@@ -2,6 +2,13 @@
 
 Lima VM image definitions for Vergil identity VMs
 
+## Table of Contents
+
+- [Status](#status)
+- [Overview](#overview)
+- [Getting Started](#getting-started)
+- [License](#license)
+
 ## Status
 
 Early development
