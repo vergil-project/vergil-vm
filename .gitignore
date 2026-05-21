@@ -1,0 +1,14 @@
+# Editors
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Vergil
+.venv-host/
+.worktrees/
