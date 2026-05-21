@@ -61,6 +61,10 @@ provision:
     apt-get update
     apt-get install -y gh
 
+    # Node.js (required for Claude Code)
+    curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
+    apt-get install -y nodejs
+
     # yq (not in Ubuntu repos — install from GitHub releases)
     ARCH=$(dpkg --print-architecture)
     curl -fsSL "https://github.com/mikefarah/yq/releases/latest/download/yq_linux_${ARCH}" \
@@ -82,6 +86,9 @@ provision:
     curl -LsSf https://astral.sh/uv/install.sh | sh
     export PATH="$HOME/.local/bin:$PATH"
     uv --version
+
+    # Install Claude Code
+    npm install -g @anthropic-ai/claude-code
 
     # Minimal zsh configuration
     cat > "$HOME/.zshrc" << 'ZSHRC'
@@ -113,6 +120,10 @@ probes:
       echo >&2 "uv is not installed yet"
       exit 1
     fi
+    if ! timeout 120s bash -c "until command -v claude >/dev/null 2>&1; do sleep 3; done"; then
+      echo >&2 "claude is not installed yet"
+      exit 1
+    fi
     if ! timeout 120s bash -c "until pgrep -f 'containerd' >/dev/null 2>&1; do sleep 3; done"; then
       echo >&2 "containerd is not running yet"
       exit 1
@@ -132,6 +143,9 @@ message: |
 
   Run nerdctl:
     limactl shell {{.Name}} -- nerdctl run --rm alpine echo hello
+
+  Launch Claude Code:
+    limactl shell {{.Name}} --workdir /projects -- claude
 
   Install vergil-tooling:
     limactl shell {{.Name}} -- bash -c 'uv tool install "vergil-tooling @ git+https://github.com/vergil-project/vergil-tooling@v2.0"'

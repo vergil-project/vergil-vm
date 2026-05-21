@@ -12,6 +12,8 @@ check_command() {
 check_command git
 check_command gh
 check_command uv
+check_command node
+check_command claude
 check_command jq
 check_command yq
 check_command rg
