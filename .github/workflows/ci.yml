@@ -24,7 +24,6 @@ jobs:
     with:
       language: shell
       versions: '["latest"]'
-      container-tag: 'latest'
       container-suffix: base
 
   quality:
@@ -53,7 +52,6 @@ jobs:
     with:
       language: shell
       versions: '["latest"]'
-      container-tag: 'latest'
       container-suffix: base
 
   version:
