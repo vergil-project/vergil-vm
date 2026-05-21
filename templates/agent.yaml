@@ -97,6 +97,7 @@ probes:
   script: |
     #!/bin/bash
     set -eux -o pipefail
+    export PATH="$HOME/.local/bin:$PATH"
     if ! timeout 120s bash -c "until command -v gh >/dev/null 2>&1; do sleep 3; done"; then
       echo >&2 "gh is not installed yet"
       exit 1
