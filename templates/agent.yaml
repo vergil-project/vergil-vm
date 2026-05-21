@@ -1,0 +1,125 @@
+# vergil-agent — Identity VM for Vergil agent sessions.
+#
+# Creates an Ubuntu 24.04 VM with rootless containerd, core
+# development tools, and dynamic vergil-tooling installation.
+#
+# Usage:
+#   limactl create --name=vergil-agent templates/agent.yaml
+#   limactl start vergil-agent
+#
+# Reference:
+#   docs/specs/2026-05-20-identity-vm-isolation-design.md
+#   docs/specs/2026-05-20-vergil-vm-image-management-design.md
+
+minimumLimaVersion: "2.0.0"
+
+base:
+- template:_images/ubuntu-lts
+
+cpus: 4
+memory: "2GiB"
+disk: "50GiB"
+
+containerd:
+  system: false
+  user: true
+
+mounts:
+- location: "~/dev"
+  writable: true
+
+ssh:
+  forwardAgent: false
+
+provision:
+- mode: system
+  script: |
+    #!/bin/bash
+    set -eux -o pipefail
+    export DEBIAN_FRONTEND=noninteractive
+
+    apt-get update
+    apt-get install -y --no-install-recommends \
+      curl wget unzip \
+      jq ripgrep fzf \
+      zsh vim tmux nano \
+      python3 python3-venv
+
+    # GitHub CLI
+    curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
+      | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg 2>/dev/null
+    chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
+      | tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+    apt-get update
+    apt-get install -y gh
+
+    # yq (not in Ubuntu repos — install from GitHub releases)
+    ARCH=$(dpkg --print-architecture)
+    curl -fsSL "https://github.com/mikefarah/yq/releases/latest/download/yq_linux_${ARCH}" \
+      -o /usr/local/bin/yq
+    chmod +x /usr/local/bin/yq
+
+    # Set zsh as default shell for the Lima user
+    chsh -s /bin/zsh "{{.User}}"
+
+    apt-get clean
+    rm -rf /var/lib/apt/lists/*
+
+- mode: user
+  script: |
+    #!/bin/bash
+    set -eux -o pipefail
+
+    # Install uv (Python package manager)
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    export PATH="$HOME/.local/bin:$PATH"
+    uv --version
+
+    # Minimal zsh configuration
+    cat > "$HOME/.zshrc" << 'ZSHRC'
+    export PATH="$HOME/.local/bin:$PATH"
+
+    autoload -Uz compinit && compinit
+    setopt HIST_IGNORE_DUPS
+    setopt SHARE_HISTORY
+    HISTFILE="$HOME/.zsh_history"
+    HISTSIZE=10000
+    SAVEHIST=10000
+
+    # Prompt: user@hostname:dir$
+    PROMPT='%n@%m:%~$ '
+    ZSHRC
+
+probes:
+- mode: readiness
+  description: "core tools installed and containerd running"
+  script: |
+    #!/bin/bash
+    set -eux -o pipefail
+    if ! timeout 120s bash -c "until command -v gh >/dev/null 2>&1; do sleep 3; done"; then
+      echo >&2 "gh is not installed yet"
+      exit 1
+    fi
+    if ! timeout 120s bash -c "until command -v uv >/dev/null 2>&1; do sleep 3; done"; then
+      echo >&2 "uv is not installed yet"
+      exit 1
+    fi
+    if ! timeout 120s bash -c "until pgrep -f 'containerd' >/dev/null 2>&1; do sleep 3; done"; then
+      echo >&2 "containerd is not running yet"
+      exit 1
+    fi
+  hint: |
+    Check provisioning logs: limactl shell vergil-agent -- cat /var/log/cloud-init-output.log
+
+message: |
+  vergil-agent VM is ready.
+
+  Shell into the VM:
+    limactl shell {{.Name}}
+
+  Run nerdctl:
+    limactl shell {{.Name}} -- nerdctl run --rm alpine echo hello
+
+  Install vergil-tooling:
+    limactl shell {{.Name}} -- bash -c 'uv tool install "vergil-tooling @ git+https://github.com/vergil-project/vergil-tooling@v2.0"'
