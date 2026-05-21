@@ -1,0 +1,17 @@
+[project]
+repository-type = "infrastructure"
+versioning-scheme = "semver"
+branching-model = "library-release"
+release-model = "tagged-release"
+primary-language = "shell"
+
+[ci]
+versions = ["latest"]
+integration-tests = false
+
+[publish]
+release = true
+docs = true
+
+[dependencies]
+vergil = "v2.0"
