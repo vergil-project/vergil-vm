@@ -24,6 +24,7 @@ jobs:
     with:
       language: shell
       versions: '["latest"]'
+      container-suffix: base
 
   quality:
     uses: vergil-project/vergil-actions/.github/workflows/ci-quality.yml@v2.0
@@ -42,6 +43,7 @@ jobs:
       language: shell
       run-standards: ${{ inputs.run-release != 'false' }}
       run-security: ${{ inputs.run-security != 'false' }}
+      run-codeql: false
       container-tag: 'latest'
       container-suffix: base
 
@@ -50,6 +52,7 @@ jobs:
     with:
       language: shell
       versions: '["latest"]'
+      container-suffix: base
 
   version:
     uses: vergil-project/vergil-actions/.github/workflows/ci-version-bump.yml@v2.0
