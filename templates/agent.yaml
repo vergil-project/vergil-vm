@@ -4,7 +4,8 @@
 # development tools, and dynamic vergil-tooling installation.
 #
 # Usage:
-#   limactl create --name=vergil-agent templates/agent.yaml
+#   limactl create --name=vergil-agent templates/agent.yaml \
+#     --param hostProjectsDir=~/dev/projects
 #   limactl start vergil-agent
 #
 # Reference:
@@ -12,6 +13,9 @@
 #   docs/specs/2026-05-20-vergil-vm-image-management-design.md
 
 minimumLimaVersion: "2.0.0"
+
+param:
+  hostProjectsDir: ""
 
 base:
 - template:_images/ubuntu-lts
@@ -24,9 +28,12 @@ containerd:
   system: false
   user: true
 
+{{- if .Param.hostProjectsDir}}
 mounts:
-- location: "~/dev"
+- location: "{{.Param.hostProjectsDir}}"
+  mountPoint: "/projects"
   writable: true
+{{- end}}
 
 ssh:
   forwardAgent: false
@@ -115,6 +122,10 @@ probes:
 
 message: |
   vergil-agent VM is ready.
+{{- if .Param.hostProjectsDir}}
+
+  Projects mount: {{.Param.hostProjectsDir}} -> /projects
+{{- end}}
 
   Shell into the VM:
     limactl shell {{.Name}}
