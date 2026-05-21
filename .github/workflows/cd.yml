@@ -6,10 +6,21 @@ on:
   workflow_dispatch:
 
 permissions:
+  attestations: write
   contents: write
+  id-token: write
+  pull-requests: write
 
 jobs:
   docs:
     uses: vergil-project/vergil-actions/.github/workflows/cd-docs.yml@v2.0
     permissions:
       contents: write
+
+  release:
+    if: github.ref == 'refs/heads/main'
+    uses: vergil-project/vergil-actions/.github/workflows/cd-release.yml@v2.0
+    with:
+      language: base
+      container-tag: latest
+    secrets: inherit
