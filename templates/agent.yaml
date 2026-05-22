@@ -69,6 +69,9 @@ provision:
       -o /usr/local/bin/yq
     chmod +x /usr/local/bin/yq
 
+    # Claude Code (npm global install requires root)
+    npm install -g @anthropic-ai/claude-code
+
     # Set zsh as default shell for the Lima user
     chsh -s /bin/zsh "{{.User}}"
 
@@ -84,9 +87,6 @@ provision:
     curl -LsSf https://astral.sh/uv/install.sh | sh
     export PATH="$HOME/.local/bin:$PATH"
     uv --version
-
-    # Install Claude Code
-    npm install -g @anthropic-ai/claude-code
 
     # Minimal zsh configuration
     cat > "$HOME/.zshrc" << 'ZSHRC'
