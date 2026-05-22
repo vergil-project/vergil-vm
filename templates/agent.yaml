@@ -3,9 +3,12 @@
 # Creates an Ubuntu 24.04 VM with rootless containerd, core
 # development tools, and dynamic vergil-tooling installation.
 #
-# Usage:
+# The projects mount is required — override HOST_PROJECTS_DIR
+# with --set before creating the VM:
+#
 #   limactl create --name=vergil-agent templates/agent.yaml \
-#     --param hostProjectsDir=~/dev/projects
+#     --set='.mounts[0].location = "/absolute/path/to/projects"' \
+#     --tty=false
 #   limactl start vergil-agent
 #
 # Reference:
@@ -13,9 +16,6 @@
 #   docs/specs/2026-05-20-vergil-vm-image-management-design.md
 
 minimumLimaVersion: "2.0.0"
-
-param:
-  hostProjectsDir: ""
 
 base:
 - template:_images/ubuntu-lts
@@ -28,12 +28,10 @@ containerd:
   system: false
   user: true
 
-{{- if .Param.hostProjectsDir}}
 mounts:
-- location: "{{.Param.hostProjectsDir}}"
+- location: "HOST_PROJECTS_DIR"
   mountPoint: "/projects"
   writable: true
-{{- end}}
 
 ssh:
   forwardAgent: false
@@ -133,10 +131,8 @@ probes:
 
 message: |
   vergil-agent VM is ready.
-{{- if .Param.hostProjectsDir}}
 
-  Projects mount: {{.Param.hostProjectsDir}} -> /projects
-{{- end}}
+  Projects mount: /projects
 
   Shell into the VM:
     limactl shell {{.Name}}

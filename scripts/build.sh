@@ -52,7 +52,7 @@ limactl delete --force "$INSTANCE" 2>/dev/null || true
 # Create and start the VM (non-interactive)
 echo "Creating VM..."
 limactl create --name="$INSTANCE" "$TEMPLATE" --tty=false \
-    --param hostProjectsDir="${REPO_ROOT}"
+    --set=".mounts[0].location = \"${REPO_ROOT}\""
 echo "Starting VM..."
 limactl start "$INSTANCE" --tty=false
 echo "VM started."
