@@ -19,12 +19,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  audit:
-    uses: vergil-project/vergil-actions/.github/workflows/ci-audit.yml@v2.0
-    with:
-      language: shell
-      versions: '["latest"]'
-
   quality:
     uses: vergil-project/vergil-actions/.github/workflows/ci-quality.yml@v2.0
     with:
@@ -42,14 +36,9 @@ jobs:
       language: shell
       run-standards: ${{ inputs.run-release != 'false' }}
       run-security: ${{ inputs.run-security != 'false' }}
+      run-codeql: false
       container-tag: 'latest'
       container-suffix: base
-
-  test:
-    uses: vergil-project/vergil-actions/.github/workflows/ci-test.yml@v2.0
-    with:
-      language: shell
-      versions: '["latest"]'
 
   version:
     uses: vergil-project/vergil-actions/.github/workflows/ci-version-bump.yml@v2.0

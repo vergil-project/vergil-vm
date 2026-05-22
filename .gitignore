@@ -12,3 +12,12 @@ Thumbs.db
 # Vergil
 .venv-host/
 .worktrees/
+
+# Lima build artifacts
+*.qcow2
+*.raw
+*.img
+*.iso
+
+# Build output
+/build/
