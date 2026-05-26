@@ -20,8 +20,17 @@ minimumLimaVersion: "2.0.0"
 base:
 - template:_images/ubuntu-lts
 
+# Resource allocation — conservative defaults for modest hardware.
+#
+# Override per-identity in ~/.config/vergil/identities.toml:
+#   cpus = 12
+#   memory = "32GiB"
+#   disk = "100GiB"
+#
+# Or at create time:  limactl create ... --set='.cpus = N' --set='.memory = "XGiB"'
+# On a stopped VM:    limactl edit <instance>
 cpus: 4
-memory: "2GiB"
+memory: "4GiB"
 disk: "50GiB"
 
 containerd:

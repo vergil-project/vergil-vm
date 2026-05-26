@@ -7,7 +7,7 @@ This file provides guidance to Claude Code when working in this repository.
 ## Validation
 
 ```bash
-vrg-docker-run -- vrg-validate
+vrg-container-run -- vrg-validate
 ```
 
 ## Memory management
@@ -87,7 +87,7 @@ Rules for this session:
   read-only — all changes flow through your worktree on your
   feature branch.
 - When you need to run validation, run it from inside your worktree
-  (vrg-docker-run mounts the current directory).
+  (vrg-container-run mounts the current directory).
 ```
 
 All fields are required.
@@ -105,7 +105,7 @@ human who can run it directly via `! <command>` in the prompt.
 ## Validation
 
 ```bash
-vrg-docker-run -- vrg-validate
+vrg-container-run -- vrg-validate
 ```
 
 This is the **only** validation command. Do not run individual linters,
