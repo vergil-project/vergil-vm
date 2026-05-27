@@ -84,6 +84,12 @@ provision:
     # Set zsh as default shell for the Lima user
     chsh -s /bin/zsh "{{.User}}"
 
+    # sshd: accept terminal env vars so Claude Code detects keyboard
+    # protocol support when accessed over SSH
+    cat > /etc/ssh/sshd_config.d/10-acceptenv-terminal.conf << 'SSHD_CONF'
+    AcceptEnv COLORTERM TERM_PROGRAM TERM_PROGRAM_VERSION
+    SSHD_CONF
+
     apt-get clean
     rm -rf /var/lib/apt/lists/*
 
