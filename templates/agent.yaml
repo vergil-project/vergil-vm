@@ -125,22 +125,14 @@ probes:
     #!/bin/bash
     set -eux -o pipefail
     export PATH="$HOME/.local/bin:$PATH"
-    if ! timeout 120s bash -c "until command -v gh >/dev/null 2>&1; do sleep 3; done"; then
-      echo >&2 "gh is not installed yet"
-      exit 1
-    fi
-    if ! timeout 120s bash -c "until command -v uv >/dev/null 2>&1; do sleep 3; done"; then
-      echo >&2 "uv is not installed yet"
-      exit 1
-    fi
-    if ! timeout 120s bash -c "until command -v claude >/dev/null 2>&1; do sleep 3; done"; then
-      echo >&2 "claude is not installed yet"
-      exit 1
-    fi
-    if ! timeout 120s bash -c "until pgrep -f 'containerd' >/dev/null 2>&1; do sleep 3; done"; then
-      echo >&2 "containerd is not running yet"
-      exit 1
-    fi
+    timeout 1800 bash -c '
+      until command -v gh >/dev/null 2>&1 &&
+            command -v uv >/dev/null 2>&1 &&
+            command -v claude >/dev/null 2>&1 &&
+            pgrep -f containerd >/dev/null 2>&1; do
+        sleep 5
+      done
+    '
   hint: |
     Check provisioning logs: limactl shell vergil-agent -- cat /var/log/cloud-init-output.log
 
