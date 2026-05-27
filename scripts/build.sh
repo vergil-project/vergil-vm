@@ -54,7 +54,7 @@ echo "Creating VM..."
 limactl create --name="$INSTANCE" "$TEMPLATE" --tty=false \
     --set=".mounts[0].location = \"${REPO_ROOT}\""
 echo "Starting VM..."
-limactl start "$INSTANCE" --tty=false
+limactl start "$INSTANCE" --tty=false --timeout=30m
 echo "VM started."
 echo ""
 
