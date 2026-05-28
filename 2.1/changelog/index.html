@@ -375,15 +375,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#210-2026-05-22" class="md-nav__link">
+  <a href="#212-2026-05-28" class="md-nav__link">
     <span class="md-ellipsis">
       
-        [2.1.0] - 2026-05-22
+        [2.1.2] - 2026-05-28
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="[2.1.0] - 2026-05-22">
+    <nav class="md-nav" aria-label="[2.1.2] - 2026-05-28">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -409,6 +409,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Documentation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#features" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -421,6 +432,67 @@
         
           <li class="md-nav__item">
   <a href="#testing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#210-2026-05-22" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [2.1.0] - 2026-05-22
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[2.1.0] - 2026-05-22">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#bug-fixes_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bug fixes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#chores_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chores
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#features_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#testing_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Testing
@@ -456,8 +528,37 @@
 <p>All notable changes to this project will be documented in this file.</p>
 <p>The format is based on <a href="https://keepachangelog.com/">Keep a Changelog</a>
 and this project adheres to <a href="https://semver.org/">Semantic Versioning</a>.</p>
-<h2 id="210-2026-05-22">[2.1.0] - 2026-05-22<a class="headerlink" href="#210-2026-05-22" title="Permanent link">&para;</a></h2>
+<h2 id="212-2026-05-28">[2.1.2] - 2026-05-28<a class="headerlink" href="#212-2026-05-28" title="Permanent link">&para;</a></h2>
 <h3 id="bug-fixes">Bug fixes<a class="headerlink" href="#bug-fixes" title="Permanent link">&para;</a></h3>
+<ul>
+<li>restructure readiness probe with 30-minute combined timeout</li>
+<li>replace language: base with container-suffix: base</li>
+</ul>
+<h3 id="chores">Chores<a class="headerlink" href="#chores" title="Permanent link">&para;</a></h3>
+<ul>
+<li>bump version to 2.1.1</li>
+<li>add hook guard shim, update CLAUDE.md template, fix settings.json</li>
+<li>remove legacy .githooks/pre-commit</li>
+<li>remove primary-language from vergil.toml</li>
+</ul>
+<h3 id="documentation">Documentation<a class="headerlink" href="#documentation" title="Permanent link">&para;</a></h3>
+<ul>
+<li>add VM resource sizing design spec and implementation plan</li>
+<li>add environment indicator design spec</li>
+<li>add environment indicator implementation plan</li>
+<li>add design spec and implementation plan for terminal env forwarding</li>
+</ul>
+<h3 id="features">Features<a class="headerlink" href="#features" title="Permanent link">&para;</a></h3>
+<ul>
+<li>update resource defaults and document override mechanism</li>
+<li>accept terminal env vars for keyboard protocol detection</li>
+</ul>
+<h3 id="testing">Testing<a class="headerlink" href="#testing" title="Permanent link">&para;</a></h3>
+<ul>
+<li>add acceptance test for terminal env AcceptEnv config</li>
+</ul>
+<h2 id="210-2026-05-22">[2.1.0] - 2026-05-22<a class="headerlink" href="#210-2026-05-22" title="Permanent link">&para;</a></h2>
+<h3 id="bug-fixes_1">Bug fixes<a class="headerlink" href="#bug-fixes_1" title="Permanent link">&para;</a></h3>
 <ul>
 <li>add run-codeql false, container-suffix/tag for audit and test jobs, and Table of Contents to README</li>
 <li>remove container-tag from audit and test jobs (not an accepted input)</li>
@@ -467,7 +568,7 @@ and this project adheres to <a href="https://semver.org/">Semantic Versioning</a
 <li>remove Go template syntax, make projects mount required</li>
 <li>move Claude Code install to system provisioning block</li>
 </ul>
-<h3 id="chores">Chores<a class="headerlink" href="#chores" title="Permanent link">&para;</a></h3>
+<h3 id="chores_1">Chores<a class="headerlink" href="#chores_1" title="Permanent link">&para;</a></h3>
 <ul>
 <li>step 3 - vergil.toml</li>
 <li>step 4 - config files</li>
@@ -476,7 +577,7 @@ and this project adheres to <a href="https://semver.org/">Semantic Versioning</a
 <li>add VERSION file (2.1.0) to bootstrap version tracking</li>
 <li>directory structure and Lima-specific gitignore</li>
 </ul>
-<h3 id="features">Features<a class="headerlink" href="#features" title="Permanent link">&para;</a></h3>
+<h3 id="features_1">Features<a class="headerlink" href="#features_1" title="Permanent link">&para;</a></h3>
 <ul>
 <li>Lima VM template for vergil-agent</li>
 <li>build script for VM creation and testing</li>
@@ -484,7 +585,7 @@ and this project adheres to <a href="https://semver.org/">Semantic Versioning</a
 <li>install Node.js and Claude Code in VM template</li>
 <li>credential provisioning via vrg-vm-init</li>
 </ul>
-<h3 id="testing">Testing<a class="headerlink" href="#testing" title="Permanent link">&para;</a></h3>
+<h3 id="testing_1">Testing<a class="headerlink" href="#testing_1" title="Permanent link">&para;</a></h3>
 <ul>
 <li>VM acceptance test suite</li>
 </ul>
