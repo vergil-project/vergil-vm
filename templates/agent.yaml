@@ -20,8 +20,17 @@ minimumLimaVersion: "2.0.0"
 base:
 - template:_images/ubuntu-lts
 
+# Resource allocation — conservative defaults for modest hardware.
+#
+# Override per-identity in ~/.config/vergil/identities.toml:
+#   cpus = 12
+#   memory = "32GiB"
+#   disk = "100GiB"
+#
+# Or at create time:  limactl create ... --set='.cpus = N' --set='.memory = "XGiB"'
+# On a stopped VM:    limactl edit <instance>
 cpus: 4
-memory: "2GiB"
+memory: "4GiB"
 disk: "50GiB"
 
 containerd:
@@ -75,6 +84,12 @@ provision:
     # Set zsh as default shell for the Lima user
     chsh -s /bin/zsh "{{.User}}"
 
+    # sshd: accept terminal env vars so Claude Code detects keyboard
+    # protocol support when accessed over SSH
+    cat > /etc/ssh/sshd_config.d/10-acceptenv-terminal.conf << 'SSHD_CONF'
+    AcceptEnv COLORTERM TERM_PROGRAM TERM_PROGRAM_VERSION
+    SSHD_CONF
+
     apt-get clean
     rm -rf /var/lib/apt/lists/*
 
@@ -110,22 +125,14 @@ probes:
     #!/bin/bash
     set -eux -o pipefail
     export PATH="$HOME/.local/bin:$PATH"
-    if ! timeout 120s bash -c "until command -v gh >/dev/null 2>&1; do sleep 3; done"; then
-      echo >&2 "gh is not installed yet"
-      exit 1
-    fi
-    if ! timeout 120s bash -c "until command -v uv >/dev/null 2>&1; do sleep 3; done"; then
-      echo >&2 "uv is not installed yet"
-      exit 1
-    fi
-    if ! timeout 120s bash -c "until command -v claude >/dev/null 2>&1; do sleep 3; done"; then
-      echo >&2 "claude is not installed yet"
-      exit 1
-    fi
-    if ! timeout 120s bash -c "until pgrep -f 'containerd' >/dev/null 2>&1; do sleep 3; done"; then
-      echo >&2 "containerd is not running yet"
-      exit 1
-    fi
+    timeout 1800 bash -c '
+      until command -v gh >/dev/null 2>&1 &&
+            command -v uv >/dev/null 2>&1 &&
+            command -v claude >/dev/null 2>&1 &&
+            pgrep -f containerd >/dev/null 2>&1; do
+        sleep 5
+      done
+    '
   hint: |
     Check provisioning logs: limactl shell vergil-agent -- cat /var/log/cloud-init-output.log
 
