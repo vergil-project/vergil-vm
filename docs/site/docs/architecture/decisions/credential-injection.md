@@ -76,7 +76,7 @@ token creation are generous (5000/hour).
 
 The VM is configured with a global git URL rewrite:
 
-```
+```text
 url."https://github.com/".insteadOf "git@github.com:"
 ```
 
