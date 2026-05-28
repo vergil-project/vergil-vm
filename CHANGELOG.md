@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.1.2] - 2026-05-28
+
+### Bug fixes
+
+- restructure readiness probe with 30-minute combined timeout
+- replace language: base with container-suffix: base
+
+### Chores
+
+- bump version to 2.1.1
+- add hook guard shim, update CLAUDE.md template, fix settings.json
+- remove legacy .githooks/pre-commit
+- remove primary-language from vergil.toml
+
+### Documentation
+
+- add VM resource sizing design spec and implementation plan
+- add environment indicator design spec
+- add environment indicator implementation plan
+- add design spec and implementation plan for terminal env forwarding
+
+### Features
+
+- update resource defaults and document override mechanism
+- accept terminal env vars for keyboard protocol detection
+
+### Testing
+
+- add acceptance test for terminal env AcceptEnv config
+
 ## [2.1.0] - 2026-05-22
 
 ### Bug fixes
