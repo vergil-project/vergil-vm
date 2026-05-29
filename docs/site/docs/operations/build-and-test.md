@@ -11,7 +11,7 @@ build.sh
   ├─ Validate template syntax (limactl validate)
   ├─ Delete any previous test VM
   ├─ Create VM from template (name: vergil-agent-test)
-  │   └─ Mount: repo root → /projects in VM
+  │   └─ Mount: repo root with path preservation
   ├─ Start VM (wait for readiness probe, up to 30 min)
   ├─ Run test suite (tests/run-tests.sh)
   │   └─ Execute each test_*.sh inside VM via limactl shell
@@ -74,4 +74,4 @@ command -v my-tool >/dev/null 2>&1 || { echo "my-tool not found"; exit 1; }
 
 The test runner picks it up automatically on the next build — no
 registration or configuration needed. Tests run inside the VM, so they
-have access to all provisioned tools and the `/projects` mount.
+have access to all provisioned tools and the projects mount.

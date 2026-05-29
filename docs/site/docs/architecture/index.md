@@ -4,22 +4,26 @@
 
 Each Vergil identity VM is a full Ubuntu 24.04 virtual machine managed
 by [Lima](https://lima-vm.io/). Lima wraps QEMU to run the guest OS and
-provides transparent SSH access from the host. A single writable mount
-at `/projects` gives the guest access to the host's project directory.
+provides transparent SSH access from the host.
+
+The host's projects directory is mounted with **path preservation** —
+the same absolute path used on the host exists inside the VM. This
+means session data, memory files, and project paths are transparently
+usable both inside the VM and on the host without translation.
 
 ```text
-┌─────────────────────────────────────────────┐
-│  Host (macOS / Linux)                       │
-│                                             │
-│  limactl ──SSH──► ┌──────────────────────┐  │
-│                   │  Ubuntu 24.04 Guest   │  │
-│                   │                       │  │
-│  /path/to/        │  /projects (mount)    │  │
-│  projects ◄──────►│                       │  │
-│                   │  containerd (rootless) │  │
-│                   │  gh, uv, claude, ...  │  │
-│                   └──────────────────────┘  │
-└─────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────┐
+│  Host (macOS)                                     │
+│                                                   │
+│  vrg-vm ──SSH──►  ┌───────────────────────────┐   │
+│                   │  Ubuntu 24.04 Guest        │   │
+│                   │                            │   │
+│  ~/dev/projects   │  ~/dev/projects (mount)    │   │
+│       ◄──────────►│                            │   │
+│                   │  containerd (rootless)     │   │
+│                   │  gh, uv, claude, ...       │   │
+│                   └───────────────────────────┘   │
+└───────────────────────────────────────────────────┘
 ```
 
 Rootless containerd runs as a user service inside the VM, allowing
@@ -58,7 +62,8 @@ Also configures:
 
 ### Stage 2: User provisioning (lima user)
 
-- Installs [uv](https://docs.astral.sh/uv/) (Python package manager)
+- Installs [uv](https://docs.astral.sh/uv/) into `~/.local/bin`
+  (per-user install, hence Stage 2 rather than Stage 1)
 - Creates a minimal `.zshrc` with PATH, history, and prompt configuration
 
 ### Stage 3: Readiness probe
@@ -72,18 +77,17 @@ Waits up to 30 minutes for all of the following:
 
 The VM reports ready only after all four conditions are met.
 
-### Stage 4: Credential injection (post-creation)
+### Stage 4: Credential injection (automated)
 
-Run manually after VM creation via `scripts/vrg-vm-init.sh`. This stage
-is separate because credentials are identity-specific — the template
-remains generic and reusable across identities. See
-[Credential Injection](decisions/credential-injection.md) for the
-design rationale.
+Executed automatically by `vrg-vm create` after the VM passes its
+readiness probe. This stage is separate in the code because credentials
+are identity-specific — the template remains generic and reusable across
+identities. See [Credential Injection](decisions/credential-injection.md)
+for the design rationale.
 
-The script:
+The injection step:
 
 1. Reads GitHub App credentials from `~/.config/vergil/identities.toml`
-   or environment variables
 2. Injects `app.pem` and `app.env` into `~/.config/vergil/` inside the
    VM (mode 600)
 3. Configures git to rewrite `git@github.com:` URLs to HTTPS

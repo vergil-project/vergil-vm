@@ -74,11 +74,11 @@ limactl shell <instance> -- nerdctl run --rm alpine echo hello
 
 ## Mount issues
 
-The `/projects` mount requires an absolute host path set at creation
-time via `--set`. Common issues:
+The projects mount uses path preservation — the host's `projects_dir`
+is mounted at the same absolute path inside the VM. Common issues:
 
-- **Relative path** — the `--set` value must be an absolute path
-  (e.g., `/Users/you/projects`, not `~/projects`)
+- **Relative path** — `projects_dir` in identities.toml must be an
+  absolute path (e.g., `/Users/you/dev/projects`, not `~/projects`)
 - **Path does not exist** — the host directory must exist before VM
   creation
 - **Permission denied** — Lima needs read/write access to the host
