@@ -15,7 +15,14 @@ Early development
 
 ## Overview
 
-TODO
+Vergil VM implements a sandbox environment for running Claude Code within
+the Vergil ecosystem. It protects the host OS by limiting filesystem
+access to a single designated project directory, and protects GitHub
+resources by authenticating through a dedicated GitHub App with scoped
+permissions.
+
+See the [documentation site](https://vergil-project.github.io/vergil-vm/)
+for the full guide.
 
 ## Getting Started
 
