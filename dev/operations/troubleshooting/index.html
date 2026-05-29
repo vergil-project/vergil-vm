@@ -1092,10 +1092,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#credential-verification-failures" class="md-nav__link">
+  <a href="#credential-issues" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Credential verification failures
+        Credential issues
       
     </span>
   </a>
@@ -1189,10 +1189,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#credential-verification-failures" class="md-nav__link">
+  <a href="#credential-issues" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Credential verification failures
+        Credential issues
       
     </span>
   </a>
@@ -1240,15 +1240,18 @@
 
 <h1 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h1>
 <h2 id="provisioning-failures">Provisioning failures<a class="headerlink" href="#provisioning-failures" title="Permanent link">&para;</a></h2>
-<p>If the VM fails during creation or the readiness probe times out, check
-the cloud-init provisioning logs:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>limactl<span class="w"> </span>shell<span class="w"> </span>&lt;instance&gt;<span class="w"> </span>--<span class="w"> </span>cat<span class="w"> </span>/var/log/cloud-init-output.log
+<p>If the VM fails during creation or the readiness probe times out,
+the simplest fix is usually to destroy and recreate:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>vrg-vm<span class="w"> </span>rebuild
+</code></pre></div>
+<p>If you need to diagnose the cause, check the cloud-init provisioning
+logs inside the VM:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>limactl<span class="w"> </span>shell<span class="w"> </span>vergil<span class="w"> </span>--<span class="w"> </span>cat<span class="w"> </span>/var/log/cloud-init-output.log
 </code></pre></div>
 <p>Common causes:</p>
 <ul>
 <li><strong>Network issues</strong> — provisioning downloads packages from apt repos,
-  GitHub, NodeSource, and npm. Verify the VM has internet access:
-  <code>limactl shell &lt;instance&gt; -- curl -s https://github.com</code></li>
+  GitHub, NodeSource, and npm</li>
 <li><strong>Disk space</strong> — a full host disk prevents the VM image from
   expanding. Check with <code>df -h</code>.</li>
 <li><strong>Lima version</strong> — the template requires Lima 2.0+. Check with
@@ -1256,61 +1259,34 @@ the cloud-init provisioning logs:</p>
 </ul>
 <h2 id="readiness-probe-timeout">Readiness probe timeout<a class="headerlink" href="#readiness-probe-timeout" title="Permanent link">&para;</a></h2>
 <p>The readiness probe waits up to 30 minutes for <code>gh</code>, <code>uv</code>, <code>claude</code>,
-and containerd. If it times out:</p>
-<ol>
-<li>Shell into the VM: <code>limactl shell &lt;instance&gt;</code></li>
-<li>Check which tools are missing: <code>which gh uv claude</code></li>
-<li>Check containerd: <code>pgrep -f containerd</code></li>
-<li>Review provisioning logs (see above)</li>
-</ol>
+and containerd. If it times out, rebuild the VM:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>vrg-vm<span class="w"> </span>rebuild
+</code></pre></div>
+<p>To diagnose before rebuilding, shell into the VM and check which
+tools are missing:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>limactl<span class="w"> </span>shell<span class="w"> </span>vergil<span class="w"> </span>--<span class="w"> </span>which<span class="w"> </span>gh<span class="w"> </span>uv<span class="w"> </span>claude
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>limactl<span class="w"> </span>shell<span class="w"> </span>vergil<span class="w"> </span>--<span class="w"> </span>pgrep<span class="w"> </span>-f<span class="w"> </span>containerd
+</code></pre></div>
 <p>The most common cause is a slow or interrupted npm install of Claude
-Code. Re-running <code>npm install -g @anthropic-ai/claude-code</code> inside the
-VM may resolve it.</p>
-<h2 id="credential-verification-failures">Credential verification failures<a class="headerlink" href="#credential-verification-failures" title="Permanent link">&para;</a></h2>
-<p>After running <code>vrg-vm-init.sh</code>, the script runs a 5-point verification.
-If checks fail:</p>
-<table>
-<thead>
-<tr>
-<th>Check</th>
-<th>Fix</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>App private key missing</td>
-<td>Re-run <code>vrg-vm-init.sh</code> — the key file may not have been copied</td>
-</tr>
-<tr>
-<td>Key permissions wrong</td>
-<td><code>limactl shell &lt;instance&gt; -- chmod 600 ~/.config/vergil/app.pem</code></td>
-</tr>
-<tr>
-<td>App config missing</td>
-<td>Verify <code>VRG_APP_ID</code> or <code>identities.toml</code> has the <code>app_id</code> field</td>
-</tr>
-<tr>
-<td>Config permissions wrong</td>
-<td><code>limactl shell &lt;instance&gt; -- chmod 600 ~/.config/vergil/app.env</code></td>
-</tr>
-<tr>
-<td>Git HTTPS rewrite missing</td>
-<td><code>limactl shell &lt;instance&gt; -- git config --global url."https://github.com/".insteadOf "git@github.com:"</code></td>
-</tr>
-</tbody>
-</table>
-<p>You can re-run verification independently:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>limactl<span class="w"> </span>shell<span class="w"> </span>&lt;instance&gt;<span class="w"> </span>--<span class="w"> </span>bash<span class="w"> </span>-s<span class="w"> </span>&lt;<span class="w"> </span>scripts/vm-verify-credentials.sh
+Code.</p>
+<h2 id="credential-issues">Credential issues<a class="headerlink" href="#credential-issues" title="Permanent link">&para;</a></h2>
+<p>Credentials are injected automatically by <code>vrg-vm create</code> and
+refreshed on each <code>vrg-vm start</code> or <code>vrg-vm session</code>. If credential
+issues arise, restarting the VM re-injects them:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>vrg-vm<span class="w"> </span>restart
+</code></pre></div>
+<p>If problems persist, rebuild the VM entirely:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>vrg-vm<span class="w"> </span>rebuild
 </code></pre></div>
 <h2 id="containerd-not-starting">Containerd not starting<a class="headerlink" href="#containerd-not-starting" title="Permanent link">&para;</a></h2>
 <p>Containerd runs as a rootless user service. To check its status:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>limactl<span class="w"> </span>shell<span class="w"> </span>&lt;instance&gt;<span class="w"> </span>--<span class="w"> </span>systemctl<span class="w"> </span>--user<span class="w"> </span>status<span class="w"> </span>containerd
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>limactl<span class="w"> </span>shell<span class="w"> </span>vergil<span class="w"> </span>--<span class="w"> </span>systemctl<span class="w"> </span>--user<span class="w"> </span>status<span class="w"> </span>containerd
 </code></pre></div>
-<p>If it is not running, start it:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>limactl<span class="w"> </span>shell<span class="w"> </span>&lt;instance&gt;<span class="w"> </span>--<span class="w"> </span>systemctl<span class="w"> </span>--user<span class="w"> </span>start<span class="w"> </span>containerd
+<p>If it is not running, restart the VM:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>vrg-vm<span class="w"> </span>restart
 </code></pre></div>
-<p>Verify it works by pulling and running a container:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>limactl<span class="w"> </span>shell<span class="w"> </span>&lt;instance&gt;<span class="w"> </span>--<span class="w"> </span>nerdctl<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>alpine<span class="w"> </span><span class="nb">echo</span><span class="w"> </span>hello
+<p>To verify containerd works:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>limactl<span class="w"> </span>shell<span class="w"> </span>vergil<span class="w"> </span>--<span class="w"> </span>nerdctl<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>alpine<span class="w"> </span><span class="nb">echo</span><span class="w"> </span>hello
 </code></pre></div>
 <h2 id="mount-issues">Mount issues<a class="headerlink" href="#mount-issues" title="Permanent link">&para;</a></h2>
 <p>The projects mount uses path preservation — the host's <code>projects_dir</code>
@@ -1324,10 +1300,12 @@ is mounted at the same absolute path inside the VM. Common issues:</p>
   directory</li>
 </ul>
 <p>To check the current mount configuration:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>limactl<span class="w"> </span>list<span class="w"> </span>--json<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">&#39;.[].config.mounts&#39;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>limactl<span class="w"> </span>list<span class="w"> </span>--json<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">&#39;.[].config.mounts&#39;</span>
 </code></pre></div>
-<p>If the mount path is wrong, the VM must be recreated with the correct
-<code>--set</code> value — mounts cannot be changed after creation.</p>
+<p>If the mount path is wrong, rebuild with the corrected <code>projects_dir</code>
+in identities.toml:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>vrg-vm<span class="w"> </span>rebuild
+</code></pre></div>
 
 
 

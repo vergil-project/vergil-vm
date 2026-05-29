@@ -1258,7 +1258,7 @@
 <h1 id="vergil-vm">Vergil VM<a class="headerlink" href="#vergil-vm" title="Permanent link">&para;</a></h1>
 <p>Vergil VM implements a sandbox environment for running
 <a href="https://claude.ai/claude-code">Claude Code</a> within the Vergil
-ecosystem. It creates isolated Ubuntu 24.04 virtual machines where AI
+ecosystem. It creates isolated Ubuntu virtual machines where AI
 agents operate with tightly scoped access — protecting both your host
 system and your GitHub resources.</p>
 <h2 id="why-sandbox">Why Sandbox?<a class="headerlink" href="#why-sandbox" title="Permanent link">&para;</a></h2>
@@ -1312,11 +1312,11 @@ injects fresh credentials and launches Claude Code against your projects.</p>
 <h2 id="whats-in-the-box">What's in the Box<a class="headerlink" href="#whats-in-the-box" title="Permanent link">&para;</a></h2>
 <p>Every VM created from the agent template includes:</p>
 <ul>
-<li><strong>Ubuntu 24.04 LTS</strong> with zsh as the default shell</li>
+<li><strong>Ubuntu LTS</strong> with zsh as the default shell</li>
 <li><strong>Rootless containerd</strong> — agents can pull and run containers without root</li>
 <li><strong>Core tools</strong> — git, jq, ripgrep, fzf, vim, tmux, curl, wget</li>
 <li><strong>GitHub CLI</strong> (<code>gh</code>) for repository operations</li>
-<li><strong>Node.js 22</strong> and <strong>Claude Code</strong> for AI-assisted development</li>
+<li><strong>Node.js</strong> and <strong>Claude Code</strong> for AI-assisted development</li>
 <li><strong>uv</strong> — Python package manager for installing vergil-tooling at runtime</li>
 <li><strong>yq</strong> — YAML processor for configuration management</li>
 </ul>
@@ -1358,7 +1358,7 @@ for creating, starting, and connecting to VMs defined by this template.</p>
 <ul>
 <li><a href="getting-started/">Getting Started</a> — configure an identity and launch your first session</li>
 <li><a href="architecture/">Architecture</a> — how the VM is built and provisioned</li>
-<li><a href="operations/build-and-test/">Build and Test</a> — run the test suite locally</li>
+<li><a href="operations/build-and-test/">Operations</a> — build, test, tune, and troubleshoot</li>
 </ul>
 <h2 id="acknowledgements">Acknowledgements<a class="headerlink" href="#acknowledgements" title="Permanent link">&para;</a></h2>
 <p>The concept for Vergil VM — using Lima to sandbox code agents inside
