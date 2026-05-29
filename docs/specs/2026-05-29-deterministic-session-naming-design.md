@@ -6,9 +6,10 @@
 
 **Date:** 2026-05-29
 
-**Status:** Design captured. Implementation **blocked** on a prerequisite
-mount fix (see "Prerequisite" below) and a follow-up live re-inspection of
-session-state detection in the corrected, shared environment.
+**Status:** Design **finalized**. The prerequisite mount fixes have landed and
+session-state detection was re-inspected live in the corrected environment
+(2026-05-29, post-rebuild); all open items are resolved. Ready to implement
+(plan-of-work step 5).
 
 ## Problem
 
@@ -134,37 +135,43 @@ refused with a clear error and the `--fork` suggestion.
 
 ## Session-state detection
 
-Detection runs **inside the VM**, against the session store the VM's Claude
-actually uses (see Prerequisite — once the mount is fixed this is the shared,
-persistent store). It joins two sources:
+Detection runs **inside the VM**, against the VM-local session store the VM's
+Claude actually uses. It joins two sources:
 
 1. **Named-session map** — scan the conversation transcripts under
-   `~/.claude/projects/*/*.jsonl` for the last `agent-name` entry per file,
-   yielding `name → sessionId`. (Last rename wins.)
-2. **Live roster** — read `~/.claude/sessions/*.json`, each of which records
-   `pid`, `sessionId`, `cwd`, and `status` (`idle`/`busy`). Validate liveness
-   against the process table (`ps`).
+   `~/.claude/projects/*/*.jsonl` for the last `agent-name` entry per file.
+   Each such entry has the shape
+   `{"type":"agent-name","agentName":"<name>","sessionId":"<id>"}`; the last one
+   in a file wins. This yields `name → sessionId` for every session that has a
+   transcript (idle or active). Transcripts live in the shared, host-backed
+   `projects` directory, so they survive rebuilds.
+2. **Live roster** — read the **VM-local** `~/.claude/sessions/*.json`. Each
+   file is named `<pid>.json` and records `pid`, `sessionId`, `cwd`, `status`
+   (`idle`/`busy`), `procStart`, and the session `name`. Validate liveness
+   against the process table (`ps`), using `procStart` to reject PID reuse.
 
-Cross-referencing the two classifies each candidate name as nonexistent,
-idle, or active.
+Classification per candidate name:
 
-> **Open item — must be re-inspected live after the mount fix and rebuild.**
-> Once `~/.claude/sessions` is genuinely shared between host and VM(s), the
-> live roster contains entries from multiple platforms. Two consequences need
-> hands-on verification before the detection logic is finalized:
+- **active** — its `sessionId` has a roster file whose `pid` is live.
+- **idle** — its `sessionId` has a transcript but no live roster entry (no
+  roster file, or a stale one whose `pid` is dead).
+- **nonexistent** — neither a transcript nor a roster entry.
+
+> **Resolved (live re-inspection, 2026-05-29, post-rebuild).** The earlier open
+> items are closed by keeping the roster **VM-local** (see Prerequisite):
 >
-> - **PID ambiguity:** a `pid` in a shared `sessions/*.json` is only meaningful
->   on the machine that owns it; a VM cannot validate a host PID (or another
->   VM's PID) against its own process table.
-> - **Filename collision:** `sessions/*.json` is keyed by PID alone, so a host
->   process and a VM process with the same PID would collide on the same
->   filename in the shared directory.
+> - **PID ambiguity — gone.** Every `pid` in a VM-local roster is owned by that
+>   VM, so the in-VM `ps`/`procStart` liveness check is always valid.
+> - **Filename collision — gone.** Each VM has its own `sessions` directory, so
+>   no host and VM process can collide on the same `<pid>.json` filename.
+> - **Platform tagging — unnecessary.** The host reads each identity VM's roster
+>   over `limactl shell <vm> -- …` and runs the liveness check in that same
+>   in-VM call, so ownership is implicit in which VM answered.
 >
-> The detection mechanism may therefore need platform tagging (e.g. a
-> launcher-maintained sidecar recording which VM/host owns each session, or a
-> liveness check executed on the owning platform). This is deliberately left
-> open; we will redo the inspection in the corrected shared environment, which
-> was the whole point of getting the mounts right.
+> Bonus confirmed live: the roster JSON already carries `name`, so
+> active-session detection can read it straight from the roster. Transcript
+> parsing remains required only for **idle** sessions, which have no roster
+> file.
 
 ## Listing sessions
 
@@ -211,49 +218,55 @@ host side, versus a proper helper run inside the VM. The in-VM helper wins —
 detection requires reading the VM's session store and process table, which are
 only correct from inside the VM, and vergil-tooling is already present there.
 
-## Prerequisite — fix the `.claude` projects/sessions mounts (do first)
+## Prerequisite — `.claude` mount fix (DONE)
 
-Discovered during design: the VM's Claude does **not** persist its session
-history across `vrg-vm rebuild`, because the `.claude/projects` and
-`.claude/sessions` mounts land at the wrong path.
+Discovered during design: the VM's Claude did **not** persist its session
+history across `vrg-vm rebuild`, because the `.claude` subdirectories landed at
+the wrong path. `lima.py` built the mounts on the **host** (`Path.home()` =
+`/Users/pmoore`) with `mountPoint == location`, but inside the VM `HOME` is
+`/home/pmoore.guest`, so the VM's Claude read/wrote its **own local**
+`~/.claude` on the (ephemeral) VM disk.
 
-**Root cause:** `vergil-tooling/lib/lima.py` (≈ lines 156–180) builds the
-mounts on the **host**, where `Path.home()` is `/Users/pmoore`. It mounts the
-host's `~/.claude/projects` and `~/.claude/sessions` with
-`mountPoint == location` (path-preserved at `/Users/pmoore/.claude/...`). But
-inside the VM `HOME` is `/home/pmoore.guest`, so the VM's Claude reads/writes
-its **own local** `/home/pmoore.guest/.claude/...` on the VM disk — which is
-destroyed on every rebuild. The intended behavior was for the VM's Claude to
-use the **shared host** directories so sessions persist.
+**What shipped:**
 
-**Fix options (decide during the fix step):**
+- **`projects` and `skills` → symlinked** into the host-backed mounts
+  (`~/.claude/projects -> /Users/pmoore/.claude/projects`, and likewise
+  `skills`). Transcripts and skills are now shared and survive rebuilds.
+  (vergil-tooling #1296 / released #1297.)
+- **`sessions` → kept VM-local** — a real directory, **not** symlinked.
+  (vergil-tooling #1301 / released #1302.) The launcher also self-heals a
+  pre-existing `sessions` symlink left by #1296.
 
-- **A — Mount at the VM home path.** Set the `.claude/projects` and
-  `.claude/sessions` mount points to the VM's `~/.claude/projects` and
-  `~/.claude/sessions` (i.e. `/home/pmoore.guest/.claude/...`), with the host's
-  corresponding directories as the source.
-- **B — Symlink.** Keep the path-preserved mounts at `/Users/pmoore/.claude/...`
-  and make the VM's `~/.claude/projects` and `~/.claude/sessions` symlinks to
-  them.
+**Why `sessions` is deliberately *not* shared:** Claude writes the live roster
+atomically — a temp file in VM-local `/tmp` followed by `rename()` onto the
+target. With `sessions/` symlinked onto the virtiofs mount that became a
+cross-filesystem rename and failed with `EXDEV (Invalid cross-device link)` —
+silently, leaving **no roster file at all**. Transcripts are unaffected because
+they are append writes, not atomic renames. Keeping `sessions` VM-local makes
+the roster write succeed and, as a bonus, gives detection a clean per-VM
+ownership model (see Session-state detection). Verified live post-rebuild: the
+running session's `sessions/<pid>.json` is present and well-formed.
 
-Either way, `CLAUDE.md` and `settings.json` are already copied to the correct
-VM location (`copy_claude_config` writes to the VM's `~/.claude`); only
-`projects` and `sessions` are mis-placed. Path preservation of the **projects
-code mount** (`/Users/pmoore/dev/projects`) is correct and unaffected — the
-transcript directory slugs encode the path-preserved `cwd`, so they line up
-between host and VM regardless.
+Path preservation of the **projects code mount** (`/Users/pmoore/dev/projects`)
+is correct and unaffected — transcript directory slugs encode the
+path-preserved `cwd`, so they line up between host and VM regardless.
+
+> Incidental: the first post-fix rebuild also surfaced an unrelated
+> `systemd-logind` 100% CPU busy-loop that wedged provisioning (vergil-vm #74);
+> it was fixed in the agent template (`mode: boot` logind drop-in) before this
+> work could be verified live.
 
 ## Plan of work (sequenced)
 
-1. **Commit this design** (current step).
-2. **Fix the mounts** (vergil-tooling `lima.py`) so the VM's Claude uses the
-   shared, persistent host `.claude/projects` and `.claude/sessions`.
-3. **Rebuild the VM**, start a fresh session, load this design, and **re-inspect
-   session-state detection live** in the corrected shared environment to
-   resolve the open items (PID ambiguity, filename collision, platform
-   tagging).
-4. **Finalize the detection mechanism** in this spec based on that inspection.
-5. **Implement** the command-surface and resolver changes (#1292 + #73) in
+1. ✅ **Commit this design.**
+2. ✅ **Fix the mounts** (vergil-tooling #1296/#1297, #1301/#1302): `projects`
+   and `skills` symlinked to the shared host store; `sessions` kept VM-local.
+3. ✅ **Rebuild and re-inspect session-state detection live** — done
+   2026-05-29 in the corrected environment.
+4. ✅ **Finalize the detection mechanism** (this revision): open items
+   resolved; roster confirmed to carry `name`, `agent-name` entry shape
+   confirmed.
+5. ⏳ **Implement** the command-surface and resolver changes (#1292 + #73) in
    vergil-tooling, plus `vrg-vm list --sessions`.
 
 ## Scope boundaries
