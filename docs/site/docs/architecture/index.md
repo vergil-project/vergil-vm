@@ -62,7 +62,8 @@ Also configures:
 
 ### Stage 2: User provisioning (lima user)
 
-- Installs [uv](https://docs.astral.sh/uv/) (Python package manager)
+- Installs [uv](https://docs.astral.sh/uv/) into `~/.local/bin`
+  (per-user install, hence Stage 2 rather than Stage 1)
 - Creates a minimal `.zshrc` with PATH, history, and prompt configuration
 
 ### Stage 3: Readiness probe
