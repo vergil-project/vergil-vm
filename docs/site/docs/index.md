@@ -56,13 +56,15 @@ Every VM created from the agent template includes:
 
 ## Ecosystem Context
 
-Vergil VM is one of three infrastructure repositories:
+Vergil VM is one of five repositories in the Vergil ecosystem:
 
 | Repository | Purpose |
 | ---------- | ------- |
 | [vergil-tooling](https://github.com/vergil-project/vergil-tooling) | CLI tools (`vrg-vm`, `vrg-git`, etc.), validators, and git hooks |
 | **vergil-vm** | VM template definition and test suite |
 | [vergil-docker](https://github.com/vergil-project/vergil-docker) | Dev container images for CI pipelines and local validation |
+| [vergil-claude-plugin](https://github.com/vergil-project/vergil-claude-plugin) | Claude Code plugin with skills, hooks, and MCP configuration |
+| [vergil-actions](https://github.com/vergil-project/vergil-actions) | Reusable GitHub Actions for CI/CD workflows |
 
 The `vrg-vm` CLI (provided by vergil-tooling) is the primary interface
 for creating, starting, and connecting to VMs defined by this template.
