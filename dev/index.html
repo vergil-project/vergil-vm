@@ -439,10 +439,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#ecosystem-context" class="md-nav__link">
+  <a href="#why-sandbox" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Ecosystem Context
+        Why Sandbox?
       
     </span>
   </a>
@@ -450,10 +450,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#components" class="md-nav__link">
+  <a href="#how-it-works" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Components
+        How It Works
       
     </span>
   </a>
@@ -472,10 +472,32 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#ecosystem-context" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ecosystem Context
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#quick-links" class="md-nav__link">
     <span class="md-ellipsis">
       
         Quick Links
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#acknowledgements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Acknowledgements
       
     </span>
   </a>
@@ -1151,10 +1173,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#ecosystem-context" class="md-nav__link">
+  <a href="#why-sandbox" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Ecosystem Context
+        Why Sandbox?
       
     </span>
   </a>
@@ -1162,10 +1184,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#components" class="md-nav__link">
+  <a href="#how-it-works" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Components
+        How It Works
       
     </span>
   </a>
@@ -1184,10 +1206,32 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#ecosystem-context" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ecosystem Context
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#quick-links" class="md-nav__link">
     <span class="md-ellipsis">
       
         Quick Links
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#acknowledgements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Acknowledgements
       
     </span>
   </a>
@@ -1212,38 +1256,33 @@
 
 
 <h1 id="vergil-vm">Vergil VM<a class="headerlink" href="#vergil-vm" title="Permanent link">&para;</a></h1>
-<p>Lima VM definitions that create isolated Ubuntu 24.04 execution environments
-for Vergil AI agent sessions. Each VM is a full virtual machine with its own
-OS, rootless container runtime, development tools, and Claude Code — providing
-strong isolation between agent identities.</p>
-<h2 id="ecosystem-context">Ecosystem Context<a class="headerlink" href="#ecosystem-context" title="Permanent link">&para;</a></h2>
-<p>Vergil VM is one of three infrastructure repositories:</p>
-<table>
-<thead>
-<tr>
-<th>Repository</th>
-<th>Purpose</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><a href="https://github.com/vergil-project/vergil-tooling">vergil-tooling</a></td>
-<td>CLI tools, validators, and git hooks consumed by all managed repos</td>
-</tr>
-<tr>
-<td><strong>vergil-vm</strong></td>
-<td>VM template and provisioning for long-running agent execution environments</td>
-</tr>
-<tr>
-<td><a href="https://github.com/vergil-project/vergil-docker">vergil-docker</a></td>
-<td>Dev container images for CI pipelines and local validation</td>
-</tr>
-</tbody>
-</table>
-<p>These are complementary: vergil-docker images are ephemeral containers for
-running linters and tests; vergil-vm instances are persistent virtual machines
-where agents do sustained development work.</p>
-<h2 id="components">Components<a class="headerlink" href="#components" title="Permanent link">&para;</a></h2>
+<p>Vergil VM implements a sandbox environment for running
+<a href="https://claude.ai/claude-code">Claude Code</a> within the Vergil
+ecosystem. It creates isolated Ubuntu 24.04 virtual machines where AI
+agents operate with tightly scoped access — protecting both your host
+system and your GitHub resources.</p>
+<h2 id="why-sandbox">Why Sandbox?<a class="headerlink" href="#why-sandbox" title="Permanent link">&para;</a></h2>
+<p>Running a code agent directly on your workstation gives it broad access
+to your filesystem, credentials, and network. Vergil VM narrows that
+exposure through three layers of protection:</p>
+<p><strong>A. Filesystem isolation</strong> — The VM can only access a single directory
+you designate as your projects hierarchy. Your home directory, system
+files, SSH keys, and everything else on the host remain invisible to
+the agent.</p>
+<p><strong>B. GitHub App scoping</strong> — Instead of sharing your personal GitHub
+credentials, each VM authenticates via a dedicated GitHub App with
+fine-grained permissions. The agent can only access repositories you
+explicitly grant to that App, and its tokens are short-lived.</p>
+<p><strong>C. Egress protection</strong> <em>(work in progress)</em> — Network egress controls
+will restrict what the agent can communicate with externally, completing
+the sandbox boundary. This is not yet implemented but will be in place
+before public release.</p>
+<p>The goal is to progressively shrink-wrap the agent's surface area to the
+absolute minimum required for productive development work.</p>
+<h2 id="how-it-works">How It Works<a class="headerlink" href="#how-it-works" title="Permanent link">&para;</a></h2>
+<p>Each identity (a named GitHub App configuration) gets its own long-lived
+VM. The VM is created once and reused across sessions — starting it
+injects fresh credentials and launches Claude Code against your projects.</p>
 <table>
 <thead>
 <tr>
@@ -1264,11 +1303,6 @@ where agents do sustained development work.</p>
 <td>Creates a test VM, runs the test suite, cleans up</td>
 </tr>
 <tr>
-<td>Credential provisioning</td>
-<td><code>scripts/vrg-vm-init.sh</code></td>
-<td>Injects GitHub App credentials into a VM</td>
-</tr>
-<tr>
 <td>Test suite</td>
 <td><code>tests/</code></td>
 <td>Integration tests that run inside the VM</td>
@@ -1286,12 +1320,47 @@ where agents do sustained development work.</p>
 <li><strong>uv</strong> — Python package manager for installing vergil-tooling at runtime</li>
 <li><strong>yq</strong> — YAML processor for configuration management</li>
 </ul>
+<h2 id="ecosystem-context">Ecosystem Context<a class="headerlink" href="#ecosystem-context" title="Permanent link">&para;</a></h2>
+<p>Vergil VM is one of three infrastructure repositories:</p>
+<table>
+<thead>
+<tr>
+<th>Repository</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://github.com/vergil-project/vergil-tooling">vergil-tooling</a></td>
+<td>CLI tools (<code>vrg-vm</code>, <code>vrg-git</code>, etc.), validators, and git hooks</td>
+</tr>
+<tr>
+<td><strong>vergil-vm</strong></td>
+<td>VM template definition and test suite</td>
+</tr>
+<tr>
+<td><a href="https://github.com/vergil-project/vergil-docker">vergil-docker</a></td>
+<td>Dev container images for CI pipelines and local validation</td>
+</tr>
+</tbody>
+</table>
+<p>The <code>vrg-vm</code> CLI (provided by vergil-tooling) is the primary interface
+for creating, starting, and connecting to VMs defined by this template.</p>
 <h2 id="quick-links">Quick Links<a class="headerlink" href="#quick-links" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="getting-started/">Getting Started</a> — create your first VM and launch a session</li>
+<li><a href="getting-started/">Getting Started</a> — configure an identity and launch your first session</li>
 <li><a href="architecture/">Architecture</a> — how the VM is built and provisioned</li>
 <li><a href="operations/build-and-test/">Build and Test</a> — run the test suite locally</li>
 </ul>
+<h2 id="acknowledgements">Acknowledgements<a class="headerlink" href="#acknowledgements" title="Permanent link">&para;</a></h2>
+<p>The concept for Vergil VM — using Lima to sandbox code agents inside
+isolated virtual machines — is inspired by
+<a href="https://gitlab.com/dmorel69/corral">corral</a> by D. Morel. Corral
+demonstrated the approach of running agents in per-repo Lima VMs with
+controlled filesystem access. Vergil VM adapts the idea to a
+per-identity model where a single VM serves an agent's entire
+collection of repositories, integrated with the broader Vergil tooling
+ecosystem.</p>
 
 
 
