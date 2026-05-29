@@ -11,19 +11,14 @@ hardware:
 | Memory | 4 GiB |
 | Disk | 50 GiB |
 
-## Override Mechanisms
-
-Resources can be customized at three levels, from most persistent to
-most ad-hoc:
-
-### Per-identity configuration
+## How to Configure
 
 Set resource fields in `~/.config/vergil/identities.toml`:
 
 ```toml
-[identities.my-agent]
+[identities.vergil]
 app_id = 12345
-private_key_path = "~/.config/vergil/keys/my-agent.pem"
+private_key_path = "~/.config/vergil/keys/vergil.pem"
 cpus = 12
 memory = "32GiB"
 disk = "100GiB"
@@ -32,34 +27,20 @@ disk = "100GiB"
 These values are applied automatically by `vrg-vm create` when creating
 a VM for this identity.
 
-### At create time
+## Applying Changes
 
-Pass `--set` flags to `limactl create`:
+To apply new resource settings, rebuild the VM:
 
 ```bash
-limactl create --name=vergil-agent templates/agent.yaml \
-  --set='.cpus = 8' \
-  --set='.memory = "16GiB"' \
-  --set='.mounts[0].location = "/path/to/projects"' \
-  --tty=false
+vrg-vm rebuild
 ```
 
-### On a stopped VM
-
-Edit a stopped VM's configuration directly:
+If you only changed CPU or memory (not disk), a restart is sufficient:
 
 ```bash
-limactl stop vergil-agent
-limactl edit vergil-agent
-```
-
-This opens the VM's YAML configuration in your editor. Modify `cpus`,
-`memory`, or `disk`, save, and restart:
-
-```bash
-limactl start vergil-agent
+vrg-vm restart
 ```
 
 !!! note
-    Disk size can only be increased, not decreased. CPU and memory
-    changes take effect on the next start.
+    Disk size can only be increased, not decreased, and requires a
+    rebuild. CPU and memory changes take effect on restart.

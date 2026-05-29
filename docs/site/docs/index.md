@@ -2,7 +2,7 @@
 
 Vergil VM implements a sandbox environment for running
 [Claude Code](https://claude.ai/claude-code) within the Vergil
-ecosystem. It creates isolated Ubuntu 24.04 virtual machines where AI
+ecosystem. It creates isolated Ubuntu virtual machines where AI
 agents operate with tightly scoped access — protecting both your host
 system and your GitHub resources.
 
@@ -36,21 +36,21 @@ Each identity (a named GitHub App configuration) gets its own long-lived
 VM. The VM is created once and reused across sessions — starting it
 injects fresh credentials and launches Claude Code against your projects.
 
-| Component | Path | Purpose |
-| --------- | ---- | ------- |
-| VM template | `templates/agent.yaml` | Lima VM definition with provisioning scripts |
-| Build script | `scripts/build.sh` | Creates a test VM, runs the test suite, cleans up |
-| Test suite | `tests/` | Integration tests that run inside the VM |
+| Component    | Path                   | Purpose                                          |
+| ------------ | ---------------------- | ------------------------------------------------ |
+| VM template  | `templates/agent.yaml` | Lima VM definition with provisioning scripts      |
+| Build script | `scripts/build.sh`     | Creates a test VM, runs the test suite, cleans up |
+| Test suite   | `tests/`               | Integration tests that run inside the VM          |
 
 ## What's in the Box
 
 Every VM created from the agent template includes:
 
-- **Ubuntu 24.04 LTS** with zsh as the default shell
+- **Ubuntu LTS** with zsh as the default shell
 - **Rootless containerd** — agents can pull and run containers without root
 - **Core tools** — git, jq, ripgrep, fzf, vim, tmux, curl, wget
 - **GitHub CLI** (`gh`) for repository operations
-- **Node.js 22** and **Claude Code** for AI-assisted development
+- **Node.js** and **Claude Code** for AI-assisted development
 - **uv** — Python package manager for installing vergil-tooling at runtime
 - **yq** — YAML processor for configuration management
 
@@ -73,7 +73,7 @@ for creating, starting, and connecting to VMs defined by this template.
 
 - [Getting Started](getting-started.md) — configure an identity and launch your first session
 - [Architecture](architecture/index.md) — how the VM is built and provisioned
-- [Build and Test](operations/build-and-test.md) — run the test suite locally
+- [Operations](operations/build-and-test.md) — build, test, tune, and troubleshoot
 
 ## Acknowledgements
 
