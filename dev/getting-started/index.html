@@ -1262,8 +1262,8 @@
 first Claude Code session.</p>
 <h2 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>macOS</strong> — Lima uses Apple's Virtualization.framework; Linux desktop
-  is not yet tested or supported</li>
+<li><strong>macOS</strong> — Lima uses Apple's Virtualization.framework; Windows and
+  Linux desktops are not yet tested</li>
 <li><strong>Lima 2.0+</strong> — VM manager
   (<a href="https://lima-vm.io/docs/installation/">install</a>)</li>
 <li><strong>vergil-tooling</strong> — provides the <code>vrg-vm</code> CLI and related tools
@@ -1271,16 +1271,9 @@ first Claude Code session.</p>
 </ul>
 <h2 id="1-configure-your-identity">1. Configure your identity<a class="headerlink" href="#1-configure-your-identity" title="Permanent link">&para;</a></h2>
 <p>Before creating a VM, you need an identity configuration that tells
-the tooling which GitHub App to use and where your projects live.</p>
-<p>Create <code>~/.config/vergil/identities.toml</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">default_identity</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;vergil&quot;</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="k">[identities.vergil]</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">vm_instance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;vergil&quot;</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="n">app_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">123456</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="n">private_key_path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;~/.config/vergil/keys/vergil.pem&quot;</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="n">projects_dir</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;/Users/you/dev/projects&quot;</span>
-</code></pre></div>
+the tooling which GitHub App to use and where your projects live.
+Identity setup and management is documented in the
+<a href="https://vergil-project.github.io/vergil-tooling/identity-setup.html">vergil-tooling identity guide</a>.</p>
 <p>The identity name <code>vergil</code> is the standard primary identity. The
 GitHub App is typically named <code>&lt;your-username&gt;-vergil</code> and granted
 access to the repositories you want the agent to work with.</p>
@@ -1292,42 +1285,38 @@ a single <code>vergil</code> identity.</p>
 </div>
 <h2 id="2-create-the-vm">2. Create the VM<a class="headerlink" href="#2-create-the-vm" title="Permanent link">&para;</a></h2>
 <p>With your identity configured, create the VM:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>vrg-vm<span class="w"> </span>create<span class="w"> </span>--identity<span class="w"> </span>vergil
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>vrg-vm<span class="w"> </span>create
 </code></pre></div>
 <p>This fetches the VM template, creates a Lima VM with your configured
-resource limits and projects mount, starts it, injects your GitHub App
-credentials, and installs vergil-tooling inside the VM. The process
-takes several minutes on first run (provisioning downloads packages
-and tools).</p>
+resource limits, mounts your projects directory with path preservation
+(the same absolute path is used inside the VM), starts it, injects
+your GitHub App credentials, and installs vergil-tooling inside the
+VM. The process takes several minutes on first run (provisioning
+downloads packages and tools).</p>
 <p>When complete, you'll see:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>VM &#39;vergil&#39; is ready.
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>VM &#39;vergil&#39; is ready.
 </code></pre></div>
 <h2 id="3-launch-a-claude-code-session">3. Launch a Claude Code session<a class="headerlink" href="#3-launch-a-claude-code-session" title="Permanent link">&para;</a></h2>
-<p>Start a sandboxed Claude Code session inside the VM:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>vrg-vm<span class="w"> </span>session<span class="w"> </span>vergil
+<p>Start a sandboxed Claude Code session:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>vrg-vm<span class="w"> </span>session<span class="w"> </span>my-project
 </code></pre></div>
-<p>This connects to the VM (starting it if needed), updates credentials
-and tooling, and drops you into an interactive shell at your projects
-directory. From there, launch Claude Code:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>claude
-</code></pre></div>
-<p>Or launch directly into a specific workspace:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>vrg-vm<span class="w"> </span>session<span class="w"> </span>vergil<span class="w"> </span>my-project<span class="w"> </span>--<span class="w"> </span>claude
-</code></pre></div>
-<p>The agent now has access only to your projects directory and can only
-authenticate to GitHub repositories granted to your App.</p>
+<p>This connects to the VM (starting it if needed) and launches Claude
+Code with your working directory set to <code>my-project</code> (a subdirectory
+of your configured projects path). The agent has access only to your
+projects directory and can only authenticate to GitHub repositories
+granted to your App.</p>
 <h2 id="day-to-day-usage">Day-to-day usage<a class="headerlink" href="#day-to-day-usage" title="Permanent link">&para;</a></h2>
-<p>After initial setup, the typical workflow is:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>vrg-vm<span class="w"> </span>session<span class="w"> </span>vergil<span class="w">           </span><span class="c1"># connect to your VM</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>claude<span class="w">                          </span><span class="c1"># launch Claude Code</span>
+<p>The typical workflow is:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>vrg-vm<span class="w"> </span>session<span class="w"> </span>my-project
 </code></pre></div>
-<p>The VM persists between sessions. Stop it when not in use:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>vrg-vm<span class="w"> </span>stop<span class="w"> </span>--identity<span class="w"> </span>vergil
+<p>When you're done, cancel out of Claude Code and the session ends.
+That's it — there's nothing else to manage.</p>
+<p>These are ephemeral, disposable sessions. Rebuild your VM frequently
+to stay current with the latest tooling and provisioning:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>vrg-vm<span class="w"> </span>rebuild
 </code></pre></div>
 <p>If the VM becomes stale (older than 3 days), the tooling will prompt
-you to rebuild:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>vrg-vm<span class="w"> </span>rebuild<span class="w"> </span>--identity<span class="w"> </span>vergil
-</code></pre></div>
+you to rebuild automatically.</p>
 <h2 id="next-steps">Next Steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../architecture/">Architecture</a> — understand the VM anatomy and

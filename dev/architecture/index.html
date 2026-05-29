@@ -1126,10 +1126,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#stage-4-credential-injection-post-creation" class="md-nav__link">
+  <a href="#stage-4-credential-injection-automated" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Stage 4: Credential injection (post-creation)
+        Stage 4: Credential injection (automated)
       
     </span>
   </a>
@@ -1184,20 +1184,23 @@
 <h2 id="vm-anatomy">VM Anatomy<a class="headerlink" href="#vm-anatomy" title="Permanent link">&para;</a></h2>
 <p>Each Vergil identity VM is a full Ubuntu 24.04 virtual machine managed
 by <a href="https://lima-vm.io/">Lima</a>. Lima wraps QEMU to run the guest OS and
-provides transparent SSH access from the host. A single writable mount
-at <code>/projects</code> gives the guest access to the host's project directory.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>┌─────────────────────────────────────────────┐
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>│  Host (macOS / Linux)                       │
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>│                                             │
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>│  limactl ──SSH──► ┌──────────────────────┐  │
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>│                   │  Ubuntu 24.04 Guest   │  │
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>│                   │                       │  │
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>│  /path/to/        │  /projects (mount)    │  │
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>│  projects ◄──────►│                       │  │
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>│                   │  containerd (rootless) │  │
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>│                   │  gh, uv, claude, ...  │  │
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>│                   └──────────────────────┘  │
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>└─────────────────────────────────────────────┘
+provides transparent SSH access from the host.</p>
+<p>The host's projects directory is mounted with <strong>path preservation</strong> —
+the same absolute path used on the host exists inside the VM. This
+means session data, memory files, and project paths are transparently
+usable both inside the VM and on the host without translation.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>┌───────────────────────────────────────────────────┐
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>│  Host (macOS)                                     │
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>│                                                   │
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>│  vrg-vm ──SSH──►  ┌───────────────────────────┐   │
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>│                   │  Ubuntu 24.04 Guest        │   │
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>│                   │                            │   │
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>│  ~/dev/projects   │  ~/dev/projects (mount)    │   │
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>│       ◄──────────►│                            │   │
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>│                   │  containerd (rootless)     │   │
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>│                   │  gh, uv, claude, ...       │   │
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>│                   └───────────────────────────┘   │
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>└───────────────────────────────────────────────────┘
 </code></pre></div>
 <p>Rootless containerd runs as a user service inside the VM, allowing
 agents to pull and run containers without root privileges. See
@@ -1282,7 +1285,8 @@ that runs when a VM is created:</p>
 </ul>
 <h3 id="stage-2-user-provisioning-lima-user">Stage 2: User provisioning (lima user)<a class="headerlink" href="#stage-2-user-provisioning-lima-user" title="Permanent link">&para;</a></h3>
 <ul>
-<li>Installs <a href="https://docs.astral.sh/uv/">uv</a> (Python package manager)</li>
+<li>Installs <a href="https://docs.astral.sh/uv/">uv</a> into <code>~/.local/bin</code>
+  (per-user install, hence Stage 2 rather than Stage 1)</li>
 <li>Creates a minimal <code>.zshrc</code> with PATH, history, and prompt configuration</li>
 </ul>
 <h3 id="stage-3-readiness-probe">Stage 3: Readiness probe<a class="headerlink" href="#stage-3-readiness-probe" title="Permanent link">&para;</a></h3>
@@ -1294,16 +1298,15 @@ that runs when a VM is created:</p>
 <li>containerd process running</li>
 </ul>
 <p>The VM reports ready only after all four conditions are met.</p>
-<h3 id="stage-4-credential-injection-post-creation">Stage 4: Credential injection (post-creation)<a class="headerlink" href="#stage-4-credential-injection-post-creation" title="Permanent link">&para;</a></h3>
-<p>Run manually after VM creation via <code>scripts/vrg-vm-init.sh</code>. This stage
-is separate because credentials are identity-specific — the template
-remains generic and reusable across identities. See
-<a href="decisions/credential-injection/">Credential Injection</a> for the
-design rationale.</p>
-<p>The script:</p>
+<h3 id="stage-4-credential-injection-automated">Stage 4: Credential injection (automated)<a class="headerlink" href="#stage-4-credential-injection-automated" title="Permanent link">&para;</a></h3>
+<p>Executed automatically by <code>vrg-vm create</code> after the VM passes its
+readiness probe. This stage is separate in the code because credentials
+are identity-specific — the template remains generic and reusable across
+identities. See <a href="decisions/credential-injection/">Credential Injection</a>
+for the design rationale.</p>
+<p>The injection step:</p>
 <ol>
-<li>Reads GitHub App credentials from <code>~/.config/vergil/identities.toml</code>
-   or environment variables</li>
+<li>Reads GitHub App credentials from <code>~/.config/vergil/identities.toml</code></li>
 <li>Injects <code>app.pem</code> and <code>app.env</code> into <code>~/.config/vergil/</code> inside the
    VM (mode 600)</li>
 <li>Configures git to rewrite <code>git@github.com:</code> URLs to HTTPS</li>

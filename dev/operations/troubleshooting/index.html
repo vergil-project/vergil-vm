@@ -1313,11 +1313,11 @@ If checks fail:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>limactl<span class="w"> </span>shell<span class="w"> </span>&lt;instance&gt;<span class="w"> </span>--<span class="w"> </span>nerdctl<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>alpine<span class="w"> </span><span class="nb">echo</span><span class="w"> </span>hello
 </code></pre></div>
 <h2 id="mount-issues">Mount issues<a class="headerlink" href="#mount-issues" title="Permanent link">&para;</a></h2>
-<p>The <code>/projects</code> mount requires an absolute host path set at creation
-time via <code>--set</code>. Common issues:</p>
+<p>The projects mount uses path preservation — the host's <code>projects_dir</code>
+is mounted at the same absolute path inside the VM. Common issues:</p>
 <ul>
-<li><strong>Relative path</strong> — the <code>--set</code> value must be an absolute path
-  (e.g., <code>/Users/you/projects</code>, not <code>~/projects</code>)</li>
+<li><strong>Relative path</strong> — <code>projects_dir</code> in identities.toml must be an
+  absolute path (e.g., <code>/Users/you/dev/projects</code>, not <code>~/projects</code>)</li>
 <li><strong>Path does not exist</strong> — the host directory must exist before VM
   creation</li>
 <li><strong>Permission denied</strong> — Lima needs read/write access to the host

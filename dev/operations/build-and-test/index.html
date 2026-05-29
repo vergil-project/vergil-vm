@@ -1227,7 +1227,7 @@ up:</p>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>  ├─ Validate template syntax (limactl validate)
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>  ├─ Delete any previous test VM
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>  ├─ Create VM from template (name: vergil-agent-test)
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>  │   └─ Mount: repo root → /projects in VM
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>  │   └─ Mount: repo root with path preservation
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>  ├─ Start VM (wait for readiness probe, up to 30 min)
 <a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>  ├─ Run test suite (tests/run-tests.sh)
 <a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>  │   └─ Execute each test_*.sh inside VM via limactl shell
@@ -1295,7 +1295,7 @@ debugging. The runner reports a summary at the end:</p>
 </code></pre></div>
 <p>The test runner picks it up automatically on the next build — no
 registration or configuration needed. Tests run inside the VM, so they
-have access to all provisioned tools and the <code>/projects</code> mount.</p>
+have access to all provisioned tools and the projects mount.</p>
 
 
 
