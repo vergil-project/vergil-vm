@@ -46,6 +46,22 @@ ssh:
   forwardAgent: false
 
 provision:
+# systemd-logind busy-loops at 100% CPU polling VT fds under this VM's
+# virtual console hardware, which starves D-Bus and hangs every PAM login
+# (including the `sudo -i` in Lima's rootless-containerd setup), wedging
+# cloud-init and leaving `limactl start` stuck at "Starting VM...".
+# Disabling VT management stops the spin. mode:boot runs in cloud-init's
+# init stage, before the built-in boot.Linux containerd script.
+- mode: boot
+  script: |
+    set -eu
+    mkdir -p /etc/systemd/logind.conf.d
+    printf '[Login]\nNAutoVTs=0\nReserveVT=0\n' \
+      > /etc/systemd/logind.conf.d/10-vergil-novt.conf
+    if systemctl is-active --quiet systemd-logind 2>/dev/null; then
+      systemctl try-restart systemd-logind || true
+    fi
+
 - mode: system
   script: |
     #!/bin/bash
