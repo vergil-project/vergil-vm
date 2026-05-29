@@ -1,89 +1,108 @@
 # Getting Started
 
-Create a Vergil identity VM, initialize credentials, and launch your
-first agent session.
+Configure a Vergil identity, create a sandboxed VM, and launch your
+first Claude Code session.
 
 ## Prerequisites
 
+- **macOS** — Lima uses Apple's Virtualization.framework; Linux desktop
+  is not yet tested or supported
 - **Lima 2.0+** — VM manager
   ([install](https://lima-vm.io/docs/installation/))
-- **macOS or Linux** host
-- **Identity configuration** — either environment variables or
-  `~/.config/vergil/identities.toml` with your GitHub App credentials
-  (see [Credential Injection](architecture/decisions/credential-injection.md)
-  for background)
+- **vergil-tooling** — provides the `vrg-vm` CLI and related tools
+  ([install](https://vergil-project.github.io/vergil-tooling/getting-started.html))
 
-## 1. Create the VM
+## 1. Configure your identity
 
-Clone the repository and create a VM from the agent template. The
-`--set` flag configures the host directory that will be mounted at
-`/projects` inside the VM.
+Before creating a VM, you need an identity configuration that tells
+the tooling which GitHub App to use and where your projects live.
 
-```bash
-git clone https://github.com/vergil-project/vergil-vm.git
-cd vergil-vm
+Create `~/.config/vergil/identities.toml`:
 
-limactl create --name=vergil-agent templates/agent.yaml \
-  --set='.mounts[0].location = "/absolute/path/to/your/projects"' \
-  --tty=false
+```toml
+default_identity = "vergil"
+
+[identities.vergil]
+vm_instance = "vergil"
+app_id = 123456
+private_key_path = "~/.config/vergil/keys/vergil.pem"
+projects_dir = "/Users/you/dev/projects"
 ```
 
-Then start the VM:
+The identity name `vergil` is the standard primary identity. The
+GitHub App is typically named `<your-username>-vergil` and granted
+access to the repositories you want the agent to work with.
+
+!!! note
+    Additional identities (e.g., a `mimir` identity for security
+    testing) are planned but not yet supported. For now, configure
+    a single `vergil` identity.
+
+## 2. Create the VM
+
+With your identity configured, create the VM:
 
 ```bash
-limactl start vergil-agent
+vrg-vm create --identity vergil
 ```
 
-The readiness probe waits up to 30 minutes for all provisioning to
-complete. When it finishes, you'll see:
+This fetches the VM template, creates a Lima VM with your configured
+resource limits and projects mount, starts it, injects your GitHub App
+credentials, and installs vergil-tooling inside the VM. The process
+takes several minutes on first run (provisioning downloads packages
+and tools).
+
+When complete, you'll see:
 
 ```text
-vergil-agent VM is ready.
+VM 'vergil' is ready.
 ```
 
-## 2. Initialize credentials
+## 3. Launch a Claude Code session
 
-Inject GitHub App credentials so the agent can authenticate via
-installation tokens:
+Start a sandboxed Claude Code session inside the VM:
 
 ```bash
-./scripts/vrg-vm-init.sh <identity-name> vergil-agent
+vrg-vm session vergil
 ```
 
-This reads credentials from `~/.config/vergil/identities.toml` (or
-from `VRG_APP_ID` and `VRG_PRIVATE_KEY_PATH` environment variables),
-injects them into the VM, configures git for HTTPS access, installs
-vergil-tooling, and runs a verification check.
-
-Expected output ends with:
-
-```text
-Credential checks: 5/5 passed
-
-=== VM initialization complete ===
-```
-
-## 3. Start a session
-
-Shell into the VM:
+This connects to the VM (starting it if needed), updates credentials
+and tooling, and drops you into an interactive shell at your projects
+directory. From there, launch Claude Code:
 
 ```bash
-limactl shell vergil-agent
+claude
 ```
 
-Verify the core tools are available:
+Or launch directly into a specific workspace:
 
 ```bash
-gh --version
-uv --version
-claude --version
-nerdctl --version
+vrg-vm session vergil my-project -- claude
 ```
 
-Launch Claude Code against your projects:
+The agent now has access only to your projects directory and can only
+authenticate to GitHub repositories granted to your App.
+
+## Day-to-day usage
+
+After initial setup, the typical workflow is:
 
 ```bash
-limactl shell vergil-agent --workdir /projects -- claude
+vrg-vm session vergil           # connect to your VM
+claude                          # launch Claude Code
+```
+
+The VM persists between sessions. Stop it when not in use:
+
+```bash
+vrg-vm stop --identity vergil
+```
+
+If the VM becomes stale (older than 3 days), the tooling will prompt
+you to rebuild:
+
+```bash
+vrg-vm rebuild --identity vergil
 ```
 
 ## Next Steps
