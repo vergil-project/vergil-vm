@@ -15,11 +15,11 @@ Early development
 
 ## Overview
 
-Vergil-vm defines Lima VM templates that create isolated Ubuntu 24.04
-execution environments for Vergil AI agent sessions. Each VM includes
-rootless containerd, core development tools, Claude Code, and GitHub App
-credential provisioning — everything an agent identity needs to operate
-independently.
+Vergil VM implements a sandbox environment for running Claude Code within
+the Vergil ecosystem. It protects the host OS by limiting filesystem
+access to a single designated project directory, and protects GitHub
+resources by authenticating through a dedicated GitHub App with scoped
+permissions.
 
 See the [documentation site](https://vergil-project.github.io/vergil-vm/)
 for the full guide.
