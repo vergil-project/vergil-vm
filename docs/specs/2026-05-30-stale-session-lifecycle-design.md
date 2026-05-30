@@ -71,8 +71,14 @@ The session id never changes. This is the mechanism the archive design relies on
 ### Age ("last active")
 
 - **active:** the roster's `updatedAt`.
-- **idle/archived:** the **timestamp of the last entry in the transcript**, with
-  the file mtime as a fallback if no timestamp is present.
+- **idle/archived:** the timestamp of the last **timestamped** entry in the
+  transcript, found by **tail-reading** (seek to end, read backward in chunks) —
+  O(1)-ish regardless of file size, since age is computed on every launch (sweep
+  + selection) and every `list`. `agent-name` entries carry **no** `timestamp`,
+  so the scan skips back past them (and past our own archive relabel) to the last
+  real activity. File mtime is a last-resort fallback only if no timestamped
+  entry exists at all — mtime alone is **not** trusted, because the projects dir
+  is a virtiofs-backed symlink whose mtimes have proven unreliable here.
 
 ## `/clear` vs. fresh — why this operates at the session level
 
@@ -89,20 +95,46 @@ leaning on `/clear`.
 
 ## Default launch behavior — `vrg-vm session <repo>`
 
-1. Resolve the lowest idle slot (unchanged from naming design).
-2. If its last-active age is **within `session_stale_days`** → resume silently.
-3. If it is **older than the threshold** → warn and prompt (interactive only):
+Two thresholds split idle sessions into three age bands (age = last-active):
 
-   ```
-   Slot 01 for vergil-project/vergil-vm was last active 12 days ago.
-   [r]esume / [f]resh / [c]ancel?
-   ```
+| Band | Age | Behavior |
+|---|---|---|
+| **fresh** | `< session_stale_days` (default 7) | silent resume |
+| **warn** | `session_stale_days ≤ age < session_archive_days` | warn + prompt |
+| **stale** | `≥ session_archive_days` (default 14) | auto-archive, dropped from candidates |
 
-- **Non-interactive / no TTY** (scripted): do **not** prompt — resume (the
-  non-destructive default) unless `--fresh` or `--slot` was given explicitly.
-  Staleness protection is an interactive affordance; scripts stay deterministic.
-- **Explicit `--slot N`**: deliberate intent → **no stale prompt**. The prompt
-  only guards the automatic lowest-idle pick.
+**Connection-time flow** (resolver, after building this repo+identity's slots):
+
+1. **Auto-archive sweep.** Relabel-archive every **cold** idle slot for *this*
+   repo+identity in the **stale** band, printing one note each:
+   `auto-archiving slot 03 (idle 24 days)…`. Strictly scoped to the target
+   repo+identity; never touches other repos or any slot with a live client.
+2. **Select** among what remains, ordered most-recently-active first:
+   - latest idle in **fresh** band → resume silently;
+   - latest idle in **warn** band → warn + prompt (interactive only):
+     ```
+     Slot 02 for vergil-project/vergil-vm was last active 9 days ago.
+     [r]esume / [f]resh / [c]ancel?
+     ```
+   - nothing left (all swept, or none existed) → create the lowest free slot.
+
+Notes:
+
+- **Most-recent, not lowest-numbered.** The idle pick is ordered by last-active
+  descending — you resume your latest work; the slot *number* is just an id.
+- **A long absence starts fresh.** If even your most-recent session is in the
+  stale band it auto-archives and you start fresh, no prompt (long gap = clean
+  slate by default).
+- **Non-interactive / no TTY** (scripted): the sweep still runs (it's a note, not
+  a prompt), but the warn band does **not** prompt — it resumes (non-destructive
+  default) unless `--fresh`/`--slot` was given. Scripts stay deterministic.
+- **Explicit `--slot N`**: surgical — **no auto-archive sweep and no prompt**;
+  resume or create exactly that slot.
+- **Off switch.** `session_archive_days = 0` disables the sweep (warn-only).
+- **Known behavior (accepted):** resuming a warn-band session and exiting without
+  doing anything writes no new timestamped entry, so the session stays in the
+  warn band and prompts again next launch. Rare and harmless; we accept it rather
+  than add a "touch on resume" mechanism.
 
 ## `--fresh` and archive-via-relabel
 
@@ -111,6 +143,13 @@ leaning on `/clear`.
 
 1. Confirm the slot's session is **cold** (no live roster entry) — guaranteed no
    concurrent writer to its transcript.
+
+   > **Cold-safety invariant.** "Cold" is judged from the *local* VM roster, which
+   > is sound only because a session name is `<identity>:…` and each identity maps
+   > to exactly one `vm_instance` — so `vergil:01:<repo>` can only ever be live in
+   > the vergil VM, which is where this resolver runs. If that 1:1 identity↔VM
+   > mapping ever changes (e.g. sharing a VM across identities), this check must be
+   > revisited before any relabel, or we could rewrite a live transcript.
 2. **Append one `agent-name` entry** to that transcript, relabeling it:
    ```
    archived@2026-05-30T14:23:07Z@vergil:01:vergil-project/vergil-vm
@@ -124,15 +163,37 @@ Nothing is deleted; the old conversation stays searchable and resumable by id.
 This is exactly what Claude's `/rename` does (append an `agent-name` line),
 applied to a cold transcript.
 
-**Archived-name recognition.** The strict slot parser (`<id>:<NN>:<path>`)
-naturally rejects the `archived@…` form, so archived sessions are excluded from
-active/idle slot resolution. The resolver detects the `archived@` prefix
-explicitly to route them to the archived listing.
+**Archived-name recognition (corrected — verified 2026-05-30).** `parse_name`
+does **not** naturally reject the `archived@…` form. The archived label embeds an
+ISO timestamp (colons in `14:23:07`) and the original name (`:NN:`), both of
+which collide with the `:` delimiter, so `parse_name` mis-parses an archived
+label into a bogus active slot (e.g. slot 23). Therefore:
 
-**Empirical pre-check (before implementation):** confirm Claude Code tolerates an
-externally-appended `agent-name` entry and honors last-wins on resume. Expected
-to pass (same entry type Claude writes); verify against a throwaway transcript
-copy in the VM.
+- `parse_name` **must explicitly return `None` for any name starting with the
+  `archived@` prefix, before the `:`-split.** Exclusion must not rely on the
+  strict format or on an identity mismatch.
+- A separate `parse_archived(name) -> (timestamp, original_name)` helper feeds
+  the archived listing. It splits with `name.split("@", 2)` →
+  `["archived", "<timestamp>", "<original-name>"]`, which stays robust even if a
+  workspace path itself contains `@` (the ISO timestamp has none, and the
+  original name is just the remainder).
+
+With prefix-first detection the rest of the label is opaque to the slot parser,
+so the timestamp format is free; keep the readable ISO form
+(`archived@2026-05-30T14:23:07Z@<original-name>`).
+
+**Empirical check (DONE — 2026-05-30, in-VM against v2.0.76).** Confirmed:
+(1) Claude resolves the current name as the **last** `agent-name` (live roster
+`name` == last transcript `agent-name`); (2) appending an `agent-name` line is
+safe and our `_last_agent_name`/`name_by_session` honor last-wins;
+(3) after relabel, `build_slots` frees the active name. The mis-parse above was
+the one correction surfaced.
+
+**Fallback.** If a future Claude version ever rejects externally-appended
+`agent-name` entries, fall back to a **sidecar archive manifest** (a separate
+file listing archived session ids that the resolver excludes from active
+resolution) — same behavior, archive state tracked out-of-band instead of in the
+transcript.
 
 ## `vrg-vm list --sessions`
 
@@ -144,33 +205,43 @@ copy in the VM.
 
 ## Configuration
 
-New key in `identities.toml`, cascading exactly like `model` / `vergil`:
+Two keys in `identities.toml`, cascading exactly like `model` / `vergil`
+(per-identity → top-level → built-in default):
 
 ```toml
-session_stale_days = 7          # ecosystem default
+session_stale_days   = 7    # warn above this (default 7)
+session_archive_days = 14   # auto-archive above this (default 14; 0 disables)
 
 [identities.vergil]
-# session_stale_days = 14       # optional per-identity override
+# session_stale_days   = 3
+# session_archive_days = 30
 ```
 
-Resolution: per-identity → top-level → built-in default **7**.
+Validation: `session_archive_days` must be `0` (disabled) or strictly greater
+than `session_stale_days`.
 
 ## Architecture / touchpoints
 
 All in vergil-tooling (the resolver and command surface from the naming work);
 pure logic stays in `lib/session.py`, thin mockable I/O in the resolver.
 
-- **`lib/session.py`** — add an `archived` classification and a
-  `last_active`/age field on slots; `list_rows` gains state filtering; `select()`
-  learns the stale cutoff and the `--fresh` path (archive-then-create decision).
+- **`lib/session.py`** — `parse_name` gains an explicit `archived@`-prefix guard
+  (return `None` before the `:`-split) plus a `parse_archived` helper; add an
+  `archived` classification and a `last_active`/age field on slots; `list_rows`
+  gains state filtering; `select()` learns the three age bands, the
+  most-recently-active idle ordering, the auto-archive sweep decision (which cold
+  idle slots are in the stale band), and the `--fresh` path (archive-then-create
+  decision).
 - **`bin/vrg_vm_resolve.py`** — read transcript timestamps for age; implement the
   relabel-append (archive); the TTY-gated stale prompt; emit age + state in
   `--list-json`.
 - **`bin/vrg_vm.py`** — `--fresh` flag; `list --sessions` filter flags
   (`--active/--idle/--archived/--all`) and the age/state columns; plumb
   `session_stale_days` (with a `resolve_*` helper like `resolve_model`).
-- **`lib/identity.py`** — `session_stale_days` on `Identity` + `IdentityConfig`,
-  parsed top-level and per-identity, plus `resolve_session_stale_days`.
+- **`lib/identity.py`** — `session_stale_days` and `session_archive_days` on
+  `Identity` + `IdentityConfig`, parsed top-level and per-identity, with
+  `resolve_session_stale_days` / `resolve_session_archive_days` and validation
+  (`archive_days == 0` or `> stale_days`).
 
 100% coverage retained; prompt/TTY and transcript-append paths factored as thin
 I/O around pure, unit-tested logic.
