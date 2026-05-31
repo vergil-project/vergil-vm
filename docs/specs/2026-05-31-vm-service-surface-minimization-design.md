@@ -61,12 +61,26 @@ Four artifacts, all in `vergil-vm`:
    keep/mask/purge table, so the rationale lives next to the code that enacts it. It
    runs after the existing tool-install block. cloud-init and the existing `mode: boot`
    logind fix are untouched.
-2. **`tests/test_services.sh`** — intent assertions, wired into `tests/run-tests.sh`.
-3. **`scripts/audit-services.sh`** — a dumb, one-shot inventory dump that shares its
-   command core with the test; output is paste-ready for the issue.
+2. **`tests/test_services.sh`** — intent assertions; auto-discovered by the
+   `tests/run-tests.sh` `test_*.sh` glob (runs in-guest).
+3. **`scripts/audit-services.sh`** — a dumb, one-shot inventory dump (host-side
+   wrapper over the shared in-guest snippet); output is paste-ready for the issue.
 4. **`scripts/vm-metrics.sh`** — a deliberately simple, labeled footprint snapshot
    (process count, idle memory, root-fs usage, unit counts) run **before** and
-   **after** stripping to quantify the win.
+   **after** stripping to quantify the win (host-side wrapper over the shared
+   in-guest snippet).
+
+### Execution model — host-side wrappers over a shared in-guest snippet
+
+The test harness already runs each `tests/test_*.sh` **inside the guest** by piping
+it over `limactl shell "$INSTANCE" -- bash -s`, while the existing `scripts/` are
+**host-side**. To make the "never drift" guarantee real across that boundary, the
+actual inventory commands (`systemctl list-*`, `/proc/meminfo`, `df`,
+`systemd-analyze`) live in **one shared in-guest snippet** (e.g.
+`tests/lib/inventory.sh`). `audit-services.sh` and `vm-metrics.sh` are thin
+host-side wrappers that run that snippet via `limactl shell <instance> -- bash -s`;
+`test_services.sh` sources/embeds the same snippet for its counts. One definition of
+"how we count the surface," three consumers — so they cannot disagree.
 
 ### Why a dedicated block (not inline, not an external script)
 
@@ -108,7 +122,10 @@ provisioning convention. A dedicated, self-documenting block keeps the audit
 Every unit is classified against a single test: **is it required for SSH-in,
 rootless containerd, cloud-init per-boot provisioning, DNS/time, or the
 gh/uv/claude toolchain?** If yes → keep. If no → mask, or purge when it is a
-clearly-dead *package*. The candidate table below is grounded in known Ubuntu 24.04
+clearly-dead *package*. **Namespace rule:** any unit in the `lima-*` namespace is
+KEEP unless positively proven idle — these are Lima's own coordination units and
+masking one can silently break `limactl` access. The candidate table below is
+grounded in known Ubuntu 24.04
 cloud-image defaults and this VM's known needs; it is **confirmed against a freshly
 built VM during implementation** (the planning step runs `audit-services.sh` on a
 real build and reconciles any deltas before finalizing the masks).
@@ -123,6 +140,7 @@ real build and reconciles any deltas before finalizing the masks).
 | Unit | Why |
 |---|---|
 | `ssh` / `sshd` | `limactl shell` rides SSH; the only access path. |
+| `lima-guestagent` (and any `lima-*` units) | Lima-injected; coordinates port-forwarding and `limactl shell` access. Non-obvious and easy to mistake for cruft — masking it breaks the only access path *and* the test/metrics tooling that rides it. Exact unit name and scope (system vs. user) confirmed by the real-build audit. |
 | `containerd` (user) + user-lingering | Rootless containerd is the entire purpose of the VM. |
 | `cloud-init*` (`cloud-init`, `cloud-config`, `cloud-final`, `cloud-init-local`) | **Per-boot** load-bearing: the existing `mode: boot` logind fix runs through cloud-init on *every* boot, not just first boot. |
 | `dbus` | systemd / cloud-init / polkit interactions. |
@@ -150,14 +168,29 @@ real build and reconciles any deltas before finalizing the masks).
 | Package | Why |
 |---|---|
 | `snapd` (+ `snapd.socket`, `snapd.seeded`) | We never use snaps. Removes a whole subsystem of mounts/timers. |
-| `unattended-upgrades` | We do not want surprise upgrades mutating a pinned image mid-life. |
+| `unattended-upgrades` | We do not want surprise upgrades mutating a pinned image mid-life. **Security note below.** |
 | `modemmanager` *(if pulled as a package)* | No modems. |
+
+#### Security note — removing the auto-patch path is deliberate
+
+`unattended-upgrades` is also the channel that applies **security** patches, so
+purging it means a running VM does not self-patch CVEs. This is an accepted,
+deliberate tradeoff, **not** an oversight, and it is sound only because of how these
+VMs are operated: they are treated as **ephemeral, stateless resources refreshed by
+frequent rebuilds**, which is where security updates come from (a rebuild pulls the
+updated base image). This is the same philosophy as the
+[stale-session lifecycle](./2026-05-30-stale-session-lifecycle-design.md) — which
+actively nudges away from long-lived sessions — and the broader practice of
+aggressively rebuilding agents rather than letting bespoke state accumulate over
+time. **If VMs ever become long-lived, this decision must be revisited and an update
+mechanism added; until then, the strategy is rebuild, not patch-in-place.**
 
 ## Guardrails
 
 ### `tests/test_services.sh` — assert intent, not inventory
 
-Wired into `tests/run-tests.sh`. Two assertion sets, run against the built VM:
+Auto-discovered by the `run-tests.sh` `test_*.sh` glob — the file just needs the
+right name; no harness edit. Runs in-guest. Two assertion sets, against the built VM:
 
 - **Denylist:** each unit in the mask/purge table is `masked` (for masks) or absent
   (for purges). Catches a typo'd mask that no-ops and a base-image bump that revives
@@ -171,11 +204,12 @@ snapshot would break on every legitimate upstream point-release shift and train 
 
 ### `scripts/audit-services.sh` — dumb dump, shared core
 
-Runs the six inventory commands above and prints their output. Shares its command
-core with the test so the two never drift. Two lives: one-time baseline capture for
-the issue, and the first diagnostic when something later breaks ("run it, diff
-against the table"). It contains no parsing/formatting/diff logic — that would be
-gold-plating.
+A host-side wrapper that runs the shared in-guest inventory snippet (see Execution
+model) via `limactl shell` and prints its output — the six inventory commands above.
+Because the snippet is the same one the test counts against, the two never drift.
+Two lives: one-time baseline capture for the issue, and the first diagnostic when
+something later breaks ("run it, diff against the table"). It contains no
+parsing/formatting/diff logic — that would be gold-plating.
 
 ### Measurement & footprint metrics — `scripts/vm-metrics.sh`
 
@@ -197,6 +231,14 @@ Idle memory and process counts are far more deterministic than boot wall-clock, 
 still depend on *when* you look; a fixed sampling point keeps the two runs
 apples-to-apples.
 
+**Resource-config parity (so the comparison is honest):** `before` and `after` must
+be built with the **identical** `cpus` / `memory` / `disk` config — idle-memory and
+disk-available numbers move with VM size, and the template documents per-identity
+overrides (e.g. `memory = "32GiB"`), so a size mismatch would make the "win" pure
+noise. Use the template defaults for both runs, and have `vm-metrics.sh` record the
+active `cpus`/`memory`/`disk` in its output header so any mismatch is self-evident on
+the face of the snapshot.
+
 **Sequencing requirement:** the `before` snapshot must be captured on the **current,
 unmodified** image *before* any template change lands. The implementation plan
 captures baseline first, then strips, then re-measures.
@@ -210,18 +252,18 @@ numeric gate.
 
 `vm-metrics.sh` is distinct from `audit-services.sh`: the audit script dumps the
 qualitative *lists* (input to classification); the metrics script captures the
-quantitative *sizes* (the before/after story). They share the unit-counting
-commands so the two never disagree on counts.
+quantitative *sizes* (the before/after story). Both draw their unit counts from the
+same shared in-guest snippet (see Execution model), so they cannot disagree.
 
 ## Implementation touchpoints
 
 | File | Change |
 |---|---|
 | `templates/agent.yaml` | New `mode: system` minimization block (mask list + curated purge), comment header carrying the keep/mask/purge table. |
-| `tests/test_services.sh` | New — denylist + allowlist assertions. |
-| `tests/run-tests.sh` | Register `test_services.sh`. |
-| `scripts/audit-services.sh` | New — one-shot inventory dump. |
-| `scripts/vm-metrics.sh` | New — labeled before/after footprint snapshot. |
+| `tests/lib/inventory.sh` | New — the shared in-guest inventory snippet (single definition of how the surface is counted). |
+| `tests/test_services.sh` | New — denylist + allowlist assertions. Auto-discovered by the `test_*.sh` glob; **no `run-tests.sh` edit needed.** |
+| `scripts/audit-services.sh` | New — host-side wrapper; one-shot inventory dump via the shared snippet. |
+| `scripts/vm-metrics.sh` | New — host-side wrapper; labeled before/after footprint snapshot, records resource config in its header. |
 
 ## Acceptance
 
