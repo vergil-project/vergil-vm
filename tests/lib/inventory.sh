@@ -12,7 +12,10 @@
 
 inv_services_running() { systemctl list-units --type=service --state=running --no-legend --no-pager | grep -c '\.service' || true; }
 inv_units_enabled()    { systemctl list-unit-files --state=enabled --no-legend --no-pager | grep -c . || true; }
-inv_timers()           { systemctl list-timers --all --no-legend --no-pager | grep -c '\.timer' || true; }
+# No --all: a masked timer still shows as a dead row under --all (no NEXT/
+# ACTIVATES), which would count toward the surface despite being inert. Counting
+# only live/scheduled timers makes the before/after delta meaningful.
+inv_timers()           { systemctl list-timers --no-legend --no-pager | grep -c '\.timer' || true; }
 inv_sockets()          { systemctl list-sockets --no-legend --no-pager | grep -c '\.socket' || true; }
 inv_proc_count()       { ps -e --no-headers | wc -l; }
 inv_mem_used_kb()      { awk '/^MemTotal:/{t=$2} /^MemAvailable:/{a=$2} END{print t-a}' /proc/meminfo; }
