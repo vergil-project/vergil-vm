@@ -33,6 +33,8 @@ socket isn't required for our use case, mask it (or don't install it).
   with a one-line justification.
 - Template changes that **measurably reduce** the running-service / timer / socket
   count.
+- A **before/after footprint snapshot** — process count, idle memory, root-filesystem
+  usage, and the unit counts — so the win is *quantified*, not just asserted.
 - A durable **regression guardrail** so the minimized surface stays minimized — a
   wrong mask or a base-image bump that revives a unit is caught, not discovered in a
   broken rebuild months later.
@@ -45,13 +47,14 @@ socket isn't required for our use case, mask it (or don't install it).
 - **cloud-init internals.** cloud-init is *kept* and not stripped — see below; it is
   per-boot load-bearing here.
 - **Boot-time as an acceptance gate.** Boot time is recorded as corroborating
-  evidence, not gated on (it is too noisy in a VM — see Measurement).
+  evidence, not gated on (it is too noisy in a VM — see Measurement & footprint
+  metrics).
 - **A golden full-inventory snapshot test.** The guardrail asserts *intent*, not the
   complete unit set, to avoid brittleness against upstream base-image churn.
 
 ## Approach overview
 
-Three artifacts, all in `vergil-vm`:
+Four artifacts, all in `vergil-vm`:
 
 1. **`templates/agent.yaml`** — a new, dedicated `mode: system` provision block whose
    sole job is surface minimization. Its comment header *is* the in-repo
@@ -61,6 +64,9 @@ Three artifacts, all in `vergil-vm`:
 2. **`tests/test_services.sh`** — intent assertions, wired into `tests/run-tests.sh`.
 3. **`scripts/audit-services.sh`** — a dumb, one-shot inventory dump that shares its
    command core with the test; output is paste-ready for the issue.
+4. **`scripts/vm-metrics.sh`** — a deliberately simple, labeled footprint snapshot
+   (process count, idle memory, root-fs usage, unit counts) run **before** and
+   **after** stripping to quantify the win.
 
 ### Why a dedicated block (not inline, not an external script)
 
@@ -171,14 +177,41 @@ the issue, and the first diagnostic when something later breaks ("run it, diff
 against the table"). It contains no parsing/formatting/diff logic — that would be
 gold-plating.
 
-### Measurement
+### Measurement & footprint metrics — `scripts/vm-metrics.sh`
 
-Record `systemd-analyze` (and the running-service / timer / socket counts) before
-and after, as evidence attached to the PR/issue. **Acceptance gates on the
-deterministic reduction in running services / timers / sockets** — the thing we
-actually control. Boot-time wall-clock is corroborating only: in a VM it is
-dominated by cloud-init network waits and one-shot provisioning and swings several
-seconds run-to-run from host load, so it is not a numeric gate.
+We capture the VM's "size" before and after so the win is quantified, not asserted.
+`scripts/vm-metrics.sh` takes a label (`before` / `after`) and prints a compact,
+paste-ready snapshot of first/second-order footprint metrics:
+
+| Metric | Source | What it shows |
+|---|---|---|
+| Running services / enabled units / timers / sockets | `systemctl list-* \| count` | The directly-controlled surface (the **gate**). |
+| Process count | total live PIDs | How many things are actually running. |
+| Idle memory in use | `/proc/meminfo` (`MemTotal` − `MemAvailable`) | Steady-state RAM footprint. |
+| Root-fs used / available | `df` on `/` | Installed disk footprint (the purge win lands here). |
+| Boot time | `systemd-analyze` | Corroborating evidence only (see below). |
+
+**Sampling discipline (so before/after are comparable):** sample at a defined point —
+after the readiness probe passes, a short settle, with **no Claude session attached**.
+Idle memory and process counts are far more deterministic than boot wall-clock, but
+still depend on *when* you look; a fixed sampling point keeps the two runs
+apples-to-apples.
+
+**Sequencing requirement:** the `before` snapshot must be captured on the **current,
+unmodified** image *before* any template change lands. The implementation plan
+captures baseline first, then strips, then re-measures.
+
+**Gate vs. evidence.** Acceptance gates on the **deterministic reduction in running
+services / timers / sockets** — the thing we actually control. Process count, idle
+memory, and disk usage are reported as the win story. Boot-time wall-clock is
+corroborating only: in a VM it is dominated by cloud-init network waits and one-shot
+provisioning and swings several seconds run-to-run from host load, so it is not a
+numeric gate.
+
+`vm-metrics.sh` is distinct from `audit-services.sh`: the audit script dumps the
+qualitative *lists* (input to classification); the metrics script captures the
+quantitative *sizes* (the before/after story). They share the unit-counting
+commands so the two never disagree on counts.
 
 ## Implementation touchpoints
 
@@ -188,12 +221,16 @@ seconds run-to-run from host load, so it is not a numeric gate.
 | `tests/test_services.sh` | New — denylist + allowlist assertions. |
 | `tests/run-tests.sh` | Register `test_services.sh`. |
 | `scripts/audit-services.sh` | New — one-shot inventory dump. |
+| `scripts/vm-metrics.sh` | New — labeled before/after footprint snapshot. |
 
 ## Acceptance
 
 - Documented keep/mask/purge decision for every enabled/running unit (the table,
   reconciled against the real build).
 - Measured reduction in running services / timers / sockets (before/after).
+- A **before/after footprint snapshot** from `vm-metrics.sh` (process count, idle
+  memory, root-fs usage, unit counts) attached as the win story — baseline captured
+  on the unmodified image first.
 - `tests/test_services.sh` green in `run-tests.sh`.
 - Rebuild passes the readiness probe (`gh`, `uv`, `claude`, containerd) and a real
   Claude Code session works end to end.
