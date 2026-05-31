@@ -39,11 +39,10 @@ echo "Instance: $INSTANCE"
 echo "Template: $TEMPLATE"
 echo ""
 
-# Validate template syntax
-echo "Validating template..."
-limactl validate "$TEMPLATE"
-echo "Template valid."
-echo ""
+# No standalone `limactl validate` here: the template carries a
+# HOST_PROJECTS_DIR placeholder that is only resolved by the --set override
+# below, and `limactl validate` has no --set. `limactl create` validates the
+# effective merged config, so the early check is redundant, not lost.
 
 # Delete any previous test instance
 limactl stop "$INSTANCE" 2>/dev/null || true
