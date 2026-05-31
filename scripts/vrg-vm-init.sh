@@ -38,21 +38,38 @@ if [ -z "$APP_ID" ] || [ -z "$PRIVATE_KEY_PATH" ]; then
         exit 1
     fi
 
-    if [ -z "$APP_ID" ]; then
-        APP_ID=$(yq -oy ".identities.${IDENTITY}.app_id" "$IDENTITIES_FILE" 2>/dev/null || true)
-    fi
-    if [ -z "$PRIVATE_KEY_PATH" ]; then
-        RAW_PATH=$(yq -oy ".identities.${IDENTITY}.private_key_path" "$IDENTITIES_FILE" 2>/dev/null || true)
-        PRIVATE_KEY_PATH="${RAW_PATH/#\~/$HOME}"
+    if ! command -v python3 >/dev/null 2>&1; then
+        echo "ERROR: python3 is required to read $IDENTITIES_FILE (TOML). Install python3, or set VRG_APP_ID and VRG_PRIVATE_KEY_PATH to bypass config parsing." >&2
+        exit 1
     fi
 
-    if [ -z "$APP_ID" ] || [ "$APP_ID" = "null" ]; then
-        echo "ERROR: app_id not found for identity '$IDENTITY' in $IDENTITIES_FILE" >&2
-        exit 1
+    # Read one identity field from the TOML config. tomllib (stdlib, Python
+    # 3.11+) is the correct parser — the file is TOML, not YAML, so the old
+    # `yq` call was wrong even when yq was installed, and `yq` is not a host
+    # dependency. Exits non-zero with a clear message on a parse error or a
+    # missing field rather than swallowing it into an empty value.
+    read_identity_field() {  # read_identity_field <field>
+        python3 - "$IDENTITIES_FILE" "$IDENTITY" "$1" <<'PY'
+import sys, tomllib
+path, identity, field = sys.argv[1:4]
+try:
+    with open(path, "rb") as fh:
+        data = tomllib.load(fh)
+except (OSError, tomllib.TOMLDecodeError) as exc:
+    sys.exit(f"ERROR: failed to read {path}: {exc}")
+value = data.get("identities", {}).get(identity, {}).get(field)
+if value is None:
+    sys.exit(f"ERROR: identities.{identity}.{field} not found in {path}")
+print(value)
+PY
+    }
+
+    if [ -z "$APP_ID" ]; then
+        APP_ID=$(read_identity_field app_id)
     fi
-    if [ -z "$PRIVATE_KEY_PATH" ] || [ "$PRIVATE_KEY_PATH" = "null" ]; then
-        echo "ERROR: private_key_path not found for identity '$IDENTITY' in $IDENTITIES_FILE" >&2
-        exit 1
+    if [ -z "$PRIVATE_KEY_PATH" ]; then
+        RAW_PATH=$(read_identity_field private_key_path)
+        PRIVATE_KEY_PATH="${RAW_PATH/#\~/$HOME}"
     fi
 fi
 
