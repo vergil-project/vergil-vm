@@ -62,6 +62,7 @@ nav:
       - Release Notes:
           - releases/index.md
   - Getting Started: getting-started.md
+  - Sessions: sessions.md
   - Architecture:
       - architecture/index.md
       - Design Decisions:
