@@ -230,13 +230,18 @@ ensure the audit's keep/mask/purge decisions are made with egress filtering in v
 ### `tests/test_services.sh` — assert intent, not inventory
 
 Auto-discovered by the `run-tests.sh` `test_*.sh` glob — the file just needs the
-right name; no harness edit. Runs in-guest. Two assertion sets, against the built VM:
+right name; no harness edit. Runs in-guest. Three assertion sets, against the built VM:
 
 - **Denylist:** each unit in the mask/purge table is `masked` (for masks) or absent
   (for purges). Catches a typo'd mask that no-ops and a base-image bump that revives
   a unit.
 - **Allowlist:** the load-bearing set still works — `containerd` reachable, `sshd`
   active, and `gh` / `uv` / `claude` resolve and run.
+- **Reserved:** the Lima guest-agent unit is **not** masked — a narrow positive guard
+  on the highest-impact reserved unit, so a future edit that masks Lima's own
+  coordination unit is caught here, not in a mysterious `limactl` failure. (The
+  `netfilter*` units are absent until egress lands, so they are guarded by the comment
+  reservation and the decision table rather than a vacuous "not masked" assertion.)
 
 This deliberately does **not** assert the complete running-unit set; a golden
 snapshot would break on every legitimate upstream point-release shift and train a
@@ -301,21 +306,31 @@ same shared in-guest snippet (see Execution model), so they cannot disagree.
 |---|---|
 | `templates/agent.yaml` | New `mode: system` minimization block (mask list + curated purge), comment header carrying the keep/mask/purge table. |
 | `tests/lib/inventory.sh` | New — the shared in-guest inventory snippet (single definition of how the surface is counted). |
-| `tests/test_services.sh` | New — denylist + allowlist assertions. Auto-discovered by the `test_*.sh` glob; **no `run-tests.sh` edit needed.** |
+| `tests/test_services.sh` | New — denylist + allowlist + reserved (Lima agent unmasked) assertions. Auto-discovered by the `test_*.sh` glob; **no `run-tests.sh` edit needed.** |
 | `scripts/audit-services.sh` | New — host-side wrapper; one-shot inventory dump via the shared snippet. |
 | `scripts/vm-metrics.sh` | New — host-side wrapper; labeled before/after footprint snapshot, records resource config in its header. |
 
 ## Acceptance
 
-- Documented keep/mask/purge decision for every enabled/running unit (the table,
-  reconciled against the real build).
+- Documented keep/mask/purge decision for every enabled/running unit, delivered as a
+  **per-unit decision table** (one row per unit, `keep｜mask｜purge` + a one-line
+  reason) reconciled against the real build and attached to the issue. KEEPs may be
+  justified by category; the table covers the audit's running-services and
+  enabled-unit-files sets, not just the changed units.
 - Measured reduction in running services / timers / sockets (before/after).
 - A **before/after footprint snapshot** from `vm-metrics.sh` (process count, idle
   memory, root-fs usage, unit counts) attached as the win story — baseline captured
   on the unmodified image first.
 - `tests/test_services.sh` green in `run-tests.sh`.
-- Rebuild passes the readiness probe (`gh`, `uv`, `claude`, containerd) and a real
-  Claude Code session works end to end.
+- **Two-tier "still works" check:**
+  - *Smoke (automated, in `build.sh`):* rebuild passes the readiness probe, tools
+    (`gh`, `uv`, `claude`) resolve, containerd runs, and the `claude` CLI launches.
+    The `build.sh` instance is uncredentialed, so this is all it can prove.
+  - *End-to-end (manual gate, credentialed VM):* one real non-interactive Claude turn
+    completes on the stripped image. This is the criterion's "a real Claude Code
+    session works end to end"; it requires credentials so it runs as a deliberate
+    manual gate, recorded on the issue (or explicitly marked deferred to a credentialed
+    host — never silently skipped).
 - `systemd-analyze` before/after recorded as evidence.
 
 ## Risks & mitigations

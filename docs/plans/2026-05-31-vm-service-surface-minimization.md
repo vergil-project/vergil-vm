@@ -88,13 +88,43 @@ Write the **confirmed lists** into the issue and carry them to Tasks 5 and 6:
 - `CONFIRMED_PURGE` — packages present and dead weight (start from: `snapd`,
   `unattended-upgrades`; add `modemmanager` only if installed as a package).
 
-- [ ] **Step 5: Post the baseline to the issue**
+Also note the **exact Lima guest-agent unit name** from the audit (e.g.
+`lima-guestagent.service`, possibly a `--user` unit) — Task 4 asserts it stays
+unmasked.
+
+- [ ] **Step 5: Produce the per-unit decision table (acceptance criterion)**
+
+The spec requires a documented keep/mask/purge decision for **every** enabled/running
+unit, not just the ones we change. Turn the audit dump into a table — one row per
+unit — and write it to `/tmp/vm-decisions.txt`:
+
+```text
+| unit | decision | reason |
+|------|----------|--------|
+| ssh.service                    | keep  | load-bearing: limactl access |
+| lima-guestagent.service        | keep  | Lima coordination (reserved) |
+| containerd (user)              | keep  | rootless containerd — core purpose |
+| systemd-resolved.service       | keep  | DNS (egress-critical) |
+| ...                            | ...   | ... |
+| multipathd.service             | mask  | no multipath storage |
+| snapd.service                  | purge | snaps unused |
+| ...                            | ...   | ... |
+```
+
+KEEPs may be justified by category ("load-bearing: SSH", "Lima coordination", "DNS",
+"default — idle but harmless, left as keep"). Every unit in the audit's *running
+services* and *enabled unit files* sections must appear exactly once.
+
+- [ ] **Step 6: Post the baseline and decision table to the issue**
 
 ```bash
 vrg-gh issue comment 78 --body-file /tmp/vm-metrics-before.txt
+vrg-gh issue comment 78 --body-file /tmp/vm-decisions.txt
 ```
 
-Expected: comment URL printed. (Attach the audit too if useful.)
+Expected: comment URLs printed. The decision table satisfies the
+"decision for every enabled/running unit" acceptance criterion; the metrics file is
+the baseline half of the win story.
 
 ---
 
@@ -324,9 +354,10 @@ Create `tests/test_services.sh`:
 #!/bin/bash
 # tests/test_services.sh — Assert the minimized service surface (intent, not snapshot).
 #
-# Auto-discovered by run-tests.sh; runs in-guest. Two assertion sets:
+# Auto-discovered by run-tests.sh; runs in-guest. Three assertion sets:
 #   denylist  — each unit masked / each package purged
 #   allowlist — load-bearing units up, toolchain resolves
+#   reserved  — Lima guest agent must stay unmasked (egress/load-bearing path)
 # NOT `set -e`: run every assertion, then report. Exit 1 if any failed.
 set -uo pipefail
 fail=0
@@ -378,6 +409,16 @@ assert_command() {
     fi
 }
 
+assert_not_masked() {       # reserved units must never be masked
+    local unit="$1"
+    if [ "$(systemctl is-enabled "$unit" 2>/dev/null || true)" = "masked" ]; then
+        echo "  FAIL: $unit is masked but is reserved (must stay unmasked)"
+        fail=1
+    else
+        echo "  PASS: $unit not masked"
+    fi
+}
+
 echo "== Denylist: must be masked =="
 for u in \
     multipathd.service \
@@ -405,6 +446,12 @@ assert_active containerd user
 for c in gh uv claude; do
     assert_command "$c"
 done
+
+echo "== Reserved: must stay unmasked =="
+# Lima's guest agent coordinates limactl access — masking it breaks everything.
+# Use the exact unit name confirmed by the Task 0 audit (adjust if it differs,
+# or if it is a --user unit add an --user variant of assert_not_masked).
+assert_not_masked lima-guestagent.service
 
 if [ "$fail" -ne 0 ]; then
     echo "test_services: FAIL"
@@ -546,7 +593,12 @@ Expected: `=== Build complete ===`. In the test output, `test_services.sh` is
 `test_tools`, `test_vergil`, `test_credentials`) is still **PASS**. This is the TDD
 green: the same test that was red in Task 4 Step 2 now passes.
 
-- [ ] **Step 3: Confirm the readiness probe and a real Claude Code session**
+- [ ] **Step 3: Smoke test — readiness probe + Claude CLI launches (automated tier)**
+
+The `build.sh` test instance is **not credentialed** (`vrg-vm-init.sh` is a separate
+step `build.sh` never runs), so the automated tier proves only that the stripped
+image is structurally intact — tools resolve, containerd runs, the `claude` CLI
+launches:
 
 ```bash
 limactl shell vergil-agent-test -- bash -lc 'command -v gh && command -v uv && command -v claude && systemctl --user is-active containerd'
@@ -554,9 +606,30 @@ limactl shell vergil-agent-test --workdir /projects -- claude --version
 ```
 
 Expected: all four tools resolve, containerd `active`, and `claude --version` prints
-a version — proving the stripped image still works end to end.
+a version. This is the smoke tier — it does **not** by itself prove an end-to-end
+session (see Step 4).
 
-- [ ] **Step 4: Capture the after footprint**
+- [ ] **Step 4: Manual end-to-end gate — one real Claude session (credentialed tier)**
+
+This is the acceptance criterion's "a real Claude Code session works end to end."
+It needs credentials, so it is a deliberate **manual gate**, not part of the
+automated `build.sh` run. Provision the kept test VM and run one real non-interactive
+turn:
+
+```bash
+# Provision credentials into the running test VM (identity name as configured).
+./scripts/vrg-vm-init.sh vergil vergil-agent-test
+
+# One real model turn — proves the session works end to end on the stripped image.
+limactl shell vergil-agent-test --workdir /projects -- claude -p 'Reply with exactly: OK'
+```
+
+Expected: the model replies `OK` (a real turn completed). Record the result on
+issue #78. If credentials are unavailable in this environment, mark this gate as
+**deferred to a credentialed host** on the issue rather than silently skipping it —
+the smoke tier (Step 3) is not a substitute for this gate.
+
+- [ ] **Step 5: Capture the after footprint**
 
 ```bash
 ./scripts/vm-metrics.sh after vergil-agent-test | tee /tmp/vm-metrics-after.txt
@@ -643,16 +716,23 @@ Use the `vergil:pr-workflow` skill (runs from inside this worktree) to push
   - Audit methodology / inventory commands → Task 1 (`inventory.sh`), Task 0 Step 3.
   - Mask-default + curated purge → Task 5.
   - Candidate table reconciled against a real build → Task 0 Step 4.
+  - Documented keep/mask/purge decision for **every** enabled/running unit → Task 0 Step 5 (decision table), posted in Step 6.
   - `tests/test_services.sh` intent assertions, auto-discovered → Task 4, Task 6 Step 2.
   - `audit-services.sh` / `vm-metrics.sh` host wrappers over shared snippet → Tasks 2, 3.
-  - Before/after metrics, resource-config parity, baseline-first sequencing → Task 0 Steps 1–2, Task 6 Step 4 (parity automatic via `build.sh` defaults).
+  - Before/after metrics, resource-config parity, baseline-first sequencing → Task 0 Steps 1–2, Task 6 Step 5 (parity automatic via `build.sh` defaults).
   - Gate on service/timer/socket drop; boot time as evidence → Task 7 Step 1.
-  - KEEP lima-* and netfilter*/iptables*/nftables* (egress reservation) → Task 0 Step 4 rule, Task 5 comment header + `mask_if_present` list omits them.
-  - Readiness probe + real Claude session still work → Task 6 Step 3.
+  - KEEP lima-* and netfilter*/iptables*/nftables* (egress reservation) → Task 0 Step 4 rule, Task 4 reserved assertion (Lima agent not masked), Task 5 comment header + `mask_if_present` list omits them.
+  - Rebuild passes readiness probe; stripped image structurally intact (smoke) → Task 6 Step 3; **real Claude session end to end** (credentialed manual gate) → Task 6 Step 4.
 - **Placeholder scan:** No TBD/TODO. The "reconcile / adjust to match CONFIRMED list"
   instructions are concrete verification actions with explicit starting content, not
   deferred work.
 - **Type consistency:** Function names (`inv_*`, `assert_masked`, `assert_purged`,
-  `assert_active`, `mask_if_present`) are used identically across the lib, the test,
-  and the template. The mask/purge lists in Task 4 (test) and Task 5 (template) are
-  the same set, both derived from Task 0's `CONFIRMED_MASK`/`CONFIRMED_PURGE`.
+  `assert_active`, `assert_not_masked`, `mask_if_present`) are used identically across
+  the lib, the test, and the template. The mask/purge lists in Task 4 (test) and
+  Task 5 (template) are the same set, both derived from Task 0's
+  `CONFIRMED_MASK`/`CONFIRMED_PURGE`.
+- **Scope compliance:** Every task traces to a spec requirement. The three
+  spec-touching steps (Task 1 Step 3 execution-model fix; Task 7 Step 3 status bump;
+  the Acceptance edits) are **documentation-accuracy / alignment corrections
+  discovered during planning and review**, not feature scope — they keep the spec and
+  plan in agreement rather than adding new behavior.
