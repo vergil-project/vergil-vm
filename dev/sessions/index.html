@@ -11,10 +11,10 @@
       
       
       
-        <link rel="prev" href="../releases/v2.1.0/">
+        <link rel="prev" href="../getting-started/">
       
       
-        <link rel="next" href="../sessions/">
+        <link rel="next" href="../architecture/">
       
       
         
@@ -25,7 +25,7 @@
     
     
       
-        <title>Getting Started - Vergil VM</title>
+        <title>Sessions - Vergil VM</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#getting-started" class="md-skip">
+        <a href="#sessions" class="md-skip">
           Skip to content
         </a>
       
@@ -116,7 +116,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Getting Started
+              Sessions
             
           </span>
         </div>
@@ -268,11 +268,9 @@
   
   
   
-    
   
-  
-    <li class="md-tabs__item md-tabs__item--active">
-      <a href="./" class="md-tabs__link">
+    <li class="md-tabs__item">
+      <a href="../getting-started/" class="md-tabs__link">
         
   
   
@@ -289,9 +287,11 @@
   
   
   
+    
   
-    <li class="md-tabs__item">
-      <a href="../sessions/" class="md-tabs__link">
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="./" class="md-tabs__link">
         
   
   
@@ -712,6 +712,33 @@
       
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
     
   
   
@@ -731,7 +758,7 @@
   <span class="md-ellipsis">
     
   
-    Getting Started
+    Sessions
   
 
     
@@ -749,7 +776,7 @@
   <span class="md-ellipsis">
     
   
-    Getting Started
+    Sessions
   
 
     
@@ -775,10 +802,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#prerequisites" class="md-nav__link">
+  <a href="#the-mental-model" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Prerequisites
+        The mental model
       
     </span>
   </a>
@@ -786,10 +813,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#1-configure-your-identity" class="md-nav__link">
+  <a href="#everyday-use" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. Configure your identity
+        Everyday use
       
     </span>
   </a>
@@ -797,10 +824,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#2-create-the-vm" class="md-nav__link">
+  <a href="#choosing-the-model" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. Create the VM
+        Choosing the model
       
     </span>
   </a>
@@ -808,10 +835,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#3-launch-a-claude-code-session" class="md-nav__link">
+  <a href="#running-several-agents-on-one-repo" class="md-nav__link">
     <span class="md-ellipsis">
       
-        3. Launch a Claude Code session
+        Running several agents on one repo
       
     </span>
   </a>
@@ -819,10 +846,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#day-to-day-usage" class="md-nav__link">
+  <a href="#listing-and-reconnecting" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Day-to-day usage
+        Listing and reconnecting
       
     </span>
   </a>
@@ -830,10 +857,93 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#next-steps" class="md-nav__link">
+  <a href="#staleness-keeping-old-context-out-of-new-work" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Next Steps
+        Staleness: keeping old context out of new work
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Staleness: keeping old context out of new work">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#starting-fresh-on-purpose" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Starting fresh on purpose
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#archived-never-deleted" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Archived, never deleted
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-fork-guardrail" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The fork guardrail
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#clear-vs-a-fresh-session" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /clear vs. a fresh session
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#escape-hatches" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Escape hatches
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#examples-at-a-glance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Examples at a glance
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#see-also" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        See also
       
     </span>
   </a>
@@ -844,33 +954,6 @@
   
 </nav>
       
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../sessions/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Sessions
-  
-
-    
-  </span>
-  
-  
-
-      </a>
     </li>
   
 
@@ -1251,10 +1334,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#prerequisites" class="md-nav__link">
+  <a href="#the-mental-model" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Prerequisites
+        The mental model
       
     </span>
   </a>
@@ -1262,10 +1345,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#1-configure-your-identity" class="md-nav__link">
+  <a href="#everyday-use" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. Configure your identity
+        Everyday use
       
     </span>
   </a>
@@ -1273,10 +1356,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#2-create-the-vm" class="md-nav__link">
+  <a href="#choosing-the-model" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. Create the VM
+        Choosing the model
       
     </span>
   </a>
@@ -1284,10 +1367,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#3-launch-a-claude-code-session" class="md-nav__link">
+  <a href="#running-several-agents-on-one-repo" class="md-nav__link">
     <span class="md-ellipsis">
       
-        3. Launch a Claude Code session
+        Running several agents on one repo
       
     </span>
   </a>
@@ -1295,10 +1378,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#day-to-day-usage" class="md-nav__link">
+  <a href="#listing-and-reconnecting" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Day-to-day usage
+        Listing and reconnecting
       
     </span>
   </a>
@@ -1306,10 +1389,93 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#next-steps" class="md-nav__link">
+  <a href="#staleness-keeping-old-context-out-of-new-work" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Next Steps
+        Staleness: keeping old context out of new work
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Staleness: keeping old context out of new work">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#starting-fresh-on-purpose" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Starting fresh on purpose
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#archived-never-deleted" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Archived, never deleted
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-fork-guardrail" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The fork guardrail
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#clear-vs-a-fresh-session" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /clear vs. a fresh session
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#escape-hatches" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Escape hatches
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#examples-at-a-glance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Examples at a glance
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#see-also" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        See also
       
     </span>
   </a>
@@ -1333,76 +1499,247 @@
 
 
 
-<h1 id="getting-started">Getting Started<a class="headerlink" href="#getting-started" title="Permanent link">&para;</a></h1>
-<p>Configure a Vergil identity, create a sandboxed VM, and launch your
-first Claude Code session.</p>
-<h2 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h2>
+<h1 id="sessions">Sessions<a class="headerlink" href="#sessions" title="Permanent link">&para;</a></h1>
+<p><code>vrg-vm session</code> is the front door to the VM. It launches Claude Code with a
+<strong>deterministic, named session</strong> so you can close your terminal, reboot your
+laptop, or rebuild the VM and pick up exactly where you left off — without
+hunting for session IDs.</p>
+<p>This guide explains the model and shows the workflows: resuming, running several
+agents at once, recovering after a reboot, and keeping old context from polluting
+new work.</p>
+<h2 id="the-mental-model">The mental model<a class="headerlink" href="#the-mental-model" title="Permanent link">&para;</a></h2>
+<p>The VM exists to sandbox Claude Code, so <code>vrg-vm session</code> <strong>launches Claude by
+default</strong> — not a shell. Every session gets a structured name:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>&lt;identity&gt;:&lt;slot&gt;:&lt;workspace-relative-path&gt;
+</code></pre></div>
+<p>For example, working in <code>my-project</code> as the <code>vergil</code> identity:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>vergil:01:my-project
+</code></pre></div>
 <ul>
-<li><strong>macOS</strong> — Lima uses Apple's Virtualization.framework; Windows and
-  Linux desktops are not yet tested</li>
-<li><strong>Lima 2.0+</strong> — VM manager
-  (<a href="https://lima-vm.io/docs/installation/">install</a>)</li>
-<li><strong>vergil-tooling</strong> — provides the <code>vrg-vm</code> CLI and related tools
-  (<a href="https://vergil-project.github.io/vergil-tooling/getting-started.html">install</a>)</li>
+<li><strong>identity</strong> — which identity you're running as (the <code>--identity</code>, or your
+  <code>default_identity</code>). It tells you <em>who</em> you are in this window.</li>
+<li><strong>slot</strong> — a two-digit number (<code>01</code>–<code>99</code>) distinguishing multiple concurrent
+  sessions for the same identity and workspace.</li>
+<li><strong>workspace path</strong> — the repo you started in, relative to your projects root.
+  It tells you <em>where</em> you are.</li>
 </ul>
-<h2 id="1-configure-your-identity">1. Configure your identity<a class="headerlink" href="#1-configure-your-identity" title="Permanent link">&para;</a></h2>
-<p>Before creating a VM, you need an identity configuration that tells
-the tooling which GitHub App to use and where your projects live.
-Identity setup and management is documented in the
-<a href="https://vergil-project.github.io/vergil-tooling/identity-setup.html">vergil-tooling identity guide</a>.</p>
-<p>The identity name <code>vergil</code> is the standard primary identity. The
-GitHub App is typically named <code>&lt;your-username&gt;-vergil</code> and granted
-access to the repositories you want the agent to work with.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Additional identities (e.g., a <code>mimir</code> identity for security
-testing) are planned but not yet supported. For now, configure
-a single <code>vergil</code> identity.</p>
-</div>
-<h2 id="2-create-the-vm">2. Create the VM<a class="headerlink" href="#2-create-the-vm" title="Permanent link">&para;</a></h2>
-<p>With your identity configured, create the VM:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>vrg-vm<span class="w"> </span>create
-</code></pre></div>
-<p>This fetches the VM template, creates a Lima VM with your configured
-resource limits, mounts your projects directory with path preservation
-(the same absolute path is used inside the VM), starts it, injects
-your GitHub App credentials, and installs vergil-tooling inside the
-VM. The process takes several minutes on first run (provisioning
-downloads packages and tools).</p>
-<p>When complete, you'll see:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>VM &#39;vergil&#39; is ready.
-</code></pre></div>
-<h2 id="3-launch-a-claude-code-session">3. Launch a Claude Code session<a class="headerlink" href="#3-launch-a-claude-code-session" title="Permanent link">&para;</a></h2>
-<p>Start a sandboxed Claude Code session:</p>
+<p>The name shows up in Claude's UI, so at a glance you know which identity and repo
+each window belongs to.</p>
+<p>A session is in one of three states:</p>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>active</strong></td>
+<td>a live Claude client is attached right now</td>
+</tr>
+<tr>
+<td><strong>idle</strong></td>
+<td>the session exists (its transcript is on disk) but nothing is attached</td>
+</tr>
+<tr>
+<td><strong>archived</strong></td>
+<td>set aside, out of the active namespace, but preserved and reconnectable</td>
+</tr>
+</tbody>
+</table>
+<h2 id="everyday-use">Everyday use<a class="headerlink" href="#everyday-use" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>vrg-vm<span class="w"> </span>session<span class="w"> </span>my-project
 </code></pre></div>
-<p>This connects to the VM (starting it if needed) and launches Claude
-Code with your working directory set to <code>my-project</code> (a subdirectory
-of your configured projects path). The agent has access only to your
-projects directory and can only authenticate to GitHub repositories
-granted to your App.</p>
-<h2 id="day-to-day-usage">Day-to-day usage<a class="headerlink" href="#day-to-day-usage" title="Permanent link">&para;</a></h2>
-<p>The typical workflow is:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>vrg-vm<span class="w"> </span>session<span class="w"> </span>my-project
+<p>The <strong>workspace argument is required</strong> — it's the repo, relative to your projects
+root, that the session bootstraps from (its <code>CLAUDE.md</code>). Tab-complete it from
+your projects directory. Use <code>.</code> to start at the projects root.</p>
+<p>Re-running the same command <strong>resumes your most recent session</strong> for that repo,
+or starts a fresh one if none exists. "Pick up where I left off" is just running
+the command again — no flags, no session hunting.</p>
+<div class="admonition note">
+<p class="admonition-title">Most-recent, not lowest-numbered</p>
+<p>If you have several sessions for a repo, the default resumes the one you
+used <strong>most recently</strong>, not the lowest slot number. The slot number is just
+an identifier.</p>
+</div>
+<h2 id="choosing-the-model">Choosing the model<a class="headerlink" href="#choosing-the-model" title="Permanent link">&para;</a></h2>
+<p>Set the model per session, or configure a default so you never type it:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>vrg-vm<span class="w"> </span>session<span class="w"> </span>--model<span class="w"> </span>opus<span class="w"> </span>my-project
 </code></pre></div>
-<p>When you're done, cancel out of Claude Code and the session ends.
-That's it — there's nothing else to manage.</p>
-<p>These are ephemeral, disposable sessions. Rebuild your VM frequently
-to stay current with the latest tooling and provisioning:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>vrg-vm<span class="w"> </span>rebuild
+<p>In <code>identities.toml</code>, <code>model</code> cascades (CLI flag → identity → top-level default):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">model</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;opus&quot;</span><span class="w">                </span><span class="c1"># ecosystem default for every identity</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="k">[identities.vergil]</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="c1"># model = &quot;claude-opus-4-8&quot;   # optional per-identity override / pin</span>
 </code></pre></div>
-<p>If the VM becomes stale (older than 3 days), the tooling will prompt
-you to rebuild automatically.</p>
-<h2 id="next-steps">Next Steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h2>
+<p>The value passes straight to Claude's <code>--model</code>, so an alias (<code>opus</code>) or a pinned
+id (<code>claude-opus-4-8</code>) both work.</p>
+<h2 id="running-several-agents-on-one-repo">Running several agents on one repo<a class="headerlink" href="#running-several-agents-on-one-repo" title="Permanent link">&para;</a></h2>
+<p>Slots let you run more than one agent against the same identity + repo — say two
+windows on separate patches. Just run the command again; if your current session
+is busy, the next invocation starts a new slot automatically:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>vrg-vm<span class="w"> </span>session<span class="w"> </span>my-project<span class="w">        </span><span class="c1"># slot 01</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>vrg-vm<span class="w"> </span>session<span class="w"> </span>my-project<span class="w">        </span><span class="c1"># slot 02 (01 is busy)</span>
+</code></pre></div>
+<p>Target a specific slot explicitly:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>vrg-vm<span class="w"> </span>session<span class="w"> </span>--slot<span class="w"> </span><span class="m">02</span><span class="w"> </span>my-project
+</code></pre></div>
+<p>An explicit <code>--slot</code> is surgical: it resumes (or creates) exactly that slot, with
+no staleness prompt and no auto-archiving of siblings.</p>
+<h2 id="listing-and-reconnecting">Listing and reconnecting<a class="headerlink" href="#listing-and-reconnecting" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>vrg-vm<span class="w"> </span>list<span class="w"> </span>--sessions
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>IDENTITY         SLOT   WORKSPACE                            STATE     LAST ACTIVE
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>──────────────── ────── ──────────────────────────────────── ───────── ────────────
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>vergil           01     my-project                           active    2h
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>vergil           02     vergil-project/vergil-tooling        idle      3d
+</code></pre></div>
+<p>It enumerates sessions across all your identity VMs, with how long since each was
+active. Filter by state:</p>
+<table>
+<thead>
+<tr>
+<th>Flag</th>
+<th>Shows</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><em>(default)</em></td>
+<td>active + idle</td>
+</tr>
+<tr>
+<td><code>--active</code> / <code>--idle</code></td>
+<td>just that state</td>
+</tr>
+<tr>
+<td><code>--archived</code></td>
+<td>archived sessions (original name, archived time, age)</td>
+</tr>
+<tr>
+<td><code>--all</code></td>
+<td>everything, including archived</td>
+</tr>
+</tbody>
+</table>
+<p>This is the recovery tool. After closing a terminal, rebooting, or a
+<code>vrg-vm rebuild</code>, your sessions are still there — transcripts persist on the host
+and survive VM rebuilds — so you can see what existed and reconnect deliberately.</p>
+<h2 id="staleness-keeping-old-context-out-of-new-work">Staleness: keeping old context out of new work<a class="headerlink" href="#staleness-keeping-old-context-out-of-new-work" title="Permanent link">&para;</a></h2>
+<p>Resuming a long-idle session drags weeks-old context back into the model, and
+stale context quietly pollutes current work — the model can't reliably tell which
+of its own context is out of date. So sessions age through three bands, governed
+by two configurable thresholds:</p>
+<table>
+<thead>
+<tr>
+<th>Band</th>
+<th>Age (idle)</th>
+<th>What happens</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>fresh</strong></td>
+<td><code>&lt; session_stale_days</code> (default <strong>7</strong>)</td>
+<td>silently resumed</td>
+</tr>
+<tr>
+<td><strong>warn</strong></td>
+<td>7–14 days</td>
+<td>you're prompted</td>
+</tr>
+<tr>
+<td><strong>stale</strong></td>
+<td><code>≥ session_archive_days</code> (default <strong>14</strong>)</td>
+<td>auto-archived, you start fresh</td>
+</tr>
+</tbody>
+</table>
+<p>In the <strong>warn</strong> band you get a prompt:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>Slot 02 for my-project was last active 9 days ago.
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>[r]esume / [f]resh / [c]ancel?
+</code></pre></div>
+<p>In the <strong>stale</strong> band, the session is auto-archived at connection time (with a
+note) and you start clean — so you're never nagged about ancient sessions you've
+clearly abandoned, and a long enough absence simply gives you a clean slate.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="n">session_stale_days</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="mi">7</span><span class="w">    </span><span class="c1"># warn above this</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="n">session_archive_days</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">14</span><span class="w">   </span><span class="c1"># auto-archive above this (0 disables)</span>
+</code></pre></div>
+<p>Both cascade like <code>model</code> (identity → top-level → built-in). Set
+<code>session_archive_days = 0</code> to turn auto-archiving off entirely.</p>
+<div class="admonition note">
+<p class="admonition-title">Two different staleness thresholds</p>
+<p><strong>VM</strong> staleness (default 3 days) prompts you to <em>rebuild the VM</em>.
+<strong>Session</strong> staleness (7/14 days) governs <em>resuming a conversation</em>. They're
+unrelated.</p>
+</div>
+<h3 id="starting-fresh-on-purpose">Starting fresh on purpose<a class="headerlink" href="#starting-fresh-on-purpose" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>vrg-vm<span class="w"> </span>session<span class="w"> </span>--fresh<span class="w"> </span>my-project
+</code></pre></div>
+<p><code>--fresh</code> archives the current session for that slot and starts a brand-new one
+under the same name. Use it whenever you want a clean slate without waiting for
+the staleness threshold.</p>
+<h3 id="archived-never-deleted">Archived, never deleted<a class="headerlink" href="#archived-never-deleted" title="Permanent link">&para;</a></h3>
+<p>Archiving never throws anything away. The old conversation is preserved and
+relabeled out of the active namespace; you can find it with
+<code>vrg-vm list --sessions --archived</code> and reconnect to it. Old transcripts are a
+record of <em>how</em> decisions were reached, so they're kept, not pruned.</p>
+<h2 id="the-fork-guardrail">The fork guardrail<a class="headerlink" href="#the-fork-guardrail" title="Permanent link">&para;</a></h2>
+<p>Claude Code has no session locking — resuming the same session in two terminals
+silently interleaves both conversations into one transcript. So the wrapper
+refuses to attach a second live client to an active session. That's a safety
+feature, not a limitation.</p>
+<p>When you want to branch off a busy session, fork it into a new slot:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>vrg-vm<span class="w"> </span>session<span class="w"> </span>--slot<span class="w"> </span><span class="m">01</span><span class="w"> </span>--fork<span class="w"> </span>my-project
+</code></pre></div>
+<h2 id="clear-vs-a-fresh-session"><code>/clear</code> vs. a fresh session<a class="headerlink" href="#clear-vs-a-fresh-session" title="Permanent link">&para;</a></h2>
+<p>Claude's in-session <code>/clear</code> resets the <em>active context</em> but the conversation
+history stays attached to the session and can be pulled back in. A <strong>fresh
+session</strong> is a stronger guarantee: a brand-new session with zero prior history.</p>
 <ul>
-<li><a href="../sessions/">Sessions</a> — naming, resume, slots, <code>--fresh</code>, staleness, and
-  <code>vrg-vm list --sessions</code></li>
-<li><a href="../architecture/">Architecture</a> — understand the VM anatomy and
-  provisioning pipeline</li>
-<li><a href="../operations/build-and-test/">Build and Test</a> — run the test suite
-  against template changes</li>
-<li><a href="../operations/resource-tuning/">Resource Tuning</a> — adjust CPU, memory,
-  and disk for your workload</li>
+<li>Use <strong><code>/clear</code></strong> to free up context mid-task while staying in the same session.</li>
+<li>Use <strong><code>--fresh</code></strong> (or accept the stale prompt's <code>[f]resh</code>) for a genuine clean
+  slate — new history, old one archived.</li>
+</ul>
+<h2 id="escape-hatches">Escape hatches<a class="headerlink" href="#escape-hatches" title="Permanent link">&para;</a></h2>
+<p>Run something other than Claude with a <code>--</code> override:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>vrg-vm<span class="w"> </span>session<span class="w"> </span>my-project<span class="w"> </span>--<span class="w"> </span>bash<span class="w">               </span><span class="c1"># a shell in the VM</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>vrg-vm<span class="w"> </span>session<span class="w"> </span>my-project<span class="w"> </span>--<span class="w"> </span>claude<span class="w"> </span>--model<span class="w"> </span>opus<span class="w">  </span><span class="c1"># extra Claude flags</span>
+</code></pre></div>
+<p>A non-<code>claude</code> command (like <code>bash</code>) runs raw. A <code>claude</code> override still goes
+through the naming/resume logic, with your extra flags appended.</p>
+<h2 id="examples-at-a-glance">Examples at a glance<a class="headerlink" href="#examples-at-a-glance" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="c1"># Start or resume your most-recent session for a repo</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>vrg-vm<span class="w"> </span>session<span class="w"> </span>my-project
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="c1"># A second agent on the same repo</span>
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>vrg-vm<span class="w"> </span>session<span class="w"> </span>my-project
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a>
+<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a><span class="c1"># See everything and reconnect after a reboot</span>
+<a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a>vrg-vm<span class="w"> </span>list<span class="w"> </span>--sessions
+<a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a>vrg-vm<span class="w"> </span>session<span class="w"> </span>--slot<span class="w"> </span><span class="m">02</span><span class="w"> </span>my-project
+<a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a>
+<a id="__codelineno-14-11" name="__codelineno-14-11" href="#__codelineno-14-11"></a><span class="c1"># Browse and reconnect to archived sessions</span>
+<a id="__codelineno-14-12" name="__codelineno-14-12" href="#__codelineno-14-12"></a>vrg-vm<span class="w"> </span>list<span class="w"> </span>--sessions<span class="w"> </span>--archived
+<a id="__codelineno-14-13" name="__codelineno-14-13" href="#__codelineno-14-13"></a>
+<a id="__codelineno-14-14" name="__codelineno-14-14" href="#__codelineno-14-14"></a><span class="c1"># Clean slate, archiving the old session</span>
+<a id="__codelineno-14-15" name="__codelineno-14-15" href="#__codelineno-14-15"></a>vrg-vm<span class="w"> </span>session<span class="w"> </span>--fresh<span class="w"> </span>my-project
+<a id="__codelineno-14-16" name="__codelineno-14-16" href="#__codelineno-14-16"></a>
+<a id="__codelineno-14-17" name="__codelineno-14-17" href="#__codelineno-14-17"></a><span class="c1"># Fork a busy session to experiment without disturbing it</span>
+<a id="__codelineno-14-18" name="__codelineno-14-18" href="#__codelineno-14-18"></a>vrg-vm<span class="w"> </span>session<span class="w"> </span>--slot<span class="w"> </span><span class="m">01</span><span class="w"> </span>--fork<span class="w"> </span>my-project
+<a id="__codelineno-14-19" name="__codelineno-14-19" href="#__codelineno-14-19"></a>
+<a id="__codelineno-14-20" name="__codelineno-14-20" href="#__codelineno-14-20"></a><span class="c1"># Pick the model</span>
+<a id="__codelineno-14-21" name="__codelineno-14-21" href="#__codelineno-14-21"></a>vrg-vm<span class="w"> </span>session<span class="w"> </span>--model<span class="w"> </span>opus<span class="w"> </span>my-project
+<a id="__codelineno-14-22" name="__codelineno-14-22" href="#__codelineno-14-22"></a>
+<a id="__codelineno-14-23" name="__codelineno-14-23" href="#__codelineno-14-23"></a><span class="c1"># Escape hatch: a raw shell</span>
+<a id="__codelineno-14-24" name="__codelineno-14-24" href="#__codelineno-14-24"></a>vrg-vm<span class="w"> </span>session<span class="w"> </span>my-project<span class="w"> </span>--<span class="w"> </span>bash
+</code></pre></div>
+<h2 id="see-also">See also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../getting-started/">Getting Started</a> — configure an identity and create the VM</li>
+<li><a href="../operations/troubleshooting/">Troubleshooting</a> — when a session won't start</li>
 </ul>
 
 
