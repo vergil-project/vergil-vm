@@ -5,7 +5,7 @@
 
 **Date:** 2026-05-31
 
-**Status:** Design approved; ready for implementation planning.
+**Status:** Implemented (issue #78).
 
 **Builds on:** [#74 logind/VT busy-loop fix](https://github.com/vergil-project/vergil-vm/pull/75)
 (merged). That fix disabled `systemd-logind` VT management after a default
