@@ -109,6 +109,21 @@ provision:
     apt-get clean
     rm -rf /var/lib/apt/lists/*
 
+# PATH for non-login, non-interactive shells. uv and uv-installed vergil
+# tooling land in ~/.local/bin, which Claude Code's non-interactive shells
+# (e.g. `limactl shell -- ...`) must resolve. Those shells don't source
+# ~/.zshrc or /etc/profile.d — their PATH comes solely from /etc/environment
+# via PAM (pam_env). So prepend ~/.local/bin there. pam_env does NOT expand
+# $HOME, and Lima may suffix the home dir (e.g. <user>.guest), so resolve the
+# real home with getent rather than assuming /home/{{.User}}. Also drop the
+# now-stale /snap/bin (snapd is purged in the minimization step below).
+- mode: system
+  script: |
+    #!/bin/bash
+    set -eux -o pipefail
+    USER_HOME="$(getent passwd "{{.User}}" | cut -d: -f6)"
+    sed -i "s|^PATH=.*|PATH=\"${USER_HOME}/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games\"|" /etc/environment
+
 # --- Service-surface minimization (issue #78) -------------------------------
 # Strip the general-purpose Ubuntu default service set down to what this
 # special-purpose agent VM needs. Mask-by-default (reversible, resists
