@@ -51,6 +51,9 @@ socket isn't required for our use case, mask it (or don't install it).
   metrics).
 - **A golden full-inventory snapshot test.** The guardrail asserts *intent*, not the
   complete unit set, to avoid brittleness against upstream base-image churn.
+- **Implementing egress filtering.** That is vergil-tooling #901. This pass only
+  stays *compatible* with it by reserving the in-VM netfilter/networking path — see
+  Forward-compatibility.
 
 ## Approach overview
 
@@ -122,10 +125,12 @@ provisioning convention. A dedicated, self-documenting block keeps the audit
 Every unit is classified against a single test: **is it required for SSH-in,
 rootless containerd, cloud-init per-boot provisioning, DNS/time, or the
 gh/uv/claude toolchain?** If yes → keep. If no → mask, or purge when it is a
-clearly-dead *package*. **Namespace rule:** any unit in the `lima-*` namespace is
-KEEP unless positively proven idle — these are Lima's own coordination units and
-masking one can silently break `limactl` access. The candidate table below is
-grounded in known Ubuntu 24.04
+clearly-dead *package*. **Namespace rules:** (1) any unit in the `lima-*` namespace
+is KEEP unless positively proven idle — these are Lima's own coordination units and
+masking one can silently break `limactl` access; (2) any `netfilter*` / `iptables*` /
+`nftables*` unit is KEEP — **reserved for future egress filtering** (see
+Forward-compatibility below), even though it looks idle in a fresh image. The
+candidate table below is grounded in known Ubuntu 24.04
 cloud-image defaults and this VM's known needs; it is **confirmed against a freshly
 built VM during implementation** (the planning step runs `audit-services.sh` on a
 real build and reconciles any deltas before finalizing the masks).
@@ -145,9 +150,10 @@ real build and reconciles any deltas before finalizing the masks).
 | `cloud-init*` (`cloud-init`, `cloud-config`, `cloud-final`, `cloud-init-local`) | **Per-boot** load-bearing: the existing `mode: boot` logind fix runs through cloud-init on *every* boot, not just first boot. |
 | `dbus` | systemd / cloud-init / polkit interactions. |
 | `systemd-journald` | Logging; diagnostics. |
-| `systemd-resolved` | DNS resolution for agent network access. |
+| `systemd-resolved` | DNS resolution for agent network access. **Egress-critical:** under egress filtering Layer 3 drops port 53 to arbitrary hosts, so the VM's DNS must route through the local stub resolver — doubly load-bearing then. |
 | `systemd-timesyncd` | Correct clock — TLS to GitHub/Anthropic depends on it. |
-| `systemd-networkd` + `netplan` | The network itself. |
+| `systemd-networkd` + `netplan` | The network itself. **Egress-relevant:** the iptables DNAT target is derived from the default route (`ip route show default`), so routing must be intact. |
+| `netfilter*` / `iptables*` / `nftables*` units *(reserved)* | KEEP even if idle now — reserved for egress filtering Layer 1 (in-VM iptables DNAT + `netfilter-persistent` reload at boot). See Forward-compatibility. |
 | `serial-getty` | **Judgment call — keep.** Feeds Lima's serial console log, the diagnostic that matters exactly when a boot wedges (cf. #74). Cheap to keep; masking it blinds us during the next bad boot. |
 | `polkit` | Kept-cautious — cloud-init/systemd may rely on it. Revisit only if the audit shows it truly idle. |
 
@@ -184,6 +190,40 @@ actively nudges away from long-lived sessions — and the broader practice of
 aggressively rebuilding agents rather than letting bespoke state accumulate over
 time. **If VMs ever become long-lived, this decision must be revisited and an update
 mechanism added; until then, the strategy is rebuild, not patch-in-place.**
+
+## Forward-compatibility: egress filtering (vergil-tooling #901)
+
+Egress filtering — a three-layer system (in-VM iptables DNAT → host HAProxy SNI
+allowlist → host pf perimeter) that confines the agent's network reach to an
+explicit host allowlist — is a **planned, pre-release-critical** feature
+([vergil-tooling #901](https://github.com/vergil-project/vergil-tooling/issues/901),
+adopted from corral). It is **not implemented here**, but this minimization pass must
+not strip the in-VM machinery it will need, or we trade a quick win now for rework
+(and a confusing breakage) later.
+
+The two efforts are complementary, not in tension: **minimization shrinks what the
+agent could talk to; egress filtering controls where it is allowed to.** Keeping the
+network path intact while stripping unrelated daemons serves both.
+
+**Only Layer 1 lives inside the VM.** Layers 2–3 (HAProxy, pf) run on the host and
+need nothing from the guest. Layer 1 (#901 Plan 4, Task 4) detects the host gateway,
+adds a `nat`/`OUTPUT` DNAT rule redirecting `:443` to the host proxy, and persists it
+to `/etc/iptables/rules.v4`. What that requires us to **proactively KEEP**:
+
+| Reserved for egress | Why it must not be masked/purged |
+|---|---|
+| `netfilter*` / `iptables*` / `nftables*` units | Carry the `nat` table + DNAT and the boot-time `rules.v4` reload (`netfilter-persistent`). Idle in a fresh image — precisely the trap. The namespace rule above reserves them. |
+| `systemd-resolved` | Egress Layer 3 drops port 53 to arbitrary hosts; the VM resolves only via the local stub resolver. Masking it breaks DNS *under filtering*. |
+| `systemd-networkd` + `netplan` | The DNAT target is the default route; routing must stay intact. |
+| `iptables` package (not purged) | Present in the base image; the DNAT rule needs it. Not on any purge list — recorded here so it stays that way. |
+
+**Observation (for #901, not this issue):** as written, Task 4 persists the rule to
+`/etc/iptables/rules.v4` but does not install/enable `netfilter-persistent`, so the
+rule would not survive a reboot. That gap belongs to #901; we note it only to explain
+why `netfilter-persistent` is on our reserved-KEEP list — egress will need it enabled.
+
+This section is documentation only; it adds **no** template change now. Its job is to
+ensure the audit's keep/mask/purge decisions are made with egress filtering in view.
 
 ## Guardrails
 
