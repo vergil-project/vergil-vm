@@ -86,6 +86,8 @@ you to rebuild automatically.
 
 ## Next Steps
 
+- [Sessions](sessions.md) — naming, resume, slots, `--fresh`, staleness, and
+  `vrg-vm list --sessions`
 - [Architecture](architecture/index.md) — understand the VM anatomy and
   provisioning pipeline
 - [Build and Test](operations/build-and-test.md) — run the test suite
