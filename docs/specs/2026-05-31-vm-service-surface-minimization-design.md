@@ -81,9 +81,10 @@ it over `limactl shell "$INSTANCE" -- bash -s`, while the existing `scripts/` ar
 actual inventory commands (`systemctl list-*`, `/proc/meminfo`, `df`,
 `systemd-analyze`) live in **one shared in-guest snippet** (e.g.
 `tests/lib/inventory.sh`). `audit-services.sh` and `vm-metrics.sh` are thin
-host-side wrappers that run that snippet via `limactl shell <instance> -- bash -s`;
-`test_services.sh` sources/embeds the same snippet for its counts. One definition of
-"how we count the surface," three consumers — so they cannot disagree.
+host-side wrappers that run that snippet via `limactl shell <instance> -- bash -s`.
+`test_services.sh` asserts unit *states* (masked / active) rather than counts, so it
+stands alone — but the two scripts that *do* count the surface share one definition,
+so they cannot disagree.
 
 ### Why a dedicated block (not inline, not an external script)
 
