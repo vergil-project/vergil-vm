@@ -124,6 +124,17 @@ provision:
     USER_HOME="$(getent passwd "{{.User}}" | cut -d: -f6)"
     sed -i "s|^PATH=.*|PATH=\"${USER_HOME}/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games\"|" /etc/environment
 
+    # Disable Claude Code's background autoupdater image-wide (issue #85). The
+    # npm global prefix is root-owned but sessions run as the non-root Lima
+    # user, so the background update can't write there and spams the status
+    # line every session. Writing it to /etc/environment lets PAM (pam_env)
+    # apply it to every login session, including SSH and `limactl shell`. We
+    # use DISABLE_AUTOUPDATER, not DISABLE_UPDATES, so a deliberate
+    # `claude update` still works — only the failing background attempt is
+    # suppressed. Version control of Claude Code stays deliberate via rebuild.
+    grep -q '^DISABLE_AUTOUPDATER=' /etc/environment \
+      || echo 'DISABLE_AUTOUPDATER=1' >> /etc/environment
+
 # --- Service-surface minimization (issue #78) -------------------------------
 # Strip the general-purpose Ubuntu default service set down to what this
 # special-purpose agent VM needs. Mask-by-default (reversible, resists
@@ -206,6 +217,9 @@ provision:
     # Minimal zsh configuration
     cat > "$HOME/.zshrc" << 'ZSHRC'
     export PATH="$HOME/.local/bin:$PATH"
+
+    # Complement /etc/environment for interactive shells (issue #85).
+    export DISABLE_AUTOUPDATER=1
 
     autoload -Uz compinit && compinit
     setopt HIST_IGNORE_DUPS
