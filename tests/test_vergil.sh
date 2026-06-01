@@ -13,7 +13,7 @@ command -v vrg-commit
 command -v vrg-git
 command -v vrg-gh
 command -v vrg-validate
-command -v vrg-docker-run
+command -v vrg-container-run
 
 # Clean up (don't leave tooling installed in the test VM)
 uv tool uninstall vergil-tooling

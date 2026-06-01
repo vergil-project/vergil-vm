@@ -109,6 +109,90 @@ provision:
     apt-get clean
     rm -rf /var/lib/apt/lists/*
 
+# PATH for non-login, non-interactive shells. uv and uv-installed vergil
+# tooling land in ~/.local/bin, which Claude Code's non-interactive shells
+# (e.g. `limactl shell -- ...`) must resolve. Those shells don't source
+# ~/.zshrc or /etc/profile.d — their PATH comes solely from /etc/environment
+# via PAM (pam_env). So prepend ~/.local/bin there. pam_env does NOT expand
+# $HOME, and Lima may suffix the home dir (e.g. <user>.guest), so resolve the
+# real home with getent rather than assuming /home/{{.User}}. Also drop the
+# now-stale /snap/bin (snapd is purged in the minimization step below).
+- mode: system
+  script: |
+    #!/bin/bash
+    set -eux -o pipefail
+    USER_HOME="$(getent passwd "{{.User}}" | cut -d: -f6)"
+    sed -i "s|^PATH=.*|PATH=\"${USER_HOME}/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games\"|" /etc/environment
+
+# --- Service-surface minimization (issue #78) -------------------------------
+# Strip the general-purpose Ubuntu default service set down to what this
+# special-purpose agent VM needs. Mask-by-default (reversible, resists
+# dependency pull-in) + a curated purge of dead-weight packages. The mask list
+# is the reconciled "expanded" set from the baseline audit (see
+# docs/specs/2026-05-31-vm-service-surface-minimization-design.md and the
+# decision table on issue #78); it MUST match tests/test_services.sh exactly.
+#
+# KEEP (load-bearing — never mask): ssh, lima-* (limactl access),
+#   containerd (user), cloud-init* (per-boot logind fix #74), dbus, journald,
+#   logind, resolved, timesyncd, networkd/networkd-dispatcher, serial-getty,
+#   polkit, apparmor, LVM/dm/storage (lvm2-monitor, dm-event, *.lvmpolld),
+#   grub/boot/console units, and ALL netfilter*/iptables*/nftables*/ufw units
+#   (reserved for egress filtering — vergil-tooling #901).
+# MASK: VMware tools (open-vm-tools, vgauth — wrong hypervisor), iSCSI
+#   (open-iscsi, iscsid), multipathd, udisks2, ModemManager, apport*, Ubuntu
+#   Pro (ubuntu-advantage, ua-*), sysstat*, fwupd-refresh, mdadm (mdcheck*,
+#   mdmonitor*), update-notifier*, lxd-installer, motd-news*, apt-daily*,
+#   getty@tty1, systemd-networkd-wait-online.
+# PURGE: snapd, unattended-upgrades.
+- mode: system
+  script: |
+    #!/bin/bash
+    set -eux -o pipefail
+    export DEBIAN_FRONTEND=noninteractive
+
+    # MASK — unneeded units. The `systemctl cat` gate skips units this image
+    # doesn't ship (so we don't create dead /dev/null links). For a unit that
+    # IS present, `mask` is not allowed to fail silently: a gated unit should
+    # always mask, so a failure is a real anomaly — let set -e abort the build
+    # loudly rather than ship a VM with an unmasked unit we meant to strip.
+    mask_if_present() {
+      local u
+      for u in "$@"; do
+        if systemctl cat "$u" >/dev/null 2>&1; then
+          systemctl mask "$u"
+        fi
+      done
+    }
+
+    mask_if_present \
+      getty@tty1.service \
+      ModemManager.service \
+      multipathd.service multipathd.socket \
+      udisks2.service \
+      apport.service apport-forward.socket \
+        apport-autoreport.path apport-autoreport.timer \
+      open-iscsi.service iscsid.socket \
+      open-vm-tools.service vgauth.service \
+      sysstat.service sysstat-collect.timer sysstat-summary.timer \
+      systemd-networkd-wait-online.service \
+      ubuntu-advantage.service ua-reboot-cmds.service ua-timer.timer \
+      fwupd-refresh.timer \
+      mdcheck_continue.timer mdcheck_start.timer mdmonitor-oneshot.timer \
+      update-notifier-download.timer update-notifier-motd.timer \
+      lxd-installer.socket \
+      motd-news.service motd-news.timer \
+      apt-daily.timer apt-daily-upgrade.timer
+
+    # PURGE — curated dead weight. Stop snapd first so purge is clean; the
+    # stop keeps `|| true` because stopping an absent unit exits non-zero
+    # (images without snapd). The purge/autoremove do NOT swallow errors:
+    # apt-get exits 0 when there's nothing to remove, so `|| true` there would
+    # only ever hide a genuine failure and ship a VM that still has snapd.
+    # set -e then aborts provisioning visibly on a real purge failure.
+    systemctl stop snapd.socket snapd.service 2>/dev/null || true
+    apt-get purge -y snapd unattended-upgrades
+    apt-get autoremove -y --purge
+
 - mode: user
   script: |
     #!/bin/bash
