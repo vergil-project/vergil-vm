@@ -5,6 +5,44 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.1.6] - 2026-06-01
+
+### Bug fixes
+
+- drop redundant template pre-validation
+- make runner robust for user-service tests
+- unbreak vergil and credentials tests on clean build
+- resolve ~/.local/bin in non-login shells
+- count only live timers in metrics
+- parse identities.toml with tomllib, not host yq
+- fail loud on mask/purge errors instead of swallowing them
+
+### Documentation
+
+- add stale-session lifecycle design
+- refine stale-lifecycle design after pushback review
+- deterministic session naming design (#73)
+- finalize session-naming detection design after live re-inspection
+- add comprehensive vrg-vm session user guide
+- add VM service-surface minimization design
+- add before/after footprint metrics to minimization design
+- incorporate pushback review into minimization design
+- reserve in-VM egress-filtering path in minimization design
+- add VM service-surface minimization implementation plan
+- align plan and spec after alignment review
+- mark service-surface minimization implemented
+
+### Features
+
+- add shared in-guest inventory snippet
+- add audit-services.sh inventory dump
+- add vm-metrics.sh footprint snapshot
+- minimize systemd service surface
+
+### Testing
+
+- add service-surface regression test
+
 ## [2.1.5] - 2026-05-29
 
 ### Bug fixes
