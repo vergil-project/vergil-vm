@@ -11,28 +11,28 @@
       
       
       
-        <link rel="prev" href="../sessions/">
+        <link rel="prev" href="../">
       
       
-        <link rel="next" href="decisions/vm-isolation-model/">
+        <link rel="next" href="../v2.1.6/">
       
       
         
       
       
-      <link rel="icon" href="../assets/images/favicon.png">
+      <link rel="icon" href="../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
-        <title>Architecture - Vergil VM</title>
+        <title>2.1.7 - Vergil VM</title>
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -51,9 +51,9 @@
       
     
     
-      <link rel="stylesheet" href="../stylesheets/extra.css">
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
     
-    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#architecture" class="md-skip">
+        <a href="#release-217-2026-06-01" class="md-skip">
           Skip to content
         </a>
       
@@ -96,7 +96,7 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href=".." title="Vergil VM" class="md-header__button md-logo" aria-label="Vergil VM" data-md-component="logo">
+    <a href="../.." title="Vergil VM" class="md-header__button md-logo" aria-label="Vergil VM" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -116,7 +116,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Architecture
+              2.1.7
             
           </span>
         </div>
@@ -229,7 +229,7 @@
   
   
     <li class="md-tabs__item">
-      <a href=".." class="md-tabs__link">
+      <a href="../.." class="md-tabs__link">
         
   
   
@@ -246,11 +246,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../changelog/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../../changelog/" class="md-tabs__link">
           
   
   
@@ -270,7 +272,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../getting-started/" class="md-tabs__link">
+      <a href="../../getting-started/" class="md-tabs__link">
         
   
   
@@ -289,7 +291,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../sessions/" class="md-tabs__link">
+      <a href="../../sessions/" class="md-tabs__link">
         
   
   
@@ -306,13 +308,11 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="./" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../../architecture/" class="md-tabs__link">
           
   
   
@@ -334,7 +334,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../operations/build-and-test/" class="md-tabs__link">
+        <a href="../../operations/build-and-test/" class="md-tabs__link">
           
   
   
@@ -370,7 +370,7 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href=".." title="Vergil VM" class="md-nav__button md-logo" aria-label="Vergil VM" data-md-component="logo">
+    <a href="../.." title="Vergil VM" class="md-nav__button md-logo" aria-label="Vergil VM" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -400,7 +400,7 @@
   
   
     <li class="md-nav__item">
-      <a href=".." class="md-nav__link">
+      <a href="../.." class="md-nav__link">
         
   
   
@@ -424,8 +424,10 @@
       
   
   
+    
   
   
+  
     
     
       
@@ -437,19 +439,22 @@
     
     
       
+        
+        
+      
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
         
           
-          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
             
   
   
@@ -467,7 +472,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
             
@@ -485,7 +490,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../changelog/" class="md-nav__link">
+      <a href="../../changelog/" class="md-nav__link">
         
   
   
@@ -510,6 +515,8 @@
                 
   
   
+    
+  
   
   
     
@@ -537,18 +544,21 @@
       
       
         
+          
+          
+        
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2" checked>
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../releases/" class="md-nav__link ">
+            <a href="../" class="md-nav__link ">
               
   
   
@@ -566,13 +576,13 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_2_2" id="__nav_2_2_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_2_2" id="__nav_2_2_label" tabindex="">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_2_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_2_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_2_2">
             <span class="md-nav__icon md-icon"></span>
             
@@ -589,10 +599,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../releases/v2.1.7/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.7
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -608,6 +645,37 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#bug-fixes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bug fixes
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -620,7 +688,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../releases/v2.1.6/" class="md-nav__link">
+      <a href="../v2.1.6/" class="md-nav__link">
         
   
   
@@ -648,7 +716,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../releases/v2.1.5/" class="md-nav__link">
+      <a href="../v2.1.5/" class="md-nav__link">
         
   
   
@@ -676,7 +744,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../releases/v2.1.4/" class="md-nav__link">
+      <a href="../v2.1.4/" class="md-nav__link">
         
   
   
@@ -704,7 +772,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../releases/v2.1.3/" class="md-nav__link">
+      <a href="../v2.1.3/" class="md-nav__link">
         
   
   
@@ -732,7 +800,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../releases/v2.1.0/" class="md-nav__link">
+      <a href="../v2.1.0/" class="md-nav__link">
         
   
   
@@ -775,7 +843,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../getting-started/" class="md-nav__link">
+      <a href="../../getting-started/" class="md-nav__link">
         
   
   
@@ -802,7 +870,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../sessions/" class="md-nav__link">
+      <a href="../../sessions/" class="md-nav__link">
         
   
   
@@ -826,8 +894,6 @@
       
   
   
-    
-  
   
   
     
@@ -843,23 +909,20 @@
     
     
       
-        
-        
-      
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="./" class="md-nav__link md-nav__link--active">
+            <a href="../../architecture/" class="md-nav__link ">
               
   
   
@@ -877,13 +940,13 @@
             </a>
             
               
-              <label class="md-nav__link md-nav__link--active" for="__nav_5" id="__nav_5_label" tabindex="">
+              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             
@@ -915,20 +978,17 @@
       
       
         
-          
-          
-        
       
     
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
         <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_2" >
         
           
-          <label class="md-nav__link" for="__nav_5_2" id="__nav_5_2_label" tabindex="">
+          <label class="md-nav__link" for="__nav_5_2" id="__nav_5_2_label" tabindex="0">
             
   
   
@@ -964,7 +1024,7 @@
   
   
     <li class="md-nav__item">
-      <a href="decisions/vm-isolation-model/" class="md-nav__link">
+      <a href="../../architecture/decisions/vm-isolation-model/" class="md-nav__link">
         
   
   
@@ -992,7 +1052,7 @@
   
   
     <li class="md-nav__item">
-      <a href="decisions/credential-injection/" class="md-nav__link">
+      <a href="../../architecture/decisions/credential-injection/" class="md-nav__link">
         
   
   
@@ -1095,7 +1155,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../operations/build-and-test/" class="md-nav__link">
+      <a href="../../operations/build-and-test/" class="md-nav__link">
         
   
   
@@ -1123,7 +1183,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../operations/resource-tuning/" class="md-nav__link">
+      <a href="../../operations/resource-tuning/" class="md-nav__link">
         
   
   
@@ -1151,7 +1211,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../operations/troubleshooting/" class="md-nav__link">
+      <a href="../../operations/troubleshooting/" class="md-nav__link">
         
   
   
@@ -1206,93 +1266,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#vm-anatomy" class="md-nav__link">
+  <a href="#bug-fixes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        VM Anatomy
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#provisioning-pipeline" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Provisioning Pipeline
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Provisioning Pipeline">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#stage-1-system-provisioning-root" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Stage 1: System provisioning (root)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#stage-2-user-provisioning-lima-user" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Stage 2: User provisioning (lima user)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#stage-3-readiness-probe" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Stage 3: Readiness probe
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#stage-4-credential-injection-automated" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Stage 4: Credential injection (automated)
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#credential-model" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Credential Model
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#ssh-terminal-environment-forwarding" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        SSH Terminal Environment Forwarding
+        Bug fixes
       
     </span>
   </a>
@@ -1316,202 +1293,14 @@
 
 
 
-<h1 id="architecture">Architecture<a class="headerlink" href="#architecture" title="Permanent link">&para;</a></h1>
-<h2 id="vm-anatomy">VM Anatomy<a class="headerlink" href="#vm-anatomy" title="Permanent link">&para;</a></h2>
-<p>Each Vergil identity VM is a full Ubuntu 24.04 virtual machine managed
-by <a href="https://lima-vm.io/">Lima</a>. Lima wraps QEMU to run the guest OS and
-provides transparent SSH access from the host.</p>
-<p>The host's projects directory is mounted with <strong>path preservation</strong> —
-the same absolute path used on the host exists inside the VM. This
-means session data, memory files, and project paths are transparently
-usable both inside the VM and on the host without translation.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>┌───────────────────────────────────────────────────┐
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>│  Host (macOS)                                     │
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>│                                                   │
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>│  vrg-vm ──SSH──►  ┌───────────────────────────┐   │
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>│                   │  Ubuntu 24.04 Guest        │   │
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>│                   │                            │   │
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>│  ~/dev/projects   │  ~/dev/projects (mount)    │   │
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>│       ◄──────────►│                            │   │
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>│                   │  containerd (rootless)     │   │
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>│                   │  gh, uv, claude, ...       │   │
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>│                   └───────────────────────────┘   │
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>└───────────────────────────────────────────────────┘
-</code></pre></div>
-<p>Rootless containerd runs as a user service inside the VM, allowing
-agents to pull and run containers without root privileges. See
-<a href="decisions/vm-isolation-model/">VM Isolation Model</a> for the design
-rationale.</p>
-<h2 id="provisioning-pipeline">Provisioning Pipeline<a class="headerlink" href="#provisioning-pipeline" title="Permanent link">&para;</a></h2>
-<p>The VM template (<code>templates/agent.yaml</code>) defines a four-stage pipeline
-that runs when a VM is created:</p>
-<h3 id="stage-1-system-provisioning-root">Stage 1: System provisioning (root)<a class="headerlink" href="#stage-1-system-provisioning-root" title="Permanent link">&para;</a></h3>
-<p>Installs OS packages and development tools:</p>
-<table>
-<thead>
-<tr>
-<th>Tool</th>
-<th>Source</th>
-<th>Purpose</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>curl, wget, unzip</td>
-<td>apt</td>
-<td>File downloads and extraction</td>
-</tr>
-<tr>
-<td>jq</td>
-<td>apt</td>
-<td>JSON processing</td>
-</tr>
-<tr>
-<td>ripgrep</td>
-<td>apt</td>
-<td>Fast code search</td>
-</tr>
-<tr>
-<td>fzf</td>
-<td>apt</td>
-<td>Fuzzy finder</td>
-</tr>
-<tr>
-<td>zsh, vim, tmux, nano</td>
-<td>apt</td>
-<td>Shell and editors</td>
-</tr>
-<tr>
-<td>python3, python3-venv</td>
-<td>apt</td>
-<td>Python runtime</td>
-</tr>
-<tr>
-<td>git</td>
-<td>apt</td>
-<td>Version control</td>
-</tr>
-<tr>
-<td>gh</td>
-<td>GitHub CLI apt repo</td>
-<td>GitHub API and workflows</td>
-</tr>
-<tr>
-<td>Node.js 22</td>
-<td>NodeSource apt repo</td>
-<td>Runtime for Claude Code</td>
-</tr>
-<tr>
-<td>yq</td>
-<td>GitHub releases binary</td>
-<td>YAML processing</td>
-</tr>
-<tr>
-<td>Claude Code</td>
-<td>npm global install</td>
-<td>AI-assisted development</td>
-</tr>
-</tbody>
-</table>
-<p>Also configures:</p>
+<h1 id="release-217-2026-06-01">Release 2.1.7 (2026-06-01)<a class="headerlink" href="#release-217-2026-06-01" title="Permanent link">&para;</a></h1>
+<h2 id="bug-fixes">Bug fixes<a class="headerlink" href="#bug-fixes" title="Permanent link">&para;</a></h2>
 <ul>
-<li>zsh as the default shell for the Lima user</li>
-<li>sshd drop-in to accept terminal environment variables (see
-  <a href="#ssh-terminal-environment-forwarding">SSH Terminal Forwarding</a>)</li>
+<li><strong>disable Claude Code background autoupdater (#85)</strong>
+The npm global Claude Code prefix is root-owned, but agent sessions run as the non-root Lima user, so the background autoupdater can't write to it and spams "Auto-update failed: no write permission to npm prefix" in the status line every session.</li>
 </ul>
-<h3 id="stage-2-user-provisioning-lima-user">Stage 2: User provisioning (lima user)<a class="headerlink" href="#stage-2-user-provisioning-lima-user" title="Permanent link">&para;</a></h3>
-<ul>
-<li>Installs <a href="https://docs.astral.sh/uv/">uv</a> into <code>~/.local/bin</code>
-  (per-user install, hence Stage 2 rather than Stage 1)</li>
-<li>Creates a minimal <code>.zshrc</code> with PATH, history, and prompt configuration</li>
-</ul>
-<h3 id="stage-3-readiness-probe">Stage 3: Readiness probe<a class="headerlink" href="#stage-3-readiness-probe" title="Permanent link">&para;</a></h3>
-<p>Waits up to 30 minutes for all of the following:</p>
-<ul>
-<li><code>gh</code> command available</li>
-<li><code>uv</code> command available</li>
-<li><code>claude</code> command available</li>
-<li>containerd process running</li>
-</ul>
-<p>The VM reports ready only after all four conditions are met.</p>
-<h3 id="stage-4-credential-injection-automated">Stage 4: Credential injection (automated)<a class="headerlink" href="#stage-4-credential-injection-automated" title="Permanent link">&para;</a></h3>
-<p>Executed automatically by <code>vrg-vm create</code> after the VM passes its
-readiness probe. This stage is separate in the code because credentials
-are identity-specific — the template remains generic and reusable across
-identities. See <a href="decisions/credential-injection/">Credential Injection</a>
-for the design rationale.</p>
-<p>The injection step:</p>
-<ol>
-<li>Reads GitHub App credentials from <code>~/.config/vergil/identities.toml</code></li>
-<li>Injects <code>app.pem</code> and <code>app.env</code> into <code>~/.config/vergil/</code> inside the
-   VM (mode 600)</li>
-<li>Configures git to rewrite <code>git@github.com:</code> URLs to HTTPS</li>
-<li>Installs vergil-tooling via <code>uv tool install</code></li>
-<li>Runs a verification check (5 assertions)</li>
-</ol>
-<h2 id="credential-model">Credential Model<a class="headerlink" href="#credential-model" title="Permanent link">&para;</a></h2>
-<p>Vergil uses GitHub App authentication. Each identity corresponds to a
-GitHub App with fine-grained repository permissions.</p>
-<p><strong>Credentials at rest</strong> (inside the VM):</p>
-<table>
-<thead>
-<tr>
-<th>File</th>
-<th>Contents</th>
-<th>Permissions</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>~/.config/vergil/app.pem</code></td>
-<td>GitHub App private key</td>
-<td>600</td>
-</tr>
-<tr>
-<td><code>~/.config/vergil/app.env</code></td>
-<td><code>APP_ID=&lt;id&gt;</code></td>
-<td>600</td>
-</tr>
-</tbody>
-</table>
-<p><strong>Token acquisition</strong> happens dynamically at runtime. The <code>vrg-git</code> and
-<code>vrg-gh</code> wrappers (provided by vergil-tooling) mint short-lived
-installation tokens from the App private key on each invocation. No
-long-lived tokens are stored.</p>
-<p>The git HTTPS rewrite (<code>url."https://github.com/".insteadOf
-"git@github.com:"</code>) ensures all git operations go through HTTPS, where
-the credential helper can inject the installation token.</p>
-<h2 id="ssh-terminal-environment-forwarding">SSH Terminal Environment Forwarding<a class="headerlink" href="#ssh-terminal-environment-forwarding" title="Permanent link">&para;</a></h2>
-<p>When agents access VMs over SSH, the terminal's keyboard protocol
-capabilities are normally lost. The VM's sshd is configured with a
-drop-in at <code>/etc/ssh/sshd_config.d/10-acceptenv-terminal.conf</code> that
-accepts three environment variables:</p>
-<table>
-<thead>
-<tr>
-<th>Variable</th>
-<th>Purpose</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>COLORTERM</code></td>
-<td>Terminal color capability</td>
-</tr>
-<tr>
-<td><code>TERM_PROGRAM</code></td>
-<td>Terminal application name</td>
-</tr>
-<tr>
-<td><code>TERM_PROGRAM_VERSION</code></td>
-<td>Terminal version</td>
-</tr>
-</tbody>
-</table>
-<p>This allows Claude Code to detect keyboard protocol support
-(shift+enter, alt+enter) when accessed over SSH from a capable
-terminal. The client side (<code>SendEnv</code>) is configured by vergil-tooling's
-<code>vrg-vm session</code> command.</p>
+<p>Set DISABLE_AUTOUPDATER=1 image-wide: in /etc/environment (PAM applies it to all login sessions, including SSH and limactl shell) and as a complement in the Lima user's ~/.zshrc for interactive shells. Using DISABLE_AUTOUPDATER rather than DISABLE_UPDATES keeps a deliberate 'claude update' working; only the failing background attempt is suppressed. Version control of Claude Code stays deliberate via rebuild.</p>
+<p>Add a test_base.sh assertion that the var is set in the VM.</p>
 
 
 
@@ -1567,10 +1356,10 @@ terminal. The client side (<code>SendEnv</code>) is configured by vergil-tooling
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.indexes", "navigation.top", "content.code.copy", "search.highlight", "search.suggest"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.indexes", "navigation.top", "content.code.copy", "search.highlight", "search.suggest"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
       
     
   </body>
