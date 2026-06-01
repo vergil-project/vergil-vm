@@ -12,4 +12,10 @@ getent passwd "$(whoami)" | grep -q '/bin/zsh'
 # Passwordless sudo works
 sudo -n true
 
+# Claude Code background autoupdater disabled image-wide (issue #85).
+# Set in /etc/environment, so PAM exports it even into this non-login
+# `limactl shell` session.
+grep -q '^DISABLE_AUTOUPDATER=1$' /etc/environment
+[ "${DISABLE_AUTOUPDATER:-}" = "1" ]
+
 echo "test_base: all checks passed"
