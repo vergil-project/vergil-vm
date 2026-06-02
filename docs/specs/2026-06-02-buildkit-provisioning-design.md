@@ -52,9 +52,24 @@ defaults.
 User lingering is already enabled by Lima's containerd `install`, so the
 buildkit `--user` unit survives logout and reboot.
 
-The issue states a rootless containerd worker is acceptable; the rootless
-OCI worker that `install-buildkit` configures satisfies this — it builds
-images that `nerdctl` can load into the rootless containerd image store.
+The issue states a rootless containerd worker is acceptable; "acceptable"
+is permissive (the containerd worker is *allowed*, not *required*). We use
+the rootless **OCI** worker that `install-buildkit` configures by default —
+nerdctl's documented and best-tested rootless build path. With the OCI
+worker, buildkit builds into its own content store and `nerdctl build`
+then loads the result into the rootless containerd image store. The
+end-to-end build test (below) verifies that load step explicitly by
+**running** the built image, not just building it — a daemon that builds
+but produces unusable images would otherwise pass a build-only check.
+
+### Known dependency: rootless snapshotter
+
+Building writes layers through the rootless snapshotter. On Ubuntu 24.04 /
+kernel 6.8, native rootless `overlayfs` in a user namespace works and Lima
+configures rootless containerd for it, so no extra package is expected. If
+native rootless overlayfs were unavailable, builds would need
+`fuse-overlayfs`; we do not install it pre-emptively (YAGNI). The
+end-to-end build test surfaces any gap here rather than leaving it silent.
 
 ## Changes
 
@@ -99,10 +114,16 @@ minimization block.
 
 After the existing pull-and-run checks, exercise a real build:
 
-- Build a minimal image from an inline Dockerfile whose base is the
-  already-pulled `ghcr.io/containerd/alpine:3.14.0` (no extra network
-  dependency), with a trivial `RUN`.
+- Build a minimal image (tag e.g. `vergil-buildtest`) from an inline
+  Dockerfile whose base is the already-pulled
+  `ghcr.io/containerd/alpine:3.14.0` (no extra network dependency), with a
+  trivial `RUN`.
 - Assert the build succeeds.
+- **Assert the built image is usable**, not just that `build` exited 0:
+  confirm it appears in `nerdctl images` and `nerdctl run` it. This is the
+  check that proves buildkit's output actually loaded into the rootless
+  containerd image store (the OCI-worker load step from the Approach
+  section).
 - Remove the built image to leave the VM clean.
 
 This proves the acceptance criterion (`nerdctl build` works out of the
@@ -121,8 +142,9 @@ box) end-to-end rather than only asserting the daemon is up.
 - The Lima template provisions and starts `buildkitd` (rootless OCI
   worker).
 - A freshly created VM can run `nerdctl build` with no manual setup.
-- The test suite asserts both the running buildkit `--user` service and a
-  successful `nerdctl build`.
+- The test suite asserts the running buildkit `--user` service and a
+  `nerdctl build` whose resulting image is loaded into the containerd
+  image store and runs.
 
 ## Validation
 
