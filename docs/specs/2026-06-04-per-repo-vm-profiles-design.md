@@ -5,7 +5,8 @@
 
 **Date:** 2026-06-04
 
-**Status:** Proposed (issue #99).
+**Status:** Proposed (issue #99). Revised after a structured pushback review
+(2026-06-04) — see "Pushback resolutions" at the end.
 
 **Spans two repositories.** This feature touches both `vergil-vm` (the VM image
 template and its tests) and `vergil-tooling` (the `vrg-vm` CLI, identity parsing,
@@ -62,8 +63,10 @@ box*. This design splits them.
 - **Observability.** `list` shows configured footprint and live occupancy split
   into `AGENTS` (harness instances) and `HUMANS` (interactive shells).
 - **Ephemeral, data-less, reproducible — preserved.** Packages are *declared*,
-  never `apt install`-ed into a live box. `rebuild` reproduces identically from
-  the composed spec alone.
+  never `apt install`-ed into a live box. `rebuild` reproduces the **declared
+  spec** (footprint + package set + provisioning) — no working state is baked in;
+  lab content lives in `build/`. Package *versions* track upstream (see
+  Reproducibility, below).
 
 ## Non-goals
 
@@ -72,13 +75,19 @@ box*. This design splits them.
 - **Host resource sanity-checking.** Verifying the Mac actually has the RAM/disk
   (and warning near capacity) is real but second/third-order. Reserved as future
   work, not built now.
-- **Completing the identity namespace migration.** Retiring the legacy
-  `vergil-agent` identity in favour of `vergil-user` / `vergil-audit` /
-  `vergil-admin` is in-flight execution the maintainer drives separately. This
-  design names the *destination* structure; it does not perform the migration.
+- **Buildkit provisioning (#97).** The Approved-but-unmerged
+  `feature/97-buildkit-provisioning` adds a `mode: user` buildkit block to the same
+  `templates/agent.yaml` this design parameterizes. It is intentionally **on hold**
+  and out of scope here; after this lands, #97 is rebased and re-engineered to sit
+  on top of these provisioning changes — it adapts to this design, not the reverse.
 - **Infra changes to `vergil-vm` itself running inside a profile VM.** The
   recursive-bootstrap caveat (#86) stands: changes to the VM image are made on the
   host, not from inside a profile VM.
+
+The identity-key normalization (`user`/`audit` → `vergil-user`/`vergil-audit`) **is
+in scope** — see "Identity-key normalization (migration)". Retiring the legacy
+`vergil-agent` *VM instance* and any broader fleet migration remain separate
+execution.
 
 ## Terminology
 
@@ -111,15 +120,17 @@ packages = [
   "dnsmasq-base", "genisoimage",
   "ruby-dev", "libvirt-dev", "pkg-config", "gcc", "make",
 ]
-# Non-apt installs (HashiCorp repo for vagrant, then `vagrant plugin install
-# vagrant-libvirt`) live in a source-controlled provisioning hook, not the apt
-# list — see "Package & provisioning layering".
+# Non-apt TOOLING installs (HashiCorp repo for vagrant, then `vagrant plugin
+# install vagrant-libvirt`) live in a source-controlled provisioning hook, not
+# the apt list — see "Package & provisioning layering". The hook installs tooling
+# ONLY; it never builds Vagrant boxes or stands up the lab.
 provision = ".vergil/provision.sh"
 
 [vm.vergil-user]                  # role overlay: only vergil-user is tuned up
-cpus   = 12
-memory = "64GiB"
-disk   = "300GiB"
+cpus       = 12
+memory     = "64GiB"
+disk       = "300GiB"
+stale_days = 7                    # rebuild nag once a week (base default is 3)
 ```
 
 The composed **repo-spec for identity `I`** = `[vm]` ⊕ `[vm.I]`. The repo author
@@ -173,8 +184,33 @@ disk   = "50GiB"
 
 **Forward namespace.** Identities are role-qualified and always `vergil-`-prefixed:
 `vergil-user`, `vergil-audit`, `vergil-admin`. This retires the awkward mix of
-bare `agent` / bare `user` / inconsistent prefixing in the current file. The legacy
-`vergil-agent` identity goes away as part of the separate migration.
+bare `agent` / bare `user` / inconsistent prefixing in the current file.
+
+### Identity-key normalization (migration)
+
+The merged dual-App setup (vergil-tooling v2.1.0) ships **bare-role identity keys**
+— `[identities.user]` / `[identities.audit]` with `vm_instance = "vergil-user"` —
+documented in `account-setup.md`. That split (key `user`, instance `vergil-user`)
+is exactly the inconsistency this design removes. This work **normalizes the
+identity keys to `vergil-<role>`** so the key equals the instance base everywhere.
+
+We take this breaking change *now*, deliberately, because the deployment is still
+**fleet-of-one** (a single human, a single `identities.toml`, pre-public-release).
+There is no installed base to keep backward-compatible yet, so no compatibility
+shim is built — we simply normalize the one file and the docs.
+
+Scope of the rename:
+
+- **Identity key:** `user` → `vergil-user`, `audit` → `vergil-audit` (and the
+  reserved `admin` → `vergil-admin`). The `--identity` default becomes
+  `vergil-user`.
+- **`vm_instance` (base VM name):** stays `vergil-user` / `vergil-audit` — now equal
+  to the key. The legacy `vergil-agent` instance is retired separately.
+- **GitHub App credential names are UNCHANGED:** the Apps remain
+  `<username>-vergil-<role>` (e.g. `wphillipmoore-vergil-user`). Only the
+  identities.toml *key* moves; the credential layer is untouched.
+- **Docs:** `vergil-tooling`'s `account-setup.md` and the dual-stanza example are
+  updated to the `vergil-<role>` keys (see touch-points).
 
 ### Composition & precedence
 
@@ -189,8 +225,10 @@ The spec used to build/validate a VM is an overlay, lowest → highest precedenc
 Merge rules:
 
 - **`packages` accumulate** (union across tiers — additive, never subtractive).
-- **Scalars (`cpus`, `memory`, `disk`) are last-wins** — the highest-precedence
-  tier that sets them decides.
+- **Scalars (`cpus`, `memory`, `disk`, `stale_days`) are last-wins** — the
+  highest-precedence tier that sets them decides. `stale_days` defaults to the base
+  policy (3) when unset; a dedicated lab box typically sets a longer window (e.g. 7)
+  in its repo `[vm]`/`[vm.<role>]` overlay.
 - **Credentials** come solely from tier 2.
 
 A host override (tier 5) is a legitimate, *recorded* build target — it is folded
@@ -236,9 +274,23 @@ For `vrg-vm session <identity> <org>/<repo>` (and lifecycle commands):
      run; surfaced as `NEEDS-REBUILD` in `list`.
    - Match → proceed.
 
-This is what makes the system honest: you can never silently run on an undersized
-or stale box. The fingerprint is over the *composed* spec, so a deliberate host
-override matches and a real requirement change does not.
+This is what makes the system honest: you can never silently run on a stale box.
+The fingerprint is over the *composed* spec, so a deliberate host override matches
+and a real requirement change does not.
+
+**Under-provisioning warning (the override floor).** A host override (tier 5) can
+size a box *below* what the repo's `[vm]`/`[vm.<role>]` declares — that is the whole
+point of the override (a 32 GiB Mac running a repo that asks for 64). But because
+the fingerprint compares against the *composed* spec, such a box reads `ok`, hiding
+the fact that it falls short of the author's stated need. That is a silent
+misconfiguration waiting to surface as days of phantom debugging (nodes that won't
+boot, OOM kills) on a problem that is actually a config choice. So: the override
+stays **sovereign** (we never block — your machine, your call), but it is **never
+silent**. When any composed scalar is below the repo's declared value, `session`
+prints a loud notice at launch (e.g. *"this repo asks for 64GiB; this box has 32GiB
+— it probably will not work"*) and `list` flags the row (see `SPEC` below). A hard
+gate (refuse-unless-`--force`) is deliberately deferred until loud-warning proves
+insufficient in practice.
 
 The "more than one VM → ask" UX the issue gestured at **dissolves** under path
 addressing: `(identity, org/repo)` is exactly one VM, so `session` is never
@@ -247,27 +299,46 @@ session *slots inside* a VM (`vrg-vm-resolve-session`), unchanged by this work.
 
 ## Package & provisioning layering
 
-The issue flagged two install shapes; both must stay reproducible:
+The issue flagged two install shapes. **Both layer TOOLING only** — they install
+what the VM needs to *do* the repo's work; they never build the repo's actual work
+product (the Vagrant boxes / lab):
 
 - **Apt packages** — the common case. The `packages` union is layered onto the
   base image at provision time via a parameterized provisioning step in
   `templates/agent.yaml`. The template is fetched by tag (`lima.py:fetch_template`),
   so its package-layering contract is versioned in `vergil-vm`.
-- **Non-apt installs** — e.g. Vagrant (HashiCorp apt repo) and the
-  `vagrant-libvirt` plugin (`vagrant plugin install …`). These are *not* single
-  apt packages, so they do not belong in `packages`. They live in a
-  source-controlled **provisioning hook** the repo references from `[vm]`
-  (`provision = ".vergil/provision.sh"`), run after the apt layer at provision
-  time. The script must be idempotent and deterministic so `rebuild` reproduces
-  byte-for-byte.
+- **Non-apt tooling installs** — e.g. Vagrant (HashiCorp apt repo) and the
+  `vagrant-libvirt` plugin (`vagrant plugin install …`). These are *not* single apt
+  packages, so they do not belong in `packages`. They live in a source-controlled
+  **provisioning hook** the repo references from `[vm]`
+  (`provision = ".vergil/provision.sh"`), run after the apt layer at provision time.
+  The hook shape is a **repo-relative script path** (decided in review): it keeps
+  complex multi-line install logic in real shell under source control, out of TOML.
+  The script must be idempotent.
 
-> **Open for pushback:** the exact hook shape — a repo-relative script path (as
-> above) vs. an inline command list in `[vm]`. The script-path form keeps complex,
-> multi-line install logic in real shell under source control and out of TOML;
-> that is the recommendation, to be confirmed in review.
+**Lab/box building is NOT provisioning.** Building the Vagrant boxes and standing up
+the multi-VM lab is a **development-time** decision the human and agent make
+together per the dev/test mode they are in — it is expensive, varied, and run on
+demand, not baked into the image. Lab artefacts land in the gitignored,
+host-mounted `build/`. This is *why* even the heavy lab box rebuilds in minutes: the
+image is base + tooling, and the lab content is reconstructed at dev time on top of
+it. It also keeps the box ephemeral and data-less.
 
-Both layers feed the fingerprint, so changing the provisioning hook triggers
-`NEEDS-REBUILD` just as a package or footprint change does.
+Both tooling layers feed the fingerprint, so changing the package set or the
+provisioning hook triggers `NEEDS-REBUILD` just as a footprint change does.
+
+### Reproducibility (what "reproducible" means here)
+
+`rebuild` reproduces the **declared spec** — the same footprint, the same package
+*set*, the same provisioning hook — not a byte-identical image. Package *versions*
+are not pinned: `apt-get install <pkg>` (and the base template's `gh` / Node /
+Claude Code / `yq` installs) pull whatever is current, so two rebuilds a week apart
+can differ in versions while matching the same fingerprint. This is deliberate — a
+dev VM should track upstream, and version-pinning would rot and fight the base
+image's "install latest" design. The **fingerprint therefore covers the
+declaration** (footprint + package list + provision-hook identity), *not* the
+resulting bytes. The genuinely reproducible guarantee — that no working state is
+baked into the image, and lab content lives in `build/` — holds fully.
 
 ## CLI surface
 
@@ -301,24 +372,101 @@ vergil-audit  base                                     Stopped  4     4GiB   50G
 
 - **CPUS / MEM / DISK** — the *composed* footprint the VM is configured for, so a
   `NEEDS-REBUILD` row shows the target and you can eyeball over/under-sizing.
-- **AGENTS** — harness instances (named sessions, from the in-VM roster already
-  queried by `--sessions`). Harness-agnostic. Agents are sandboxed to running the
-  harness; they never hold an interactive login.
-- **HUMANS** — **open human-held interactive shells** (`limactl shell` / SSH),
-  computed as *total interactive logins − agent sessions* so the shell each agent
-  runs inside is not double-counted. The label is `HUMANS`, not `LOGINS`, to make
-  the access model legible at a glance: agents are walled into the harness, humans
-  get the shell. **This rests on the invariant that agents never hold an
-  interactive login** — if that ever changes (a supervised agent debug shell, a
-  remote-trigger harness login), the column's semantics must be revisited, because
-  an agent login would otherwise be miscounted as a human. The count is a tally of
-  *shells*, not distinct people (one human with three triage tabs reads `3`); the
-  docs and `--help` state this precisely.
-- **AGENTS** and **HUMANS** are shown as two numbers, never summed — total
-  occupancy is their sum, but the split is the thing you actually want to see.
-  Both are `—` when the VM is not running. Per-VM occupancy is queried only for
-  running VMs and only on `list`.
-- **SPEC** — `ok` / `NEEDS-REBUILD` / `not-created`, the drift gate surfaced.
+- **AGENTS / HUMANS — counted by process-tree classification, not arithmetic.**
+  Each in-VM login session is classified by inspecting its process tree: it is an
+  **agent** if its tree roots the harness (`claude`), a **human** if it is an
+  interactive PTY login that is not agent-hosting. The two columns are *direct
+  counts* of those two classes — there is **no** "total minus agents" subtraction.
+  This is deliberate: a naïve total-logins count sweeps in the tooling's own
+  transient non-interactive `limactl shell -- cmd` calls (credential injection,
+  config copy, session resolve, even the occupancy query itself), and the
+  subtraction can mis-attribute or go negative. Process-tree classification excludes
+  those non-TTY exec channels *by construction*.
+  - **AGENTS** — harness instances; reconciles with the `--sessions` roster.
+  - **HUMANS** — **open human-held interactive shells** (`limactl shell` / SSH for
+    debugging and triage). The label is `HUMANS`, not `LOGINS`, to make the access
+    model legible at a glance: agents are walled into the harness, humans get the
+    shell. **This rests on the invariant that agents never hold an interactive
+    login** — if that ever changes (a supervised agent debug shell, a remote-trigger
+    harness login), the classifier and this column's meaning must be revisited. The
+    count is a tally of *shells*, not distinct people (one human with three triage
+    tabs reads `3`); the docs and `--help` state this precisely.
+  - Shown as two numbers, **never summed** — total occupancy is their sum, but the
+    split is the thing you want to see. Both are `—` when the VM is not running.
+    Per-VM occupancy is queried only for running VMs and only on `list`.
+- **SPEC** — the drift/health gate surfaced:
+  - `ok` — composed spec matches the built fingerprint.
+  - `NEEDS-REBUILD` — fingerprint drift (the repo spec changed); `session`/`start`
+    abort with the `rebuild` command.
+  - `not-created` — a repo declares a spec but no VM has been built yet.
+  - `orphaned` — a dedicated VM instance exists but no backing spec does (the repo
+    dropped its `[vm]`, or was renamed/removed). See Dedicated-VM lifecycle.
+  - `ok ⚠ under (mem 32<64)` — running, but a host override sized a scalar below the
+    repo's declared value (the override floor warning).
+
+## Staleness (tunable per VM)
+
+The existing lifecycle hard-codes a 3-day staleness threshold: `start`/`session`
+abort on a VM older than the threshold, nudging a rebuild (which also refreshes
+in-VM tooling). That default is right for the cheap base sandbox. Dedicated VMs make
+the threshold **tunable** via `stale_days` in the repo `[vm]`/`[vm.<role>]` cascade
+(composed like any scalar, last-wins). The base VM keeps the 3-day default; the
+`mq-cluster-tooling` lab sets `7` (weekly).
+
+Because lab content is rebuilt at dev time into `build/` (not baked into the image),
+even the heavy box rebuilds in minutes, so a tunable nag — rather than a longer hard
+floor or a fingerprint-only policy — is the right first cut. We are deliberately not
+over-designing this; further policies (e.g. staleness keyed off fingerprint rather
+than age) are revisited if experience demands.
+
+## Dedicated-VM lifecycle (orphans)
+
+`list` enumerates dedicated VMs as the **union** of two sources: existing Lima
+instances matching `<identity>--*`, and local repos (under `projects_dir`) that ship
+a `[vm]` spec. An **orphan** is an instance in the first set with no match in the
+second — the repo dropped its `[vm]`, or was renamed/moved/deleted. Orphans route
+nothing (`session` now lands on base) and have no spec to drift against, so without
+handling they would linger invisibly, consuming disk — up to 300 GiB on the lab box.
+
+Resolution: orphans are **surfaced, not auto-removed**. `list` shows the instance
+with `SPEC = orphaned`; `destroy <org>/<repo>` (or `destroy` by the instance name)
+removes it — `destroy` needs only the name, not a composed spec. We deliberately do
+**not** auto-prune: these VMs are expensive and a missing spec can be transient (a
+repo temporarily moved, a stanza about to be re-added), so silently nuking 300 GiB
+on that signal is too dangerous. If stale orphans pile up in practice, an opt-in
+`gc` is an easy follow-up.
+
+## Security boundaries
+
+Vergil's hard problems live at the **seams between systems**, where one system's
+guarantees do not line up with the next's. This design adds one such seam and must
+name it rather than leave it implicit:
+
+**Repo-controlled code runs as root in a credentialed VM.** The `provision` hook is
+a script from the consuming repo, executed with root at provision time; the same VM
+later holds the identity's GitHub App private key (injected by `session`/`start`). A
+hostile or compromised `provision.sh` — or a dependency it pulls — could read that
+key and exfiltrate it. The VM's host-isolation protects the laptop; it does **not**
+protect the credential inside the VM.
+
+Bound and mitigation (no new machinery, proportionate to a single-user system
+developing its own repos):
+
+- **Trust boundary, stated:** build a dedicated VM only for a repo you trust to run
+  code as root. In normal use that is your own repo.
+- **Fingerprint as review checkpoint:** the hook is folded into the fingerprint, so
+  any change to `provision.sh` flips `NEEDS-REBUILD` — a forced moment to eyeball
+  the script before it re-runs.
+- **Tooling-only hook:** the hook installs tooling, not lab content, keeping it
+  small and auditable.
+
+This seam is logged — alongside GitHub's permission-granularity gaps (grants that
+carry unwanted companion permissions; no fine-grained agent-capability control) — in
+a **strategic security-boundary register**
+([vergil-tooling #1369](https://github.com/vergil-project/vergil-tooling/issues/1369))
+for long-term, solution-seeking tracking. Those entries also become comparison criteria
+when evaluating GitHub alternatives: do the same imperfectly-aligned boundaries
+apply there?
 
 ## Nested virtualization
 
@@ -341,18 +489,22 @@ in `vergil-vm`, not a field in `vergil.toml`.
   used for per-repo dedicated VMs.
 - **Host resource sanity-check.** Before building, verify the host has the RAM/disk
   and warn past a threshold (e.g. > 80 % of available). Future work.
-- **Host-side override usage.** The override *mechanism* (tier 5) ships now; we
-  have no machine that yet needs to cap the lab, so it is untested against a real
-  downsizing case until one exists.
+- **Host-side override usage.** The override *mechanism* (tier 5) and its loud
+  under-provisioning warning ship now; we have no machine that yet needs to cap the
+  lab, so it is untested against a real downsizing case until one exists. A hard gate
+  (refuse-unless-`--force` below the declared floor) is deferred until the loud
+  warning proves insufficient.
 
 ## Invariants preserved
 
 - **Requirements in source (`vergil.toml [vm]`), credentials + selection in user
   config (`identities.toml`).** No secrets in the repo; no repo requirements baked
   into user config.
-- **Ephemeral, data-less, reproducible.** Packages and provisioning are *declared*,
-  never installed into a live box. `vrg-vm rebuild <org>/<repo>` reproduces
-  identically from the composed spec alone.
+- **Ephemeral, data-less, reproducible-from-declaration.** Packages and provisioning
+  are *declared*, never installed into a live box. `vrg-vm rebuild <org>/<repo>`
+  reproduces the **declared** footprint + package set + provisioning from the
+  composed spec alone (versions track upstream — see Reproducibility). No working
+  state is baked in; lab content lives in `build/`.
 - **The only working space is the consuming repo's gitignored `build/`,**
   host-mounted into the VM.
 - **Recursive-bootstrap caveat (#86).** Infra changes to `vergil-vm` itself run on
@@ -362,23 +514,32 @@ in `vergil-vm`, not a field in `vergil.toml`.
 
 **`vergil-tooling`:**
 
-- `lib/identity.py` — parse the nested `[identities.<id>.<org>.<repo>]` cascade;
-  add the composition/overlay resolver (tiers 1–5) and a `compose_vm_spec(identity,
-  org, repo)`; reuse `_SIZE_PATTERN` and the resource validators. Parse the new
-  role-qualified identity names; keep `resolve_workspace` for locating the repo.
+- `lib/identity.py` — normalize identity keys to `vergil-<role>`; parse the nested
+  `[identities.<id>.<org>.<repo>]` cascade; add the composition/overlay resolver
+  (tiers 1–5) and a `compose_vm_spec(identity, org, repo)`; reuse `_SIZE_PATTERN`
+  and the resource validators; keep `resolve_workspace` for locating the repo.
 - new lib helper — read/validate a repo's `vergil.toml [vm]` cascade
-  (`packages`, `cpus`/`memory`/`disk`, `provision`); compute the composed-spec
-  fingerprint.
+  (`packages`, `cpus`/`memory`/`disk`, `stale_days`, `provision`); compute the
+  composed-spec fingerprint (declaration: footprint + package list + provision-hook
+  identity).
 - `lib/lima.py` — `create_vm(...)` layers the composed `packages` and runs the
   `provision` hook at provision time; write the fingerprint marker into the VM;
-  read it back for the drift check; add per-VM occupancy queries (agents from the
-  roster, humans from login/seat enumeration).
+  read it back for the drift check; **classify per-VM occupancy by process tree**
+  (agent = tree roots the harness; human = interactive PTY login that is not
+  agent-hosting); enumerate dedicated VMs as the union of `<identity>--*` instances
+  and spec-bearing repos for orphan detection.
 - `bin/vrg_vm.py` — accept the optional `<org>/<repo>` positional across
   `create`/`session`/`rebuild`/`destroy`/`start`/`stop`/`restart`/`update`;
-  implement the base-vs-dedicated resolution + abort gate; extend `list` with the
-  CPUS/MEM/DISK/AGENTS/HUMANS/SPEC columns.
-- `bin/vrg_vm_resolve.py` — unchanged in behaviour; its roster output feeds the
-  `AGENTS` count.
+  implement the base-vs-dedicated resolution + abort gate; apply composed
+  `stale_days`; emit the loud under-provisioning warning when a host override sizes
+  below the repo's declared scalar; extend `list` with the
+  CPUS/MEM/DISK/AGENTS/HUMANS/SPEC columns (including `orphaned` and the `under`
+  flag).
+- `bin/vrg_vm_resolve.py` — unchanged in behaviour; its roster reconciles with the
+  process-tree `AGENTS` count.
+- `docs/site/docs/guides/account-setup.md` (+ the dual-stanza example) — update the
+  `[identities.user]`/`[identities.audit]` keys to `vergil-user`/`vergil-audit` per
+  the identity-key normalization; the App-credential naming is unchanged.
 
 **`vergil-vm` (this repo):**
 
@@ -401,22 +562,65 @@ in `vergil-vm`, not a field in `vergil.toml`.
 - Bumping a footprint or package in the repo `vergil.toml` flips that VM's `list`
   row to `NEEDS-REBUILD`, and `session`/`start` abort with the `rebuild` command.
 - `vrg-vm list` shows CPUS/MEM/DISK and, for running VMs, correct `AGENTS` and
-  `HUMANS` counts (an extra `limactl shell` raises `HUMANS` by one; it does not
-  change `AGENTS`).
-- Identity-only `vrg-vm create` / `session` (no positional) is unchanged.
+  `HUMANS` counts: an extra `limactl shell` raises `HUMANS` by one and leaves
+  `AGENTS` unchanged; the tooling's own transient non-interactive `limactl shell --`
+  calls do **not** move either count.
+- Identity keys are `vergil-user`/`vergil-audit`; `--identity` defaults to
+  `vergil-user`; `account-setup.md` matches. Identity-only `vrg-vm create` /
+  `session` (no positional) is unchanged.
 - `vergil-audit` against the same spec'd repo builds a packages-only dedicated box
   at base footprint; `vergil-user` builds the tuned-up box.
+- A repo `[vm]` setting `stale_days = 7` is honoured: the box does not nag until day
+  7, while the base box still nags at day 3.
+- Dropping a repo's `[vm]` leaves its instance as `SPEC = orphaned` in `list`, and
+  `vrg-vm destroy <org>/<repo>` removes it.
+- A host override sizing memory below the repo's declared value runs, but `session`
+  warns loudly at launch and `list` flags the row `under`.
 
 ## Resolved open questions (from issue #99)
 
 1. **Package layering mechanism** — apt `packages` union layered in the
    tag-versioned `agent.yaml` provisioning step; deterministic, fingerprinted.
-2. **Vagrant / `vagrant-libvirt`** — non-apt installs go in a source-controlled
-   `provision` hook referenced from `[vm]`, run after the apt layer (script-path
-   shape recommended, confirm in review). Not in the apt list.
+2. **Vagrant / `vagrant-libvirt`** — non-apt **tooling** installs go in a
+   source-controlled `provision` hook (repo-relative script path) referenced from
+   `[vm]`, run after the apt layer. Not in the apt list. The hook installs tooling
+   only; building the lab is a dev-time step into `build/`.
 3. **Inline overrides** — yes, as host-side overrides at the `identities.toml`
    `[<id>.<org>.<repo>]` tier (precedence 5, wins); mechanism built, rarely used.
 4. **Name collisions** — solved by fully-qualified, reversible `--`-delimited
    instance names and nested TOML keys; no invented profile names.
 5. **Nested virtualization** — template default (host permitting), not a spec knob;
    macOS/Apple-Virtualization enablement is a template/provisioning concern.
+
+## Pushback resolutions (2026-06-04)
+
+A structured pushback review surfaced two source-control conflicts and six design
+findings. Resolutions, all folded into the body above:
+
+**Conflicts**
+
+- **Identity-key naming** — the shipped dual-App setup uses bare-role keys
+  (`[identities.user]`). Resolved to **normalize keys to `vergil-<role>`** now, while
+  fleet-of-one and pre-release; see "Identity-key normalization (migration)".
+- **#97 buildkit provisioning** — Approved-but-unmerged, touches the same
+  `agent.yaml`. Resolved to **defer**; #97 rebases onto this work later (Non-goals).
+
+**Findings**
+
+1. **Dedicated-VM staleness** (serious) — `stale_days` made tunable per VM, lab
+   defaults to 7; base stays 3. Plus the correction that the `provision` hook is
+   **tooling-only** (lab building is dev-time), which keeps rebuilds fast.
+2. **AGENTS/HUMANS counting** (serious) — replaced fragile "total − agents"
+   arithmetic with **process-tree classification**, counted directly.
+3. **Reproducibility overclaim** (moderate) — dropped "byte-for-byte"; reproduces the
+   **declared** spec, versions track upstream; fingerprint = declaration. See
+   "Reproducibility".
+4. **`provision.sh` root-in-credentialed-VM** (security) — documented trust boundary
+   + fingerprint-as-checkpoint in "Security boundaries"; logged to a strategic
+   security-boundary register (vergil-tooling #1369) alongside GitHub permission-
+   granularity gaps.
+5. **Orphaned dedicated VMs** (moderate) — `list` surfaces `SPEC = orphaned`,
+   `destroy` removes; no auto-prune. See "Dedicated-VM lifecycle".
+6. **Host override below declared minimum** (moderate) — override stays sovereign but
+   **never silent**: loud `session` warning + `list` `under` flag. Hard gate
+   deferred. See the override-floor note under "Resolution & the safety gate".
