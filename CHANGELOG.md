@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.1.9] - 2026-06-04
+
+### Features
+
+- declarative apt_repos + vagrant_plugins provisioning; .vergil/ is scratch (#105)
+
 ## [2.1.8] - 2026-06-04
 
 ### Documentation
