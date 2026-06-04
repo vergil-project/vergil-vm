@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.1.8] - 2026-06-04
+
+### Documentation
+
+- add per-repo VM profiles design spec (#99)
+- fold pushback resolutions into VM profiles spec (#99)
+- add Plan 1 (spec foundation) for per-repo VM profiles (#99)
+- add Plans 2 (lifecycle) and 3 (observability) for VM profiles (#99)
+- apply alignment fixes to VM profile plans (#99)
+- use vrg-validate as the per-task verification gate in plans (#99)
+
+### Features
+
+- layer profile packages, hook, and fingerprint at provision time (#99)
+
+### Testing
+
+- end-to-end profile build: package + hook + fingerprint (#99)
+
 ## [2.1.7] - 2026-06-01
 
 ### Bug fixes
