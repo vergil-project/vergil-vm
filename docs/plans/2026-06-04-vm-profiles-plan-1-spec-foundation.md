@@ -71,8 +71,11 @@ Data model used across tasks (defined in Task 1 and Task 3, referenced everywher
   `provision: str | None` (same fields, all optional, no nested `roles`).
 - `ComposedSpec` (vm_spec.py): `cpus: int`, `memory: str`, `disk: str`,
   `stale_days: int`, `packages: tuple[str, ...]` (sorted, deduped),
-  `provision: str | None`, `dedicated: bool`, `under: tuple[str, ...]`
-  (names of scalars a host override pushed below the repo's declared value).
+  `provision: str | None` (the hook's repo-relative path), `dedicated: bool`,
+  `under: tuple[str, ...]` (names of scalars a host override pushed below the repo's
+  declared value), `provision_hash: str | None = None` (SHA-256 of the hook's
+  *contents*, filled in at resolve time so editing the script flips the fingerprint —
+  see Plan 2 Task 4).
 
 ---
 
@@ -481,6 +484,10 @@ class ComposedSpec:
     provision: str | None
     dedicated: bool
     under: tuple[str, ...]
+    # SHA-256 of the provision hook's CONTENTS (not the path). compose_vm_spec has no
+    # file access, so it leaves this None; Plan 2's _resolve_target reads the hook file
+    # and fills it in before fingerprinting, so editing the script flips NEEDS-REBUILD.
+    provision_hash: str | None = None
 
 
 def compose_vm_spec(
@@ -760,6 +767,13 @@ class TestFingerprint:
         assert spec_fingerprint(self._spec(packages=("a",))) != spec_fingerprint(
             self._spec(packages=("a", "b"))
         )
+
+    def test_provision_hook_content_change_changes_fingerprint(self) -> None:
+        # Editing the script (same path) must flip the fingerprint — this is the
+        # security review checkpoint the spec promises.
+        assert spec_fingerprint(self._spec(provision_hash="hookv1")) != spec_fingerprint(
+            self._spec(provision_hash="hookv2")
+        )
 ```
 
 - [ ] **Step 2: Run them to confirm they fail**
@@ -784,7 +798,10 @@ def spec_fingerprint(spec: ComposedSpec) -> str:
             f"memory={spec.memory}",
             f"disk={spec.disk}",
             f"stale_days={spec.stale_days}",
-            f"provision={spec.provision or ''}",
+            # The hook's CONTENT hash (filled in at resolve time) is what makes an edit
+            # to provision.sh flip the fingerprint. Fall back to the path only when no
+            # content hash is available (e.g. a base box has neither).
+            f"provision={spec.provision_hash or spec.provision or ''}",
             "packages=" + ",".join(sorted(spec.packages)),
         )
     )

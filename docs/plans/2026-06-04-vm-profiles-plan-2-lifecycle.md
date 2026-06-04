@@ -40,6 +40,8 @@ Plan 1 (`2026-06-04-vm-profiles-plan-1-spec-foundation.md`) MUST be complete and
   writes the fingerprint marker, installs the packages, and runs the hook.
 - **Create** `tests/test_vm_profile_template.sh` *(vergil-vm)* — structural assertions on
   the template (param keys present, provisioning step references them, fingerprint path).
+- **Create** `tests/test_vm_profile_e2e.sh` *(vergil-vm)* — Task 8 end-to-end CI build test
+  (package layered + hook ran + fingerprint marker stamped).
 - **Modify** `src/vergil_tooling/lib/lima.py` *(vergil-tooling)* — extend `create_vm`;
   add `read_fingerprint`, `vm_spec_status`.
 - **Modify** `src/vergil_tooling/bin/vrg_vm.py` *(vergil-tooling)* — add `_resolve_target`
@@ -434,6 +436,36 @@ class TestResolveTarget:
         assert target.spec.dedicated is True
         assert target.spec.cpus == 12
         assert target.fingerprint != ""
+
+    @patch("vergil_tooling.bin.vrg_vm.read_config")
+    def test_editing_provision_hook_changes_fingerprint(
+        self, mock_read: MagicMock, tmp_path: Path
+    ) -> None:
+        # Real on-disk hook so _resolve_target hashes its CONTENT; editing it must
+        # change the fingerprint (the security checkpoint).
+        ident = self._identity(projects_dir=str(tmp_path))
+        hook = tmp_path / "org" / "repo" / ".vergil" / "provision.sh"
+        hook.parent.mkdir(parents=True)
+        stanza = VmStanza(
+            packages=["x"], cpus=None, memory=None, disk=None, stale_days=None,
+            provision=".vergil/provision.sh",
+            roles={"vergil-user": RoleOverlay(
+                packages=[], cpus=12, memory="64GiB", disk="300GiB", stale_days=7,
+                provision=None)},
+        )
+        mock_read.return_value = MagicMock(vm=stanza)
+        args = MagicMock(workspace="org/repo", identity="vergil-user", config=None)
+
+        def resolve_target():
+            with patch("vergil_tooling.bin.vrg_vm._resolve",
+                       return_value=("vergil-user", ident, _config_with(ident))):
+                return _resolve_target(args)
+
+        hook.write_text("echo v1\n", encoding="utf-8")
+        fp1 = resolve_target().fingerprint
+        hook.write_text("echo v2  # edited\n", encoding="utf-8")
+        fp2 = resolve_target().fingerprint
+        assert fp1 != fp2
 ```
 
 > Note: `read_config` here returns an object exposing `.vm: VmStanza | None`. Plan 1 Task 1
@@ -483,6 +515,9 @@ from vergil_tooling.lib.vm_spec import (
     spec_fingerprint,
 )
 ```
+
+Also add `import hashlib` to the stdlib imports and `replace` to the dataclass import
+(`from dataclasses import dataclass, replace`).
 
 and add the dataclass + resolver (after `_resolve`):
 
@@ -541,6 +576,16 @@ def _resolve_target(args: argparse.Namespace) -> Target:
 
     if not spec.dedicated:
         return Target(name, identity, config, org, repo, spec, identity.vm_instance, "")
+
+    # Fold the provision hook's CONTENT hash into the fingerprint, so editing the
+    # script (same path) flips NEEDS-REBUILD — the security review checkpoint the spec
+    # promises. The hook is source-controlled and normally present; if it is absent at
+    # resolve time we fall back to the path (the template enforces presence at build).
+    if spec.provision:
+        hook_path = repo_dir / spec.provision
+        if hook_path.exists():
+            digest = hashlib.sha256(hook_path.read_bytes()).hexdigest()
+            spec = replace(spec, provision_hash=digest)
 
     inst = instance_name(name, org, repo)
     return Target(name, identity, config, org, repo, spec, inst, spec_fingerprint(spec))
@@ -934,10 +979,99 @@ vrg-commit --type feat --scope vrg-vm \
 
 ---
 
+## Task 8: End-to-end profile build (CI integration) *(vergil-vm)*
+
+**Files:**
+- Create: `tests/test_vm_profile_e2e.sh` *(vergil-vm)*
+- Modify: the CI build-test workflow that already builds a VM and runs `tests/`.
+
+This is the spec's acceptance criterion — *"a tiny test spec with one extra package proves
+the layering end-to-end; a second case proves the provision hook runs"* — as an automated,
+right-sized CI test (small footprint, one cheap package). It exercises the **template's
+param provisioning** directly via `limactl`, so it does not need credentials or the full
+`vrg-vm` CLI. Work in the **`vergil-vm` worktree**.
+
+- [ ] **Step 1: Write the integration test (runs against a profile-built VM)**
+
+Create `tests/test_vm_profile_e2e.sh`:
+
+```bash
+#!/usr/bin/env bash
+# End-to-end: build a tiny profile VM via the template's params and assert that the
+# package layered, the provision hook ran, and the fingerprint marker was stamped.
+# Usage: tests/test_vm_profile_e2e.sh  (builds + tears down its own throwaway instance)
+set -euo pipefail
+HERE="$(cd "$(dirname "$0")" && pwd)"
+TEMPLATE="$HERE/../templates/agent.yaml"
+INSTANCE="vergil-profile-e2e"
+WORK="$(mktemp -d)"
+FP="testfp123"
+
+cleanup() { limactl delete --force "$INSTANCE" >/dev/null 2>&1 || true; rm -rf "$WORK"; }
+trap cleanup EXIT
+
+# A trivial, self-contained provision hook (TOOLING only — here it just drops a sentinel).
+mkdir -p "$WORK/.vergil"
+cat > "$WORK/.vergil/provision.sh" <<'HOOK'
+#!/bin/bash
+set -eux
+touch /tmp/vergil-hook-ran
+HOOK
+
+limactl create --name="$INSTANCE" --tty=false \
+  --set='.mounts[0].location = "'"$WORK"'"' \
+  --set='.mounts[0].mountPoint = "'"$WORK"'"' \
+  --set='.param.EXTRA_PACKAGES = "cowsay"' \
+  --set='.param.PROVISION_HOOK = "'"$WORK"'/.vergil/provision.sh"' \
+  --set='.param.SPEC_FINGERPRINT = "'"$FP"'"' \
+  "$TEMPLATE"
+limactl start "$INSTANCE" --tty=false
+
+fail() { echo "FAIL: $1" >&2; exit 1; }
+
+# 1. The extra package layered (base image does not ship cowsay).
+limactl shell "$INSTANCE" -- bash -lc 'command -v cowsay' >/dev/null \
+  || fail "extra package 'cowsay' not installed"
+# 2. The provision hook ran.
+limactl shell "$INSTANCE" -- test -f /tmp/vergil-hook-ran \
+  || fail "provision hook did not run (sentinel missing)"
+# 3. The fingerprint marker was stamped with the injected value.
+got=$(limactl shell "$INSTANCE" -- cat /etc/vergil/vm-spec.fingerprint | tr -d '[:space:]')
+[ "$got" = "$FP" ] || fail "fingerprint marker is '$got', expected '$FP'"
+
+echo "PASS: vm profile end-to-end (package + hook + fingerprint marker)"
+```
+
+- [ ] **Step 2: Run it locally (or in CI) to confirm it passes against a real build**
+
+Run: `bash tests/test_vm_profile_e2e.sh`
+Expected: `PASS: vm profile end-to-end (package + hook + fingerprint marker)`.
+(This builds a real VM — minutes. It is the slow integration guard, run in CI, not per-edit.)
+
+- [ ] **Step 3: Wire it into the CI build-test path**
+
+Find the workflow/script that builds the agent VM and runs the `tests/` suite (the same one
+that runs `tests/test_services.sh` against a built instance — see `tests/run-tests.sh` and
+`.github/`). Add `tests/test_vm_profile_e2e.sh` so CI runs it. It manages its own throwaway
+instance, so it does not depend on the main build instance.
+
+- [ ] **Step 4: Commit** *(in the vergil-vm worktree)*
+
+```bash
+vrg-git add tests/test_vm_profile_e2e.sh
+vrg-commit --type test --scope template \
+  --message "end-to-end profile build: package + hook + fingerprint (#99)" \
+  --body "CI integration test builds a tiny profile VM (cowsay + sentinel hook + test fingerprint) via the template params and asserts all three landed in the VM — the spec's end-to-end acceptance criterion, automated and right-sized."
+```
+
 ## Done criteria (Plan 2)
 
 - A dedicated `create`/`rebuild` provisions the box with its composed footprint, packages,
   provision hook, and a stamped fingerprint; base create/rebuild is unchanged.
+- Editing a repo's `provision.sh` (same path) changes the composed fingerprint
+  (`_resolve_target` hashes the hook's contents), so `session`/`start` flag `NEEDS-REBUILD`.
+- The end-to-end CI test proves a real profile VM gets its package, runs its hook, and is
+  stamped with the fingerprint marker.
 - `read_fingerprint`/`vm_spec_status` detect drift.
 - `session`/`start` abort with the exact `create`/`rebuild` command when a dedicated VM is
   missing or drifted, warn loudly on a below-declared override, and honour composed
