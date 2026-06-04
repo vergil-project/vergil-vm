@@ -12,6 +12,9 @@ Thumbs.db
 # Vergil
 .venv-host/
 .worktrees/
+# .vergil/ is Vergil scratch only (PR-template staging, *.local.toml overrides,
+# work-in-progress). Nothing source-controlled lives here — see vergil-vm#105.
+.vergil/
 
 # Lima build artifacts
 *.qcow2
