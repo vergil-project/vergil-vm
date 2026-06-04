@@ -37,7 +37,8 @@ disk: "50GiB"
 # vrg-vm via `--set=.param.<KEY>`. Empty defaults keep the base box unchanged.
 param:
   EXTRA_PACKAGES: ""          # space-separated apt package list, layered additively
-  PROVISION_HOOK: ""          # absolute path (inside the VM) to a repo provision.sh
+  APT_REPOS: ""               # ";"-joined "name|key_url|uri|suite|components" records
+  VAGRANT_PLUGINS: ""         # space-separated vagrant plugin names
   SPEC_FINGERPRINT: ""        # composed-spec fingerprint, stamped into the VM
 
 containerd:
@@ -239,10 +240,11 @@ provision:
     PROMPT='%n@%m:%~$ '
     ZSHRC
 
-# --- Per-repo VM profile layering (issue #99) ------------------------------
-# Stamp the spec fingerprint, install the profile's additive apt packages, then
-# run the repo's provisioning hook (TOOLING only — never lab/box building). All
-# three are no-ops when their param is empty, so the base box is unaffected.
+# --- Per-repo VM profile layering (issue #99, #105) ------------------------
+# Declarative tooling install, owned by this (reviewed) template — repos supply
+# data, never a script. Stamp the fingerprint, register declared apt repos, install
+# the additive apt packages, then install declared vagrant plugins for the Lima user.
+# Every step is a no-op when its param is empty, so the base box is unaffected.
 - mode: system
   script: |
     #!/bin/bash
@@ -252,24 +254,38 @@ provision:
     mkdir -p /etc/vergil
     printf '%s\n' '{{.Param.SPEC_FINGERPRINT}}' > /etc/vergil/vm-spec.fingerprint
 
+    # Extra apt repositories: each record is "name|key_url|uri|suite|components";
+    # records are ";"-separated. Keys are expected ASCII-armored (gpg --dearmor).
+    REPOS="{{.Param.APT_REPOS}}"
+    if [ -n "$REPOS" ]; then
+      IFS=';' read -ra _repos <<< "$REPOS"
+      for _r in "${_repos[@]}"; do
+        IFS='|' read -r _name _key _uri _suite _comp <<< "$_r"
+        curl -fsSL "$_key" | gpg --dearmor -o "/usr/share/keyrings/${_name}.gpg"
+        echo "deb [signed-by=/usr/share/keyrings/${_name}.gpg] $_uri $_suite $_comp" \
+          > "/etc/apt/sources.list.d/${_name}.list"
+      done
+    fi
+
     PKGS="{{.Param.EXTRA_PACKAGES}}"
     if [ -n "$PKGS" ]; then
       apt-get update
       # shellcheck disable=SC2086  # word-splitting the package list is intended
       apt-get install -y --no-install-recommends $PKGS
-      apt-get clean
-      rm -rf /var/lib/apt/lists/*
     fi
 
-    HOOK="{{.Param.PROVISION_HOOK}}"
-    if [ -n "$HOOK" ]; then
-      if [ -f "$HOOK" ]; then
-        bash "$HOOK"
-      else
-        echo "ERROR: provision hook not found: $HOOK" >&2
-        exit 1
-      fi
+    # Vagrant plugins compile native extensions (build deps come via EXTRA_PACKAGES)
+    # and must belong to the Lima user who runs vagrant, not root. `sudo -u … -H`
+    # points HOME at the user so plugins land in their ~/.vagrant.d.
+    PLUGINS="{{.Param.VAGRANT_PLUGINS}}"
+    if [ -n "$PLUGINS" ]; then
+      for _p in $PLUGINS; do
+        sudo -u "{{.User}}" -H vagrant plugin install "$_p"
+      done
     fi
+
+    apt-get clean
+    rm -rf /var/lib/apt/lists/*
 
 probes:
 - mode: readiness

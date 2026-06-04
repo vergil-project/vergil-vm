@@ -5,8 +5,17 @@
 
 **Date:** 2026-06-04
 
-**Status:** Proposed (issue #99). Revised after a structured pushback review
+**Status:** Implemented (issue #99). Revised after a structured pushback review
 (2026-06-04) — see "Pushback resolutions" at the end.
+
+> **Amended by [vergil-vm #105](https://github.com/vergil-project/vergil-vm/issues/105).**
+> The `provision` *script hook* described below (and its content-hashing) was **removed**
+> before real use and replaced with two **declarative** knobs in `vergil.toml [vm]`:
+> `apt_repos` (extra apt repositories: key + source line) and `vagrant_plugins`. The
+> reviewed `vergil-vm` template owns the install; repos never supply a script. Relatedly,
+> **`.vergil/` is global gitignored scratch** — nothing source-controlled lives there
+> (the hook's old `.vergil/provision.sh` home was the trigger). Wherever this document
+> says `provision` / `provision.sh`, read `apt_repos` + `vagrant_plugins`.
 
 **Spans two repositories.** This feature touches both `vergil-vm` (the VM image
 template and its tests) and `vergil-tooling` (the `vrg-vm` CLI, identity parsing,
