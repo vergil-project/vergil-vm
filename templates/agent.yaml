@@ -33,6 +33,13 @@ cpus: 4
 memory: "4GiB"
 disk: "50GiB"
 
+# Per-repo VM profile parameters (issue #99). Overridden at create time by
+# vrg-vm via `--set=.param.<KEY>`. Empty defaults keep the base box unchanged.
+param:
+  EXTRA_PACKAGES: ""          # space-separated apt package list, layered additively
+  PROVISION_HOOK: ""          # absolute path (inside the VM) to a repo provision.sh
+  SPEC_FINGERPRINT: ""        # composed-spec fingerprint, stamped into the VM
+
 containerd:
   system: false
   user: true
@@ -231,6 +238,38 @@ provision:
     # Prompt: user@hostname:dir$
     PROMPT='%n@%m:%~$ '
     ZSHRC
+
+# --- Per-repo VM profile layering (issue #99) ------------------------------
+# Stamp the spec fingerprint, install the profile's additive apt packages, then
+# run the repo's provisioning hook (TOOLING only — never lab/box building). All
+# three are no-ops when their param is empty, so the base box is unaffected.
+- mode: system
+  script: |
+    #!/bin/bash
+    set -eux -o pipefail
+    export DEBIAN_FRONTEND=noninteractive
+
+    mkdir -p /etc/vergil
+    printf '%s\n' '{{.Param.SPEC_FINGERPRINT}}' > /etc/vergil/vm-spec.fingerprint
+
+    PKGS="{{.Param.EXTRA_PACKAGES}}"
+    if [ -n "$PKGS" ]; then
+      apt-get update
+      # shellcheck disable=SC2086  # word-splitting the package list is intended
+      apt-get install -y --no-install-recommends $PKGS
+      apt-get clean
+      rm -rf /var/lib/apt/lists/*
+    fi
+
+    HOOK="{{.Param.PROVISION_HOOK}}"
+    if [ -n "$HOOK" ]; then
+      if [ -f "$HOOK" ]; then
+        bash "$HOOK"
+      else
+        echo "ERROR: provision hook not found: $HOOK" >&2
+        exit 1
+      fi
+    fi
 
 probes:
 - mode: readiness
