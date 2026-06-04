@@ -19,8 +19,11 @@ Plans 1 and 2 complete. Consumes their API: `parse_instance_name`, `instance_nam
 ## Execution context
 
 All of Plan 3 is in **`vergil-tooling`** — work in `.worktrees/vm-profiles` (branch
-`feature/vm-profiles`). `vrg-git`/`vrg-commit`/`vrg-container-run`; commits reference
-`vergil-vm#99`.
+`feature/vm-profiles`). `vrg-git`/`vrg-commit`; commits reference `vergil-vm#99`.
+
+**Verification convention (repo policy):** `vrg-container-run -- vrg-validate` is the only
+sanctioned validation command (runs the whole suite). Run it **once per task** as the green
+gate; the per-step run lines describe expected red/green. Do not invoke `pytest` directly.
 
 ---
 

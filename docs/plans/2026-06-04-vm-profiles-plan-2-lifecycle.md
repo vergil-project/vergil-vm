@@ -28,8 +28,11 @@ Plan 1 (`2026-06-04-vm-profiles-plan-1-spec-foundation.md`) MUST be complete and
 - **Tasks 2–7** edit `vergil-tooling` — work in the **`vergil-tooling` worktree**
   `.worktrees/vm-profiles` (branch `feature/vm-profiles`, created in Plan 1). Commit
   there with `vrg-commit`.
-- Git policy: `vrg-git` for git, `vrg-commit` for commits, `vrg-container-run -- …` to run
-  tests/validation. Commits reference `vergil-vm#99`.
+- Git policy: `vrg-git` for git, `vrg-commit` for commits. Commits reference `vergil-vm#99`.
+- **Verification convention (repo policy):** `vrg-container-run -- vrg-validate` is the only
+  sanctioned validation command (runs the whole suite). Run it **once per task** as the green
+  gate; the per-step run lines describe expected red/green. Do not invoke `pytest`/`ruff`/`ty`
+  directly. (vergil-vm tasks: the shell tests run directly, then `vrg-validate` as the gate.)
 
 ---
 

@@ -38,9 +38,12 @@ This feature spans two repos. **Plan 1 is entirely in `vergil-tooling`.**
 - **Git policy (both repos):** use `vrg-git` for git, `vrg-commit` (NOT `git commit`)
   for commits. `vrg-commit` signature:
   `vrg-commit --type <feat|fix|docs|…> --scope <scope> --message "<subject>" [--body "<body>"]`.
-- **Run tests / validation** from inside the worktree:
-  `vrg-container-run -- vrg-validate` is the only validation command. To run a single
-  test fast during a step: `vrg-container-run -- pytest tests/vergil_tooling/<file>::<test> -v`.
+- **Verification convention (repo policy):** `vrg-container-run -- vrg-validate` is the
+  **only** sanctioned validation command (CLAUDE.md) — it runs the whole suite (lint +
+  types + every test). Run it **once per task** as the green gate, after the task's code is
+  written. The per-step "run the test, confirm it fails/passes" lines below describe the
+  *expected red/green* for that step; the authoritative gate is the single per-task
+  `vrg-validate`. Do not invoke `pytest`/`ruff`/`ty` directly.
 - Every commit step below uses `vrg-commit`; the literal `git add` shown is run via
   `vrg-git add`.
 
