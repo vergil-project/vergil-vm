@@ -62,4 +62,10 @@ echo "=== Running tests ==="
 bash "$TESTS" "$INSTANCE"
 echo ""
 
+# Per-repo VM profile end-to-end (issue #99): builds its own throwaway
+# parameterized instance to verify package layering + provision hook + fingerprint.
+echo "=== Running per-repo VM profile e2e ==="
+bash "${REPO_ROOT}/tests/e2e-vm-profile.sh"
+echo ""
+
 echo "=== Build complete ==="
