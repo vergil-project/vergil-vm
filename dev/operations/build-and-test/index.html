@@ -1627,7 +1627,7 @@ up:</p>
 </tr>
 <tr>
 <td><code>test_vm_profile.sh</code></td>
-<td>Per-repo profile provisioning ran (spec-fingerprint marker stamped)</td>
+<td>Per-repo profile provisioning ran (spec-fingerprint marker stamped), no provisioning error recorded</td>
 </tr>
 </tbody>
 </table>
@@ -1636,9 +1636,9 @@ debugging. The runner reports a summary at the end:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>6 tests, 0 failures
 </code></pre></div>
 <h2 id="end-to-end-scripts">End-to-End Scripts<a class="headerlink" href="#end-to-end-scripts" title="Permanent link">&para;</a></h2>
-<p>Two host-side scripts (they run <code>limactl</code>, so they are deliberately not
+<p>Host-side scripts (they run <code>limactl</code>, so they are deliberately not
 named <code>test_*.sh</code>) build their own throwaway, parameterized instances.
-<code>build.sh</code> runs both after the in-guest suite:</p>
+<code>build.sh</code> runs them all after the in-guest suite:</p>
 <table>
 <thead>
 <tr>
@@ -1654,6 +1654,10 @@ named <code>test_*.sh</code>) build their own throwaway, parameterized instances
 <tr>
 <td><code>e2e-nested-virt.sh</code></td>
 <td>Nested virtualization end-to-end: <code>nestedVirtualization</code> + <code>NESTED_VIRT</code> set together yields <code>/dev/kvm</code> in the guest (requires macOS 15+ on M3-or-later Apple silicon)</td>
+</tr>
+<tr>
+<td><code>e2e-provision-failure.sh</code></td>
+<td>An uninstallable extra package fails <code>limactl start</code> and is named in <code>/etc/vergil/provision-error</code> (slowest step — the failing start spends its full timeout)</td>
 </tr>
 </tbody>
 </table>
