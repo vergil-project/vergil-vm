@@ -68,4 +68,11 @@ echo "=== Running per-repo VM profile e2e ==="
 bash "${REPO_ROOT}/tests/e2e-vm-profile.sh"
 echo ""
 
+# Nested-virtualization end-to-end (issue #131): builds its own throwaway
+# instance with nestedVirtualization enabled and asserts /dev/kvm appears.
+# Requires macOS 15+ on M3-or-later Apple silicon; fails loudly otherwise.
+echo "=== Running nested-virtualization e2e ==="
+bash "${REPO_ROOT}/tests/e2e-nested-virt.sh"
+echo ""
+
 echo "=== Build complete ==="
