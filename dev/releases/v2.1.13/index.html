@@ -11,10 +11,10 @@
       
       
       
-        <link rel="prev" href="../v2.1.10/">
+        <link rel="prev" href="../">
       
       
-        <link rel="next" href="../v2.1.8/">
+        <link rel="next" href="../v2.1.12/">
       
       
         
@@ -25,7 +25,7 @@
     
     
       
-        <title>2.1.9 - Vergil VM</title>
+        <title>2.1.13 - Vergil VM</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#release-219-2026-06-04" class="md-skip">
+        <a href="#release-2113-2026-06-05" class="md-skip">
           Skip to content
         </a>
       
@@ -116,7 +116,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              2.1.9
+              2.1.13
             
           </span>
         </div>
@@ -611,10 +611,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../v2.1.13/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.13
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -630,6 +657,37 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#chores" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chores
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -723,37 +781,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    2.1.9
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../v2.1.9/" class="md-nav__link">
         
   
   
@@ -769,37 +800,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#features" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Features
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1446,10 +1446,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#features" class="md-nav__link">
+  <a href="#chores" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Features
+        Chores
       
     </span>
   </a>
@@ -1473,12 +1473,21 @@
 
 
 
-<h1 id="release-219-2026-06-04">Release 2.1.9 (2026-06-04)<a class="headerlink" href="#release-219-2026-06-04" title="Permanent link">&para;</a></h1>
-<h2 id="features">Features<a class="headerlink" href="#features" title="Permanent link">&para;</a></h2>
+<h1 id="release-2113-2026-06-05">Release 2.1.13 (2026-06-05)<a class="headerlink" href="#release-2113-2026-06-05" title="Permanent link">&para;</a></h1>
+<h2 id="chores">Chores<a class="headerlink" href="#chores" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>declarative apt_repos + vagrant_plugins provisioning; .vergil/ is scratch (#105)</strong>
-Replace the PROVISION_HOOK param + script execution with declarative APT_REPOS (key + apt source line, registered with signed-by) and VAGRANT_PLUGINS (installed for the Lima user). The template owns the install; repos supply data, never a script. e2e now asserts an apt repo registers + a package layers. .vergil/ added to .gitignore as global scratch. Spec amended. Tracks #105 / vergil-tooling#1381.</li>
+<li><strong>replace raw limactl references with vrg-vm commands</strong>
+Update the agent.yaml header, resource-override comment, readiness-probe
+hint, and post-provision message to reference the vrg-vm lifecycle
+interface (create, start, rebuild, session, update) instead of raw
+limactl commands. vrg-vm now owns the full VM lifecycle with automatic
+credential injection, so users should never need to type limactl
+directly.</li>
 </ul>
+<p>Mechanical comments describing Lima-layer internals (logind busy-loop,
+PAM environment snapshots, ControlMaster channels, the lima-* unit
+keep-list) intentionally keep their limactl references — they document
+what happens beneath the vrg-vm wrapper.</p>
 
 
 
