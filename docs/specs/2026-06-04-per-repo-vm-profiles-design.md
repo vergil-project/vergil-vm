@@ -17,6 +17,15 @@
 > (the hook's old `.vergil/provision.sh` home was the trigger). Wherever this document
 > says `provision` / `provision.sh`, read `apt_repos` + `vagrant_plugins`.
 
+> **Amended by [vergil-vm #111](https://github.com/vergil-project/vergil-vm/issues/111).**
+> `vrg-vm list` enumerates dedicated VMs from **existing Lima instances only**; the
+> projects-tree scan and the `not-created` SPEC state are **dropped**. Discovery of
+> declared-but-unbuilt VMs stays with the `session`/`start` preflight gate, which
+> already aborts with the exact `create` command at the moment the signal is
+> actionable. The "Extended `vrg-vm list`", "Dedicated-VM lifecycle (orphans)", and
+> implementation touch-point sections below incorporate the revision. Implementation:
+> [vergil-tooling #1412](https://github.com/vergil-project/vergil-tooling/issues/1412).
+
 **Spans two repositories.** This feature touches both `vergil-vm` (the VM image
 template and its tests) and `vergil-tooling` (the `vrg-vm` CLI, identity parsing,
 Lima driver, and in-VM session resolver). Each touch-point below is tagged with
@@ -407,11 +416,18 @@ vergil-audit  base                                     Stopped  4     4GiB   50G
   - `ok` — composed spec matches the built fingerprint.
   - `NEEDS-REBUILD` — fingerprint drift (the repo spec changed); `session`/`start`
     abort with the `rebuild` command.
-  - `not-created` — a repo declares a spec but no VM has been built yet.
   - `orphaned` — a dedicated VM instance exists but no backing spec does (the repo
     dropped its `[vm]`, or was renamed/removed). See Dedicated-VM lifecycle.
   - `ok ⚠ under (mem 32<64)` — running, but a host override sized a scalar below the
     repo's declared value (the override floor warning).
+
+  A repo that declares a spec but has never built its VM is deliberately **not** a
+  `list` state (#111). That signal is delivered by the `session`/`start` preflight
+  gate — which aborts with the exact `create` command at the moment the user
+  expresses intent to use the repo — rather than as standing inventory. Listing it
+  would mean scanning every checked-out repo per identity (O(repos), not
+  O(instances)), and at scale the declared-but-unbuilt rows would drown the rows
+  that matter.
 
 ## Staleness (tunable per VM)
 
@@ -430,12 +446,24 @@ than age) are revisited if experience demands.
 
 ## Dedicated-VM lifecycle (orphans)
 
-`list` enumerates dedicated VMs as the **union** of two sources: existing Lima
-instances matching `<identity>--*`, and local repos (under `projects_dir`) that ship
-a `[vm]` spec. An **orphan** is an instance in the first set with no match in the
-second — the repo dropped its `[vm]`, or was renamed/moved/deleted. Orphans route
-nothing (`session` now lands on base) and have no spec to drift against, so without
-handling they would linger invisibly, consuming disk — up to 300 GiB on the lab box.
+`list` enumerates dedicated VMs from **existing Lima instances only** — those
+matching `<identity>--*`. For each instance, one **targeted read** of that repo's
+`vergil.toml` (under `projects_dir`) classifies it: a backing `[vm]` spec means
+present; none means **orphaned** — the repo dropped its `[vm]`, or was
+renamed/moved/deleted. Cost is O(instances), not O(checked-out repos).
+
+There is no projects-tree scan (#111). The original design unioned in a second
+source — every spec-bearing repo under `projects_dir` — solely to surface
+`not-created` rows; orphan classification never needed it. The scan paid a
+full-tree config parse per identity, would drown the live rows in
+declared-but-unbuilt inventory as adoption grows, and coupled `list` output to
+validation noise from every `vergil.toml` in the tree. The preflight abort gate
+(see "Resolution & the safety gate") remains the discovery surface for
+declared-but-unbuilt VMs.
+
+Orphans route nothing (`session` now lands on base) and have no spec to drift
+against, so without handling they would linger invisibly, consuming disk — up to
+300 GiB on the lab box.
 
 Resolution: orphans are **surfaced, not auto-removed**. `list` shows the instance
 with `SPEC = orphaned`; `destroy <org>/<repo>` (or `destroy` by the instance name)
@@ -535,8 +563,10 @@ in `vergil-vm`, not a field in `vergil.toml`.
   `provision` hook at provision time; write the fingerprint marker into the VM;
   read it back for the drift check; **classify per-VM occupancy by process tree**
   (agent = tree roots the harness; human = interactive PTY login that is not
-  agent-hosting); enumerate dedicated VMs as the union of `<identity>--*` instances
-  and spec-bearing repos for orphan detection.
+  agent-hosting); enumerate dedicated VMs from existing `<identity>--*` instances,
+  classifying each present/orphaned via a targeted read of that repo's
+  `vergil.toml` — no projects-tree scan (#111;
+  [vergil-tooling #1412](https://github.com/vergil-project/vergil-tooling/issues/1412)).
 - `bin/vrg_vm.py` — accept the optional `<org>/<repo>` positional across
   `create`/`session`/`rebuild`/`destroy`/`start`/`stop`/`restart`/`update`;
   implement the base-vs-dedicated resolution + abort gate; apply composed

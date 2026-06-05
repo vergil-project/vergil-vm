@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.1.10] - 2026-06-05
+
+### Bug fixes
+
+- disable Claude Code autoupdater via managed settings (#110)
+
+### Chores
+
+- migrate vergil dependency pins from v2.0 to v2.1
+
+### Documentation
+
+- amend VM profiles spec: list enumerates instances only (#111)
+
 ## [2.1.9] - 2026-06-04
 
 ### Features
