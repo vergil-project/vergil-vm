@@ -131,6 +131,7 @@ assert_active ssh
 assert_active systemd-resolved
 assert_active systemd-networkd
 assert_active containerd user
+assert_active buildkit user
 for c in gh uv claude; do
     assert_command "$c"
 done
