@@ -39,6 +39,24 @@ param:
   APT_REPOS: ""               # ";"-joined "name|key_url|uri|suite|components" records
   VAGRANT_PLUGINS: ""         # space-separated vagrant plugin names
   SPEC_FINGERPRINT: ""        # composed-spec fingerprint, stamped into the VM
+  NESTED_VIRT: ""             # "true" when the composed spec declares nested = true
+
+# Nested virtualization (issue #131) — a per-profile knob, default OFF.
+# `nestedVirtualization` is static top-level Lima/vz config, so a template
+# cannot express "host permitting"; the consuming repo's spec drives it at
+# create time instead. When the composed spec declares `nested = true`,
+# vrg-vm sets BOTH halves together:
+#
+#   --set='.nestedVirtualization = true'
+#   --set='.param.NESTED_VIRT = "true"'
+#
+# The flag makes Lima's vz driver expose virtualization extensions to the
+# guest (so /dev/kvm appears); the param drives the in-guest verification
+# step below, which fails the build loudly if /dev/kvm did not materialize.
+# Requires macOS 15+ on M3-or-later Apple silicon — Lima itself rejects the
+# flag at create/start on unsupported hosts. Default-off keeps the KVM API
+# out of base agent VMs (service-surface minimization, issue #78).
+nestedVirtualization: false
 
 containerd:
   system: false
@@ -315,6 +333,25 @@ provision:
     PKGS="{{.Param.EXTRA_PACKAGES}}"
     if [ -n "$PKGS" ]; then
       apt-get update
+      # Per-package resolution diagnostics (issue #130): apt transactions are
+      # all-or-nothing, so a single uninstallable package zeroes the WHOLE
+      # extra-package layer and the real cause drowns in apt output (vagrant
+      # on arm64 took down 13 installable packages with it). Check every
+      # declared package has an installation candidate for this architecture
+      # first, and fail naming exactly the offenders. The error lands in
+      # /etc/vergil/provision-error, which the readiness probe's hint names.
+      MISSING=""
+      for _pkg in $PKGS; do
+        if [ -z "$(apt-cache madison "$_pkg")" ]; then
+          MISSING="${MISSING} ${_pkg}"
+        fi
+      done
+      if [ -n "$MISSING" ]; then
+        printf 'ERROR: no installation candidate on %s for:%s (declared in the repo vergil.toml [vm] packages)\n' \
+          "$(dpkg --print-architecture)" "${MISSING}" \
+          | tee /etc/vergil/provision-error >&2
+        exit 1
+      fi
       # shellcheck disable=SC2086  # word-splitting the package list is intended
       apt-get install -y --no-install-recommends $PKGS
     fi
@@ -322,8 +359,23 @@ provision:
     # Vagrant plugins compile native extensions (build deps come via EXTRA_PACKAGES)
     # and must belong to the Lima user who runs vagrant, not root. `sudo -u … -H`
     # points HOME at the user so plugins land in their ~/.vagrant.d.
+    #
+    # The template owns the vagrant binary itself (issue #130): vagrant has no
+    # apt installation candidate on arm64 from ANY source — HashiCorp's repo
+    # publishes no arm64 vagrant, and noble dropped it from universe post-BUSL
+    # — so the only supported Linux/arm64 path is HashiCorp's Ruby gem.
+    # Consuming repos declare plugins plus the build deps (ruby-dev, gcc,
+    # make, pkg-config) in packages; "vagrant" never belongs in the apt list.
     PLUGINS="{{.Param.VAGRANT_PLUGINS}}"
     if [ -n "$PLUGINS" ]; then
+      if ! command -v vagrant >/dev/null 2>&1; then
+        if ! command -v gem >/dev/null 2>&1; then
+          printf 'ERROR: vagrant_plugins declared but ruby/gem is unavailable — declare ruby-dev (plus gcc, make, pkg-config) in the repo vergil.toml [vm] packages\n' \
+            | tee /etc/vergil/provision-error >&2
+          exit 1
+        fi
+        gem install vagrant
+      fi
       for _p in $PLUGINS; do
         sudo -u "{{.User}}" -H vagrant plugin install "$_p"
       done
@@ -332,24 +384,63 @@ provision:
     apt-get clean
     rm -rf /var/lib/apt/lists/*
 
+# --- Nested-virtualization verification (issue #131) -------------------------
+# When the composed spec requests nested virt, vrg-vm sets both the top-level
+# `nestedVirtualization` flag and the NESTED_VIRT param (see the param block).
+# Verify the request actually produced /dev/kvm: without it, anything that
+# needs KVM falls back to TCG software emulation — a silent order-of-magnitude
+# slowdown the no-silent-failures policy forbids. Fail the build loudly
+# instead. The marker records the request for the in-guest test suite
+# (tests/test_nested_virt.sh), which asserts the contract in both directions.
+- mode: system
+  script: |
+    #!/bin/bash
+    set -eux -o pipefail
+    NESTED="{{.Param.NESTED_VIRT}}"
+    mkdir -p /etc/vergil
+    printf '%s\n' "${NESTED:-false}" > /etc/vergil/nested-virt.requested
+    if [ "${NESTED}" = "true" ] && [ ! -c /dev/kvm ]; then
+      # tee into provision-error so the failure is named at the start
+      # boundary (issue #130), not just buried in the cloud-init log.
+      printf '%s\n' \
+        "ERROR: nested virtualization was requested (NESTED_VIRT=true) but" \
+        "/dev/kvm is absent in the guest. The host must be macOS 15+ on" \
+        "M3-or-later Apple silicon, and the instance must be created with" \
+        "nestedVirtualization=true (vrg-vm sets both halves together)." \
+        | tee /etc/vergil/provision-error >&2
+      exit 1
+    fi
+
 probes:
 - mode: readiness
-  description: "core tools installed, containerd and buildkit running"
+  description: "provisioning completed, core tools installed, containerd and buildkit running"
   script: |
     #!/bin/bash
     set -eux -o pipefail
     export PATH="$HOME/.local/bin:$PATH"
+    # Readiness means ALL provisioning finished cleanly, not merely "the base
+    # tools answer" (issue #130): the extra-package layer runs after the tools
+    # this probe used to wait for, so a failed profile layer previously
+    # slipped through as a ready VM that silently lacked its declared
+    # toolchain. Gate on cloud-init reaching a clean "done", and bail out
+    # immediately when provisioning has recorded a failure — those tools are
+    # never coming, so spinning out the timeout would only bury the error.
     timeout 1800 bash -c '
-      until command -v gh >/dev/null 2>&1 &&
+      until cloud-init status 2>/dev/null | grep -q "^status: done" &&
+            command -v gh >/dev/null 2>&1 &&
             command -v uv >/dev/null 2>&1 &&
             command -v claude >/dev/null 2>&1 &&
             pgrep -f containerd >/dev/null 2>&1 &&
             pgrep -f buildkitd >/dev/null 2>&1; do
+        if [ -f /etc/vergil/provision-error ]; then exit 1; fi
+        if cloud-init status 2>/dev/null | grep -q "^status: error"; then exit 1; fi
         sleep 5
       done
     '
   hint: |
-    Check provisioning logs: vrg-vm session . -- cat /var/log/cloud-init-output.log
+    Provisioning may have failed. Check the named error first, then the full log:
+      vrg-vm session . -- cat /etc/vergil/provision-error
+      vrg-vm session . -- cat /var/log/cloud-init-output.log
 
 message: |
   vergil-agent VM is ready.

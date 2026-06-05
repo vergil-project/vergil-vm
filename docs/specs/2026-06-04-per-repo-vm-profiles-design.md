@@ -26,6 +26,35 @@
 > implementation touch-point sections below incorporate the revision. Implementation:
 > [vergil-tooling #1412](https://github.com/vergil-project/vergil-tooling/issues/1412).
 
+> **Amended by [vergil-vm #131](https://github.com/vergil-project/vergil-vm/issues/131).**
+> Nested virtualization is **not** a template default — that resolution is
+> **reversed**: it is a per-profile knob, `nested = true` in the repo
+> `[vm]`/`[vm.<role>]` cascade, default off. Verified against a freshly built
+> VM: `/dev/kvm` was absent, and the template cannot deliver "host permitting"
+> (Lima's `nestedVirtualization` is static top-level config, and always-on
+> breaks every build — including base boxes — on pre-M3 / macOS < 15 hosts).
+> Always-on would also hand the KVM API to every sandboxed agent VM, against
+> the service-surface-minimization philosophy (#78). The "Nested
+> virtualization" section, resolved question 5, and the `vergil-vm`
+> touch-points below incorporate the revision.
+
+> **Amended by [vergil-vm #130](https://github.com/vergil-project/vergil-vm/issues/130).**
+> Two corrections from the first real profile build (`mq-cluster-tooling`).
+> **(1) The template owns the `vagrant` binary.** `vagrant` has no apt
+> installation candidate on arm64 from any source (HashiCorp's repo publishes
+> none; noble dropped it post-BUSL), so wherever this document shows vagrant
+> installed via the HashiCorp **apt repo**, read: the template runs
+> `gem install vagrant` when `vagrant_plugins` is non-empty and vagrant is not
+> on PATH — consuming repos declare *plugins* plus build deps (`ruby-dev`,
+> `gcc`, `make`, `pkg-config`) in `packages`, never `vagrant` itself.
+> **(2) Provisioning failures are loud.** Apt installs are transactional, so
+> one uninstallable package silently zeroed the whole extra-package layer
+> while the VM still reported ready. The template now pre-checks every
+> declared package for an installation candidate (failing with the offenders
+> named in `/etc/vergil/provision-error`), and the readiness probe gates on a
+> clean cloud-init `done` — a failed provision now fails `vrg-vm create` at
+> the start boundary instead of shipping a box without its declared toolchain.
+
 **Spans two repositories.** This feature touches both `vergil-vm` (the VM image
 template and its tests) and `vergil-tooling` (the `vrg-vm` CLI, identity parsing,
 Lima driver, and in-VM session resolver). Each touch-point below is tagged with
@@ -508,11 +537,20 @@ apply there?
 ## Nested virtualization
 
 The `mq-cluster-tooling` lab needs `/dev/kvm` inside the VM for its arm64 nodes.
-Nested virtualization is therefore the **template default** (host permitting),
-*not* a per-spec knob — a repo opting *out* of nesting is hard to imagine, and a
-knob nobody flips is dead surface. The open enablement question (macOS + Apple
-Virtualization nested-virt support) is a **template/provisioning** problem to solve
-in `vergil-vm`, not a field in `vergil.toml`.
+Nested virtualization is a **per-profile knob** (revised by #131 — this section
+originally declared it a template default): `nested = true` in the repo
+`[vm]`/`[vm.<role>]` cascade, default off, composed and fingerprinted like any
+other scalar. The template default was rejected because Lima's
+`nestedVirtualization` key is static top-level config — a template cannot
+express "host permitting", so always-on would break every build (including
+base boxes) on pre-M3 / macOS < 15 hosts — and because an unconditional
+default hands the KVM API to every sandboxed agent VM, against the
+service-surface-minimization philosophy (#78). `vrg-vm` applies the knob at
+create time (`--set='.nestedVirtualization = true'` together with the
+template's `NESTED_VIRT` param); the template verifies in-guest that
+`/dev/kvm` actually appeared and fails the build loudly otherwise
+(no-silent-failures — without it, KVM work degrades silently to TCG
+software emulation).
 
 ## Deferred work
 
@@ -583,9 +621,10 @@ in `vergil-vm`, not a field in `vergil.toml`.
 **`vergil-vm` (this repo):**
 
 - `templates/agent.yaml` — a parameterized provisioning step that installs the
-  composed `packages` list and runs the repo `provision` hook; nested-virt enabled
-  by default; write the spec fingerprint marker. The template is tag-versioned, so
-  this is the stable package/provisioning contract.
+  composed `packages` list and runs the repo `provision` hook; a `NESTED_VIRT`
+  param plus in-guest `/dev/kvm` verification for the per-profile nested-virt
+  knob (#131); write the spec fingerprint marker. The template is tag-versioned,
+  so this is the stable package/provisioning contract.
 - `tests/` — assert a dedicated profile VM has an extra package the base lacks;
   assert the fingerprint drift gate flips `NEEDS-REBUILD` when the spec changes;
   assert identity-only `create` is unchanged.
@@ -628,8 +667,9 @@ in `vergil-vm`, not a field in `vergil.toml`.
    `[<id>.<org>.<repo>]` tier (precedence 5, wins); mechanism built, rarely used.
 4. **Name collisions** — solved by fully-qualified, reversible `--`-delimited
    instance names and nested TOML keys; no invented profile names.
-5. **Nested virtualization** — template default (host permitting), not a spec knob;
-   macOS/Apple-Virtualization enablement is a template/provisioning concern.
+5. **Nested virtualization** — originally resolved as a template default (host
+   permitting); **reversed by #131**: a per-profile `nested = true` knob in the
+   `[vm]` cascade, default off. See "Nested virtualization".
 
 ## Pushback resolutions (2026-06-04)
 

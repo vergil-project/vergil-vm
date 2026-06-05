@@ -49,9 +49,12 @@ All tests run inside the VM via `limactl shell`. The test runner
 | `test_base.sh` | Ubuntu 24.04, zsh default shell, passwordless sudo |
 | `test_containerd.sh` | Rootless containerd running, nerdctl can pull and run containers |
 | `test_credentials.sh` | Credential files exist with correct permissions, git HTTPS config |
+| `test_nested_virt.sh` | `/dev/kvm` presence matches the `NESTED_VIRT` build request, in both directions |
+| `test_services.sh` | Service-surface minimization: the mask list is applied, snapd and unattended-upgrades are purged |
 | `test_ssh.sh` | sshd accepts `COLORTERM`, `TERM_PROGRAM`, `TERM_PROGRAM_VERSION` |
 | `test_tools.sh` | All development tools installed (git, gh, uv, node, claude, jq, yq, rg, fzf) |
 | `test_vergil.sh` | vergil-tooling installs via uv, `vrg-*` commands resolve on PATH |
+| `test_vm_profile.sh` | Per-repo profile provisioning ran (spec-fingerprint marker stamped), no provisioning error recorded |
 
 Failed tests are automatically re-run with output displayed for
 debugging. The runner reports a summary at the end:
@@ -59,6 +62,18 @@ debugging. The runner reports a summary at the end:
 ```text
 6 tests, 0 failures
 ```
+
+## End-to-End Scripts
+
+Host-side scripts (they run `limactl`, so they are deliberately not
+named `test_*.sh`) build their own throwaway, parameterized instances.
+`build.sh` runs them all after the in-guest suite:
+
+| Script | Verifies |
+| ------ | -------- |
+| `e2e-vm-profile.sh` | Per-repo profile params end-to-end: apt repo registered, extra package layered, fingerprint stamped |
+| `e2e-nested-virt.sh` | Nested virtualization end-to-end: `nestedVirtualization` + `NESTED_VIRT` set together yields `/dev/kvm` in the guest (requires macOS 15+ on M3-or-later Apple silicon) |
+| `e2e-provision-failure.sh` | An uninstallable extra package fails `limactl start` and is named in `/etc/vergil/provision-error` (slowest step — the failing start spends its full timeout) |
 
 ## Adding a New Test
 

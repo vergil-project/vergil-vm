@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.1.14] - 2026-06-05
+
+### Bug fixes
+
+- loud extra-package failures and template-owned vagrant (#130) (#133)
+
+### Features
+
+- per-profile nested-virtualization knob (#131) (#132)
+
 ## [2.1.13] - 2026-06-05
 
 ### Chores
