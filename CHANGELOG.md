@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.1.11] - 2026-06-05
+
+### Documentation
+
+- design for guaranteeing buildkitd in the VM (#97)
+- tighten buildkit build test after pushback (#97)
+
+### Features
+
+- provision and start rootless buildkit for nerdctl build (#97)
+
+### Testing
+
+- assert buildkit unit and end-to-end nerdctl build (#97)
+
 ## [2.1.10] - 2026-06-05
 
 ### Bug fixes
