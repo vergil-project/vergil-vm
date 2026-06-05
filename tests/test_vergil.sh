@@ -6,7 +6,7 @@ set -euo pipefail
 export PATH="$HOME/.local/bin:$PATH"
 
 # uv tool install works (install from the configured version)
-uv tool install 'vergil-tooling @ git+https://github.com/vergil-project/vergil-tooling@v2.0'
+uv tool install 'vergil-tooling @ git+https://github.com/vergil-project/vergil-tooling@v2.1'
 
 # Core vrg-* commands are available after install
 command -v vrg-commit

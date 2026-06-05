@@ -320,4 +320,4 @@ message: |
     limactl shell {{.Name}} --workdir /projects -- claude
 
   Install vergil-tooling:
-    limactl shell {{.Name}} -- bash -c 'uv tool install "vergil-tooling @ git+https://github.com/vergil-project/vergil-tooling@v2.0"'
+    limactl shell {{.Name}} -- bash -c 'uv tool install "vergil-tooling @ git+https://github.com/vergil-project/vergil-tooling@v2.1"'
