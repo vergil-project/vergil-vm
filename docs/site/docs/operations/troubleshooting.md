@@ -9,8 +9,17 @@ the simplest fix is usually to destroy and recreate:
 vrg-vm rebuild
 ```
 
-If you need to diagnose the cause, check the cloud-init provisioning
-logs inside the VM:
+If you need to diagnose the cause, check the named provisioning error
+first — fatal provisioning failures record a one-line explanation (for
+example, which declared package has no installation candidate on the
+VM's architecture):
+
+```bash
+limactl shell vergil -- cat /etc/vergil/provision-error
+```
+
+For anything it doesn't explain, fall back to the full cloud-init
+provisioning log inside the VM:
 
 ```bash
 limactl shell vergil -- cat /var/log/cloud-init-output.log
@@ -27,17 +36,24 @@ Common causes:
 
 ## Readiness probe timeout
 
-The readiness probe waits up to 30 minutes for `gh`, `uv`, `claude`,
-and containerd. If it times out, rebuild the VM:
+The readiness probe waits up to 30 minutes for provisioning to finish
+cleanly (cloud-init `status: done`) and for `gh`, `uv`, `claude`, and
+containerd. A recorded provisioning failure (`/etc/vergil/provision-error`,
+or cloud-init `status: error`) can never recover, so the probe stops
+waiting for tools that are never coming and the start is guaranteed to
+fail rather than report a ready VM that lacks its declared toolchain.
+If it times out, rebuild the VM:
 
 ```bash
 vrg-vm rebuild
 ```
 
-To diagnose before rebuilding, shell into the VM and check which
-tools are missing:
+To diagnose before rebuilding, check for a recorded provisioning error
+(see above), then shell into the VM and check provisioning state and
+which tools are missing:
 
 ```bash
+limactl shell vergil -- cloud-init status
 limactl shell vergil -- which gh uv claude
 limactl shell vergil -- pgrep -f containerd
 ```

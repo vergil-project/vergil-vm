@@ -38,6 +38,23 @@
 > virtualization" section, resolved question 5, and the `vergil-vm`
 > touch-points below incorporate the revision.
 
+> **Amended by [vergil-vm #130](https://github.com/vergil-project/vergil-vm/issues/130).**
+> Two corrections from the first real profile build (`mq-cluster-tooling`).
+> **(1) The template owns the `vagrant` binary.** `vagrant` has no apt
+> installation candidate on arm64 from any source (HashiCorp's repo publishes
+> none; noble dropped it post-BUSL), so wherever this document shows vagrant
+> installed via the HashiCorp **apt repo**, read: the template runs
+> `gem install vagrant` when `vagrant_plugins` is non-empty and vagrant is not
+> on PATH — consuming repos declare *plugins* plus build deps (`ruby-dev`,
+> `gcc`, `make`, `pkg-config`) in `packages`, never `vagrant` itself.
+> **(2) Provisioning failures are loud.** Apt installs are transactional, so
+> one uninstallable package silently zeroed the whole extra-package layer
+> while the VM still reported ready. The template now pre-checks every
+> declared package for an installation candidate (failing with the offenders
+> named in `/etc/vergil/provision-error`), and the readiness probe gates on a
+> clean cloud-init `done` — a failed provision now fails `vrg-vm create` at
+> the start boundary instead of shipping a box without its declared toolchain.
+
 **Spans two repositories.** This feature touches both `vergil-vm` (the VM image
 template and its tests) and `vergil-tooling` (the `vrg-vm` CLI, identity parsing,
 Lima driver, and in-VM session resolver). Each touch-point below is tagged with
