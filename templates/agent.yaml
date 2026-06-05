@@ -3,13 +3,12 @@
 # Creates an Ubuntu 24.04 VM with rootless containerd, core
 # development tools, and dynamic vergil-tooling installation.
 #
-# The projects mount is required — override HOST_PROJECTS_DIR
-# with --set before creating the VM:
+# The projects mount is required — vrg-vm (vergil-tooling) drives this
+# template and injects HOST_PROJECTS_DIR from the identity config at
+# create time:
 #
-#   limactl create --name=vergil-agent templates/agent.yaml \
-#     --set='.mounts[0].location = "/absolute/path/to/projects"' \
-#     --tty=false
-#   limactl start vergil-agent
+#   vrg-vm create
+#   vrg-vm start
 #
 # Reference:
 #   docs/specs/2026-05-20-identity-vm-isolation-design.md
@@ -27,8 +26,8 @@ base:
 #   memory = "32GiB"
 #   disk = "100GiB"
 #
-# Or at create time:  limactl create ... --set='.cpus = N' --set='.memory = "XGiB"'
-# On a stopped VM:    limactl edit <instance>
+# vrg-vm applies these at create time; apply a changed footprint to an
+# existing VM with `vrg-vm rebuild`.
 cpus: 4
 memory: "4GiB"
 disk: "50GiB"
@@ -350,7 +349,7 @@ probes:
       done
     '
   hint: |
-    Check provisioning logs: limactl shell vergil-agent -- cat /var/log/cloud-init-output.log
+    Check provisioning logs: vrg-vm session . -- cat /var/log/cloud-init-output.log
 
 message: |
   vergil-agent VM is ready.
@@ -358,13 +357,13 @@ message: |
   Projects mount: /projects
 
   Shell into the VM:
-    limactl shell {{.Name}}
+    vrg-vm session . -- bash
 
   Run nerdctl:
-    limactl shell {{.Name}} -- nerdctl run --rm alpine echo hello
+    vrg-vm session . -- nerdctl run --rm alpine echo hello
 
-  Launch Claude Code:
-    limactl shell {{.Name}} --workdir /projects -- claude
+  Launch Claude Code (workspace is relative to the projects dir):
+    vrg-vm session <org>/<repo>
 
-  Install vergil-tooling:
-    limactl shell {{.Name}} -- bash -c 'uv tool install "vergil-tooling @ git+https://github.com/vergil-project/vergil-tooling@v2.1"'
+  Update vergil-tooling:
+    vrg-vm update
