@@ -11,10 +11,10 @@
       
       
       
-        <link rel="prev" href="../v2.1.10/">
+        <link rel="prev" href="../">
       
       
-        <link rel="next" href="../v2.1.8/">
+        <link rel="next" href="../v2.1.9/">
       
       
         
@@ -25,7 +25,7 @@
     
     
       
-        <title>2.1.9 - Vergil VM</title>
+        <title>2.1.10 - Vergil VM</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#release-219-2026-06-04" class="md-skip">
+        <a href="#release-2110-2026-06-05" class="md-skip">
           Skip to content
         </a>
       
@@ -116,7 +116,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              2.1.9
+              2.1.10
             
           </span>
         </div>
@@ -605,34 +605,6 @@
                 
   
   
-  
-  
-    <li class="md-nav__item">
-      <a href="../v2.1.10/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    2.1.10
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
     
   
   
@@ -652,7 +624,7 @@
   <span class="md-ellipsis">
     
   
-    2.1.9
+    2.1.10
   
 
     
@@ -670,7 +642,7 @@
   <span class="md-ellipsis">
     
   
-    2.1.9
+    2.1.10
   
 
     
@@ -696,10 +668,32 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#features" class="md-nav__link">
+  <a href="#bug-fixes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Features
+        Bug fixes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#chores" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chores
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Documentation
       
     </span>
   </a>
@@ -710,6 +704,34 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../v2.1.9/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.9
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -1356,10 +1378,32 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#features" class="md-nav__link">
+  <a href="#bug-fixes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Features
+        Bug fixes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#chores" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chores
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Documentation
       
     </span>
   </a>
@@ -1383,12 +1427,28 @@
 
 
 
-<h1 id="release-219-2026-06-04">Release 2.1.9 (2026-06-04)<a class="headerlink" href="#release-219-2026-06-04" title="Permanent link">&para;</a></h1>
-<h2 id="features">Features<a class="headerlink" href="#features" title="Permanent link">&para;</a></h2>
+<h1 id="release-2110-2026-06-05">Release 2.1.10 (2026-06-05)<a class="headerlink" href="#release-2110-2026-06-05" title="Permanent link">&para;</a></h1>
+<h2 id="bug-fixes">Bug fixes<a class="headerlink" href="#bug-fixes" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>declarative apt_repos + vagrant_plugins provisioning; .vergil/ is scratch (#105)</strong>
-Replace the PROVISION_HOOK param + script execution with declarative APT_REPOS (key + apt source line, registered with signed-by) and VAGRANT_PLUGINS (installed for the Lima user). The template owns the install; repos supply data, never a script. e2e now asserts an apt repo registers + a package layers. .vergil/ added to .gitignore as global scratch. Spec amended. Tracks #105 / vergil-tooling#1381.</li>
+<li><strong>disable Claude Code autoupdater via managed settings (#110)</strong></li>
 </ul>
+<h2 id="chores">Chores<a class="headerlink" href="#chores" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>migrate vergil dependency pins from v2.0 to v2.1</strong>
+Bump the vergil.toml dependency pin, the vergil-tooling host-install refs (templates/agent.yaml, scripts/vrg-vm-init.sh, tests/test_vergil.sh), and the vergil-actions reusable-workflow refs (ci.yml, cd.yml) from v2.0 to v2.1. Historical plan/spec docs are left as point-in-time records. No VERSION bump: develop is ahead of main. Part of the fleet-wide 2.0 -&gt; 2.1 migration (issue #104, playbook vergil-tooling#1371).</li>
+</ul>
+<h2 id="documentation">Documentation<a class="headerlink" href="#documentation" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>amend VM profiles spec: list enumerates instances only (#111)</strong>
+Amend the per-repo VM profiles design per issue #111: vrg-vm list
+enumerates dedicated VMs from existing Lima instances only, classifying
+each present/orphaned via a targeted read of that repo's vergil.toml.
+The projects-tree scan and the not-created SPEC state are dropped —
+cost becomes O(instances) instead of O(checked-out repos), and the
+session/start preflight gate remains the discovery surface for
+declared-but-unbuilt VMs.</li>
+</ul>
+<p>Implementation tracked in vergil-tooling#1412.</p>
 
 
 
