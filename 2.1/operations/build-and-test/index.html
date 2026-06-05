@@ -543,6 +543,8 @@
       
         
       
+        
+      
     
     
     
@@ -595,6 +597,34 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../releases/v2.1.14/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.14
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
               
             
               
@@ -1365,6 +1395,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#end-to-end-scripts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        End-to-End Scripts
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#adding-a-new-test" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1507,6 +1548,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#end-to-end-scripts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        End-to-End Scripts
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#adding-a-new-test" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1584,6 +1636,14 @@ up:</p>
 <td>Credential files exist with correct permissions, git HTTPS config</td>
 </tr>
 <tr>
+<td><code>test_nested_virt.sh</code></td>
+<td><code>/dev/kvm</code> presence matches the <code>NESTED_VIRT</code> build request, in both directions</td>
+</tr>
+<tr>
+<td><code>test_services.sh</code></td>
+<td>Service-surface minimization: the mask list is applied, snapd and unattended-upgrades are purged</td>
+</tr>
+<tr>
 <td><code>test_ssh.sh</code></td>
 <td>sshd accepts <code>COLORTERM</code>, <code>TERM_PROGRAM</code>, <code>TERM_PROGRAM_VERSION</code></td>
 </tr>
@@ -1595,12 +1655,42 @@ up:</p>
 <td><code>test_vergil.sh</code></td>
 <td>vergil-tooling installs via uv, <code>vrg-*</code> commands resolve on PATH</td>
 </tr>
+<tr>
+<td><code>test_vm_profile.sh</code></td>
+<td>Per-repo profile provisioning ran (spec-fingerprint marker stamped), no provisioning error recorded</td>
+</tr>
 </tbody>
 </table>
 <p>Failed tests are automatically re-run with output displayed for
 debugging. The runner reports a summary at the end:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>6 tests, 0 failures
 </code></pre></div>
+<h2 id="end-to-end-scripts">End-to-End Scripts<a class="headerlink" href="#end-to-end-scripts" title="Permanent link">&para;</a></h2>
+<p>Host-side scripts (they run <code>limactl</code>, so they are deliberately not
+named <code>test_*.sh</code>) build their own throwaway, parameterized instances.
+<code>build.sh</code> runs them all after the in-guest suite:</p>
+<table>
+<thead>
+<tr>
+<th>Script</th>
+<th>Verifies</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>e2e-vm-profile.sh</code></td>
+<td>Per-repo profile params end-to-end: apt repo registered, extra package layered, fingerprint stamped</td>
+</tr>
+<tr>
+<td><code>e2e-nested-virt.sh</code></td>
+<td>Nested virtualization end-to-end: <code>nestedVirtualization</code> + <code>NESTED_VIRT</code> set together yields <code>/dev/kvm</code> in the guest (requires macOS 15+ on M3-or-later Apple silicon)</td>
+</tr>
+<tr>
+<td><code>e2e-provision-failure.sh</code></td>
+<td>An uninstallable extra package fails <code>limactl start</code> and is named in <code>/etc/vergil/provision-error</code> (slowest step — the failing start spends its full timeout)</td>
+</tr>
+</tbody>
+</table>
 <h2 id="adding-a-new-test">Adding a New Test<a class="headerlink" href="#adding-a-new-test" title="Permanent link">&para;</a></h2>
 <p>Create a new file matching the <code>test_*.sh</code> pattern in <code>tests/</code>:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="ch">#!/bin/bash</span>
