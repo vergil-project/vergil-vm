@@ -106,7 +106,7 @@ limactl shell "$INSTANCE" -- \
 echo "Installing vergil-tooling in VM..."
 # shellcheck disable=SC2016
 limactl shell "$INSTANCE" -- bash -c \
-    'export PATH="$HOME/.local/bin:$PATH" && uv tool install "vergil-tooling @ git+https://github.com/vergil-project/vergil-tooling@v2.0"' \
+    'export PATH="$HOME/.local/bin:$PATH" && uv tool install "vergil-tooling @ git+https://github.com/vergil-project/vergil-tooling@v2.1"' \
     2>&1 | tail -3
 echo ""
 
