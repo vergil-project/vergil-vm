@@ -264,6 +264,28 @@ provision:
     PROMPT='%n@%m:%~$ '
     ZSHRC
 
+# --- Rootless buildkit for `nerdctl build` (issue #97) ----------------------
+# Lima's nerdctl-full bundle (pulled via `containerd: {user: true}`) already
+# ships buildkitd/buildctl — the gap is that nothing starts the daemon. Use
+# upstream's own containerd-rootless-setuptool.sh to install and start the
+# rootless buildkit systemd --user unit (rootless OCI worker). It exposes the
+# default socket nerdctl auto-probes, so `nerdctl build` needs no
+# --buildkit-host wiring. Lingering is already enabled by Lima's containerd
+# setup, so the unit survives logout and reboot.
+- mode: user
+  script: |
+    #!/bin/bash
+    set -eux -o pipefail
+    export PATH="$HOME/.local/bin:/usr/local/bin:$PATH"
+    export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+
+    # install-buildkit requires the rootless containerd user service to exist
+    # already (Lima provisions it via its own containerd setup). Wait for it
+    # rather than depend on provisioning-step ordering.
+    timeout 300 bash -c 'until systemctl --user is-active --quiet containerd; do sleep 3; done'
+
+    containerd-rootless-setuptool.sh install-buildkit
+
 # --- Per-repo VM profile layering (issue #99, #105) ------------------------
 # Declarative tooling install, owned by this (reviewed) template — repos supply
 # data, never a script. Stamp the fingerprint, register declared apt repos, install
@@ -313,7 +335,7 @@ provision:
 
 probes:
 - mode: readiness
-  description: "core tools installed and containerd running"
+  description: "core tools installed, containerd and buildkit running"
   script: |
     #!/bin/bash
     set -eux -o pipefail
@@ -322,7 +344,8 @@ probes:
       until command -v gh >/dev/null 2>&1 &&
             command -v uv >/dev/null 2>&1 &&
             command -v claude >/dev/null 2>&1 &&
-            pgrep -f containerd >/dev/null 2>&1; do
+            pgrep -f containerd >/dev/null 2>&1 &&
+            pgrep -f buildkitd >/dev/null 2>&1; do
         sleep 5
       done
     '
