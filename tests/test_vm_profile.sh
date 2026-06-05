@@ -16,4 +16,13 @@ if [ ! -f "$MARKER" ]; then
     exit 1
 fi
 
+# A successful build must not have recorded a provisioning failure (issue
+# #130): provisioning steps tee fatal errors into this marker, and the
+# readiness probe fails the start on its presence — so on a box that reached
+# the test suite it must be absent.
+if [ -f /etc/vergil/provision-error ]; then
+    echo "test_vm_profile: FAIL — /etc/vergil/provision-error present: $(cat /etc/vergil/provision-error)" >&2
+    exit 1
+fi
+
 echo "test_vm_profile: all checks passed"

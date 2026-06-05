@@ -75,4 +75,12 @@ echo "=== Running nested-virtualization e2e ==="
 bash "${REPO_ROOT}/tests/e2e-nested-virt.sh"
 echo ""
 
+# Provisioning-failure end-to-end (issue #130): builds its own throwaway
+# instance with an uninstallable extra package and asserts the start fails
+# with the package named in /etc/vergil/provision-error. Slowest step — the
+# failing start spends its full timeout before Lima gives up.
+echo "=== Running provisioning-failure e2e ==="
+bash "${REPO_ROOT}/tests/e2e-provision-failure.sh"
+echo ""
+
 echo "=== Build complete ==="
