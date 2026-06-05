@@ -39,6 +39,24 @@ param:
   APT_REPOS: ""               # ";"-joined "name|key_url|uri|suite|components" records
   VAGRANT_PLUGINS: ""         # space-separated vagrant plugin names
   SPEC_FINGERPRINT: ""        # composed-spec fingerprint, stamped into the VM
+  NESTED_VIRT: ""             # "true" when the composed spec declares nested = true
+
+# Nested virtualization (issue #131) — a per-profile knob, default OFF.
+# `nestedVirtualization` is static top-level Lima/vz config, so a template
+# cannot express "host permitting"; the consuming repo's spec drives it at
+# create time instead. When the composed spec declares `nested = true`,
+# vrg-vm sets BOTH halves together:
+#
+#   --set='.nestedVirtualization = true'
+#   --set='.param.NESTED_VIRT = "true"'
+#
+# The flag makes Lima's vz driver expose virtualization extensions to the
+# guest (so /dev/kvm appears); the param drives the in-guest verification
+# step below, which fails the build loudly if /dev/kvm did not materialize.
+# Requires macOS 15+ on M3-or-later Apple silicon — Lima itself rejects the
+# flag at create/start on unsupported hosts. Default-off keeps the KVM API
+# out of base agent VMs (service-surface minimization, issue #78).
+nestedVirtualization: false
 
 containerd:
   system: false
@@ -331,6 +349,29 @@ provision:
 
     apt-get clean
     rm -rf /var/lib/apt/lists/*
+
+# --- Nested-virtualization verification (issue #131) -------------------------
+# When the composed spec requests nested virt, vrg-vm sets both the top-level
+# `nestedVirtualization` flag and the NESTED_VIRT param (see the param block).
+# Verify the request actually produced /dev/kvm: without it, anything that
+# needs KVM falls back to TCG software emulation — a silent order-of-magnitude
+# slowdown the no-silent-failures policy forbids. Fail the build loudly
+# instead. The marker records the request for the in-guest test suite
+# (tests/test_nested_virt.sh), which asserts the contract in both directions.
+- mode: system
+  script: |
+    #!/bin/bash
+    set -eux -o pipefail
+    NESTED="{{.Param.NESTED_VIRT}}"
+    mkdir -p /etc/vergil
+    printf '%s\n' "${NESTED:-false}" > /etc/vergil/nested-virt.requested
+    if [ "${NESTED}" = "true" ] && [ ! -c /dev/kvm ]; then
+      echo "ERROR: nested virtualization was requested (NESTED_VIRT=true) but" >&2
+      echo "/dev/kvm is absent in the guest. The host must be macOS 15+ on" >&2
+      echo "M3-or-later Apple silicon, and the instance must be created with" >&2
+      echo "nestedVirtualization=true (vrg-vm sets both halves together)." >&2
+      exit 1
+    fi
 
 probes:
 - mode: readiness
