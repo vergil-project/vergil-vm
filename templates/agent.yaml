@@ -384,6 +384,41 @@ provision:
     apt-get clean
     rm -rf /var/lib/apt/lists/*
 
+# --- Libvirt/KVM group membership (issue #137) -------------------------------
+# A profile that declares the libvirt stack leaves the Lima user unable to use
+# it: the `libvirt` group gates the qemu:///system socket (vagrant-libvirt's
+# default URI) and the `kvm` group gates /dev/kvm once nested virt exposes it.
+# The vm-spec schema has no way to express group membership, so derive the
+# intent from what the profile already declares — libvirt-daemon-system in
+# packages, vagrant-libvirt in vagrant_plugins, or nested = true — and add the
+# memberships here. Consuming repos stay declarative; profiles without the
+# libvirt stack get no new memberships. Runs after profile layering so the
+# libvirt group created by the package postinst already exists; a missing
+# group is created rather than silently skipped. The marker records the
+# decision for the in-guest test suite (tests/test_libvirt_groups.sh), which
+# asserts the contract in both directions.
+- mode: system
+  script: |
+    #!/bin/bash
+    set -eux -o pipefail
+    PKGS="{{.Param.EXTRA_PACKAGES}}"
+    PLUGINS="{{.Param.VAGRANT_PLUGINS}}"
+    NESTED="{{.Param.NESTED_VIRT}}"
+
+    WANTED=false
+    case " ${PKGS} " in *" libvirt-daemon-system "*) WANTED=true ;; esac
+    case " ${PLUGINS} " in *" vagrant-libvirt "*) WANTED=true ;; esac
+    if [ "${NESTED}" = "true" ]; then WANTED=true; fi
+
+    mkdir -p /etc/vergil
+    printf '%s\n' "${WANTED}" > /etc/vergil/libvirt-groups.requested
+
+    if [ "${WANTED}" = "true" ]; then
+      getent group libvirt >/dev/null || groupadd --system libvirt
+      getent group kvm >/dev/null || groupadd --system kvm
+      usermod -aG libvirt,kvm "{{.User}}"
+    fi
+
 # --- Nested-virtualization verification (issue #131) -------------------------
 # When the composed spec requests nested virt, vrg-vm sets both the top-level
 # `nestedVirtualization` flag and the NESTED_VIRT param (see the param block).
