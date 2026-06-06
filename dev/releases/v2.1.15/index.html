@@ -11,10 +11,10 @@
       
       
       
-        <link rel="prev" href="../v2.1.13/">
+        <link rel="prev" href="../">
       
       
-        <link rel="next" href="../v2.1.11/">
+        <link rel="next" href="../v2.1.14/">
       
       
         
@@ -25,7 +25,7 @@
     
     
       
-        <title>2.1.12 - Vergil VM</title>
+        <title>2.1.15 - Vergil VM</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#release-2112-2026-06-05" class="md-skip">
+        <a href="#release-2115-2026-06-06" class="md-skip">
           Skip to content
         </a>
       
@@ -116,7 +116,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              2.1.12
+              2.1.15
             
           </span>
         </div>
@@ -615,10 +615,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../v2.1.15/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.15
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -634,6 +661,37 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#bug-fixes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bug fixes
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -699,37 +757,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    2.1.12
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../v2.1.12/" class="md-nav__link">
         
   
   
@@ -745,37 +776,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#ci" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        CI
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1506,10 +1506,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#ci" class="md-nav__link">
+  <a href="#bug-fixes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        CI
+        Bug fixes
       
     </span>
   </a>
@@ -1533,12 +1533,24 @@
 
 
 
-<h1 id="release-2112-2026-06-05">Release 2.1.12 (2026-06-05)<a class="headerlink" href="#release-2112-2026-06-05" title="Permanent link">&para;</a></h1>
-<h2 id="ci">CI<a class="headerlink" href="#ci" title="Permanent link">&para;</a></h2>
+<h1 id="release-2115-2026-06-06">Release 2.1.15 (2026-06-06)<a class="headerlink" href="#release-2115-2026-06-06" title="Permanent link">&para;</a></h1>
+<h2 id="bug-fixes">Bug fixes<a class="headerlink" href="#bug-fixes" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>add build-only docs verification job</strong>
-Add a docs job to ci.yml calling the reusable ci-docs.yml@v2.0 workflow, so docs-build failures surface pre-merge as the docs / docs check context instead of post-merge in CD.</li>
+<li><strong>add Lima user to libvirt/kvm groups for libvirt-stack profiles (#138)</strong>
+A profile that declares the libvirt stack (libvirt-daemon-system in
+packages, vagrant-libvirt in vagrant_plugins, or nested = true) left the
+Lima user outside the libvirt group that gates the qemu:///system socket
+and the kvm group that gates /dev/kvm, so virsh and vagrant-libvirt
+failed with permission denied.</li>
 </ul>
+<p>Derive the intent from the existing params in a new system-mode
+provisioning step after profile layering, stamp the decision into
+/etc/vergil/libvirt-groups.requested, and grant both memberships when
+requested. The vm-spec schema is unchanged, so consuming repos stay
+declarative; profiles without the libvirt stack get no new memberships.</p>
+<p>Assert the contract in both directions in-guest
+(tests/test_libvirt_groups.sh) and exercise the positive path in
+e2e-vm-profile.sh by declaring libvirt-daemon-system.</p>
 
 
 
