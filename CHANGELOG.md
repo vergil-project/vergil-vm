@@ -5,7 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [2.1.16] - 2026-06-07
+## [2.1.17] - 2026-06-08
+
+### Bug fixes
+
+- export VRG_IDENTITY_MODE from ~/.zshenv, not ~/.bashrc (#149)
+
+## [2.1.16] - 2026-06-06
 
 ### Bug fixes
 
