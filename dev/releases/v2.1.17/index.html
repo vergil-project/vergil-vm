@@ -11,28 +11,28 @@
       
       
       
-        <link rel="prev" href="../vm-isolation-model/">
+        <link rel="prev" href="../">
       
       
-        <link rel="next" href="../../../operations/build-and-test/">
+        <link rel="next" href="../v2.1.16/">
       
       
         
       
       
-      <link rel="icon" href="../../../assets/images/favicon.png">
+      <link rel="icon" href="../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
-        <title>Credential Injection - Vergil VM</title>
+        <title>2.1.17 - Vergil VM</title>
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
       
         
-        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -51,9 +51,9 @@
       
     
     
-      <link rel="stylesheet" href="../../../stylesheets/extra.css">
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
     
-    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#credential-injection" class="md-skip">
+        <a href="#release-2117-2026-06-08" class="md-skip">
           Skip to content
         </a>
       
@@ -96,7 +96,7 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../../.." title="Vergil VM" class="md-header__button md-logo" aria-label="Vergil VM" data-md-component="logo">
+    <a href="../.." title="Vergil VM" class="md-header__button md-logo" aria-label="Vergil VM" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -116,7 +116,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Credential Injection
+              2.1.17
             
           </span>
         </div>
@@ -229,7 +229,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../.." class="md-tabs__link">
+      <a href="../.." class="md-tabs__link">
         
   
   
@@ -246,11 +246,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../../../changelog/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../../changelog/" class="md-tabs__link">
           
   
   
@@ -270,7 +272,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../../getting-started/" class="md-tabs__link">
+      <a href="../../getting-started/" class="md-tabs__link">
         
   
   
@@ -289,7 +291,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../../sessions/" class="md-tabs__link">
+      <a href="../../sessions/" class="md-tabs__link">
         
   
   
@@ -306,13 +308,11 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../../" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../../architecture/" class="md-tabs__link">
           
   
   
@@ -334,7 +334,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../../operations/build-and-test/" class="md-tabs__link">
+        <a href="../../operations/build-and-test/" class="md-tabs__link">
           
   
   
@@ -370,7 +370,7 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../../.." title="Vergil VM" class="md-nav__button md-logo" aria-label="Vergil VM" data-md-component="logo">
+    <a href="../.." title="Vergil VM" class="md-nav__button md-logo" aria-label="Vergil VM" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -400,7 +400,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../.." class="md-nav__link">
+      <a href="../.." class="md-nav__link">
         
   
   
@@ -424,8 +424,10 @@
       
   
   
+    
   
   
+  
     
     
       
@@ -437,19 +439,22 @@
     
     
       
+        
+        
+      
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
         
           
-          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
             
   
   
@@ -467,7 +472,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
             
@@ -485,7 +490,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../changelog/" class="md-nav__link">
+      <a href="../../changelog/" class="md-nav__link">
         
   
   
@@ -510,6 +515,8 @@
                 
   
   
+    
+  
   
   
     
@@ -557,18 +564,21 @@
       
       
         
+          
+          
+        
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2" checked>
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../../releases/" class="md-nav__link ">
+            <a href="../" class="md-nav__link ">
               
   
   
@@ -586,13 +596,13 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_2_2" id="__nav_2_2_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_2_2" id="__nav_2_2_label" tabindex="">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_2_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_2_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_2_2">
             <span class="md-nav__icon md-icon"></span>
             
@@ -609,10 +619,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../../releases/v2.1.17/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.17
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -628,6 +665,37 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#bug-fixes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bug fixes
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -640,7 +708,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../releases/v2.1.16/" class="md-nav__link">
+      <a href="../v2.1.16/" class="md-nav__link">
         
   
   
@@ -668,7 +736,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../releases/v2.1.15/" class="md-nav__link">
+      <a href="../v2.1.15/" class="md-nav__link">
         
   
   
@@ -696,7 +764,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../releases/v2.1.14/" class="md-nav__link">
+      <a href="../v2.1.14/" class="md-nav__link">
         
   
   
@@ -724,7 +792,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../releases/v2.1.13/" class="md-nav__link">
+      <a href="../v2.1.13/" class="md-nav__link">
         
   
   
@@ -752,7 +820,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../releases/v2.1.12/" class="md-nav__link">
+      <a href="../v2.1.12/" class="md-nav__link">
         
   
   
@@ -780,7 +848,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../releases/v2.1.11/" class="md-nav__link">
+      <a href="../v2.1.11/" class="md-nav__link">
         
   
   
@@ -808,7 +876,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../releases/v2.1.10/" class="md-nav__link">
+      <a href="../v2.1.10/" class="md-nav__link">
         
   
   
@@ -836,7 +904,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../releases/v2.1.9/" class="md-nav__link">
+      <a href="../v2.1.9/" class="md-nav__link">
         
   
   
@@ -864,7 +932,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../releases/v2.1.8/" class="md-nav__link">
+      <a href="../v2.1.8/" class="md-nav__link">
         
   
   
@@ -892,7 +960,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../releases/v2.1.7/" class="md-nav__link">
+      <a href="../v2.1.7/" class="md-nav__link">
         
   
   
@@ -920,7 +988,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../releases/v2.1.6/" class="md-nav__link">
+      <a href="../v2.1.6/" class="md-nav__link">
         
   
   
@@ -948,7 +1016,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../releases/v2.1.5/" class="md-nav__link">
+      <a href="../v2.1.5/" class="md-nav__link">
         
   
   
@@ -976,7 +1044,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../releases/v2.1.4/" class="md-nav__link">
+      <a href="../v2.1.4/" class="md-nav__link">
         
   
   
@@ -1004,7 +1072,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../releases/v2.1.3/" class="md-nav__link">
+      <a href="../v2.1.3/" class="md-nav__link">
         
   
   
@@ -1032,7 +1100,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../releases/v2.1.0/" class="md-nav__link">
+      <a href="../v2.1.0/" class="md-nav__link">
         
   
   
@@ -1075,7 +1143,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../getting-started/" class="md-nav__link">
+      <a href="../../getting-started/" class="md-nav__link">
         
   
   
@@ -1102,7 +1170,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../sessions/" class="md-nav__link">
+      <a href="../../sessions/" class="md-nav__link">
         
   
   
@@ -1126,8 +1194,6 @@
       
   
   
-    
-  
   
   
     
@@ -1143,23 +1209,20 @@
     
     
       
-        
-        
-      
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../" class="md-nav__link ">
+            <a href="../../architecture/" class="md-nav__link ">
               
   
   
@@ -1177,13 +1240,13 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="">
+              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1200,10 +1263,8 @@
                 
   
   
-    
   
   
-  
     
     
       
@@ -1217,20 +1278,17 @@
       
       
         
-          
-          
-        
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_2" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_2" >
         
           
-          <label class="md-nav__link" for="__nav_5_2" id="__nav_5_2_label" tabindex="">
+          <label class="md-nav__link" for="__nav_5_2" id="__nav_5_2_label" tabindex="0">
             
   
   
@@ -1248,7 +1306,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_2_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_2_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_5_2">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1266,7 +1324,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../vm-isolation-model/" class="md-nav__link">
+      <a href="../../architecture/decisions/vm-isolation-model/" class="md-nav__link">
         
   
   
@@ -1291,37 +1349,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Credential Injection
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../architecture/decisions/credential-injection/" class="md-nav__link">
         
   
   
@@ -1337,98 +1368,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#problem" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Problem
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#key-decisions" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Key Decisions
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Key Decisions">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#post-creation-injection" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Post-creation injection
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#github-app-authentication" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        GitHub App authentication
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#dynamic-token-acquisition" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Dynamic token acquisition
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#https-only-git-access" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        HTTPS-only git access
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1516,7 +1455,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../operations/build-and-test/" class="md-nav__link">
+      <a href="../../operations/build-and-test/" class="md-nav__link">
         
   
   
@@ -1544,7 +1483,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../operations/resource-tuning/" class="md-nav__link">
+      <a href="../../operations/resource-tuning/" class="md-nav__link">
         
   
   
@@ -1572,7 +1511,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../operations/troubleshooting/" class="md-nav__link">
+      <a href="../../operations/troubleshooting/" class="md-nav__link">
         
   
   
@@ -1627,74 +1566,13 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#problem" class="md-nav__link">
+  <a href="#bug-fixes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Problem
+        Bug fixes
       
     </span>
   </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#key-decisions" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Key Decisions
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Key Decisions">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#post-creation-injection" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Post-creation injection
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#github-app-authentication" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        GitHub App authentication
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#dynamic-token-acquisition" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Dynamic token acquisition
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#https-only-git-access" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        HTTPS-only git access
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -1715,75 +1593,12 @@
 
 
 
-<h1 id="credential-injection">Credential Injection<a class="headerlink" href="#credential-injection" title="Permanent link">&para;</a></h1>
-<p>Agent VMs receive GitHub App credentials after creation through a
-separate initialization step rather than having credentials baked into
-the VM template. This page documents the rationale.</p>
-<p><strong>Implemented:</strong> May 2026 |
-<strong>Issue:</strong> <a href="https://github.com/vergil-project/vergil-vm/issues/1">#1</a></p>
-<h2 id="problem">Problem<a class="headerlink" href="#problem" title="Permanent link">&para;</a></h2>
-<p>Agents need GitHub credentials to clone repositories, push commits, and
-interact with the GitHub API. The credential strategy must support
-multiple identities (each with their own GitHub App) while keeping the
-VM template generic.</p>
-<h2 id="key-decisions">Key Decisions<a class="headerlink" href="#key-decisions" title="Permanent link">&para;</a></h2>
-<h3 id="post-creation-injection">Post-creation injection<a class="headerlink" href="#post-creation-injection" title="Permanent link">&para;</a></h3>
-<p>Credentials are injected into the VM after it is created and started,
-via <code>scripts/vrg-vm-init.sh</code>, rather than being embedded in the Lima
-template.</p>
-<p><strong>Why?</strong> The VM template defines the execution environment — it is the
-same for all identities. Credentials are identity-specific. Separating
-these concerns means:</p>
+<h1 id="release-2117-2026-06-08">Release 2.1.17 (2026-06-08)<a class="headerlink" href="#release-2117-2026-06-08" title="Permanent link">&para;</a></h1>
+<h2 id="bug-fixes">Bug fixes<a class="headerlink" href="#bug-fixes" title="Permanent link">&para;</a></h2>
 <ul>
-<li>One template serves all identities. No template-per-identity
-  proliferation.</li>
-<li>The template can be version-controlled and shared without exposing
-  secrets.</li>
-<li>Credential rotation does not require VM recreation — re-run
-  <code>vrg-vm-init.sh</code> with updated credentials.</li>
+<li><strong>export VRG_IDENTITY_MODE from ~/.zshenv, not ~/.bashrc (#149)</strong>
+The identity-mode env var was only exported from ~/.bashrc, which this VM's zsh shell never sources — so VRG_IDENTITY_MODE was absent in live zsh sessions even when the identity is correctly resolved. Bake a guarded export into ~/.zshenv (the zsh hook sourced for every invocation) at image-build time; the file-presence guard keeps it inert until the per-VM mode file is injected. Assert the on-disk mechanism in test_base.sh.</li>
 </ul>
-<p><strong>Trade-off:</strong> VM creation is a two-step process (create + initialize)
-rather than a single command. This is acceptable because VM creation is
-infrequent — typically once per identity.</p>
-<h3 id="github-app-authentication">GitHub App authentication<a class="headerlink" href="#github-app-authentication" title="Permanent link">&para;</a></h3>
-<p>Each identity maps to a GitHub App rather than using OAuth tokens or
-personal access tokens (PATs).</p>
-<p><strong>Why?</strong></p>
-<ul>
-<li><strong>Fine-grained permissions</strong> — each App is scoped to specific
-  repositories and operations.</li>
-<li><strong>Short-lived tokens</strong> — installation tokens expire after one hour,
-  limiting the blast radius of a compromised token.</li>
-<li><strong>Identity separation</strong> — each App has its own identity in git
-  history, making it clear which agent made which commit.</li>
-<li><strong>No user session dependency</strong> — Apps authenticate independently of
-  any human user's OAuth session.</li>
-</ul>
-<p><strong>Trade-off:</strong> GitHub Apps require initial setup (creating the App,
-generating a private key, installing it on target repositories). This
-one-time cost is justified by the operational benefits.</p>
-<h3 id="dynamic-token-acquisition">Dynamic token acquisition<a class="headerlink" href="#dynamic-token-acquisition" title="Permanent link">&para;</a></h3>
-<p>The raw App private key is stored in the VM, but tokens are minted on
-demand by <code>vrg-git</code> and <code>vrg-gh</code> (vergil-tooling wrappers) rather than
-being pre-generated and cached.</p>
-<p><strong>Why?</strong> Installation tokens have a one-hour lifetime. Generating them
-at the moment of use ensures they are always fresh. The wrappers handle
-token minting transparently — the agent uses <code>vrg-git push</code> as if it
-were a normal git command.</p>
-<p><strong>Trade-off:</strong> Every git/gh operation incurs a token-minting API call.
-The latency is negligible (~100ms) and GitHub's rate limits for App
-token creation are generous (5000/hour).</p>
-<h3 id="https-only-git-access">HTTPS-only git access<a class="headerlink" href="#https-only-git-access" title="Permanent link">&para;</a></h3>
-<p>The VM is configured with a global git URL rewrite:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>url.&quot;https://github.com/&quot;.insteadOf &quot;git@github.com:&quot;
-</code></pre></div>
-<p>This forces all git operations through HTTPS, where the credential
-helper can inject the installation token.</p>
-<p><strong>Why?</strong> SSH-based git access would require deploying SSH keys per
-identity. HTTPS with the token credential helper is simpler and
-leverages the existing App authentication flow. SSH agent forwarding
-is explicitly disabled (<code>forwardAgent: false</code>) to prevent credential
-leakage from the host.</p>
 
 
 
@@ -1839,10 +1654,10 @@ leakage from the host.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.tabs", "navigation.sections", "navigation.indexes", "navigation.top", "content.code.copy", "search.highlight", "search.suggest"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.indexes", "navigation.top", "content.code.copy", "search.highlight", "search.suggest"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
       
     
   </body>
