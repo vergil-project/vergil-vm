@@ -281,6 +281,24 @@ provision:
     PROMPT='%n@%m:%~$ '
     ZSHRC
 
+    # Identity-mode export for zsh (issue #148). VRG_IDENTITY_MODE is the
+    # fast Layer-1 signal that the identity-aware wrappers (vrg-git, vrg-gh,
+    # vrg-submit-pr) and skill preflights read; the durable source of truth
+    # is ~/.config/vergil/identity-mode, written per-VM at credential-
+    # injection time. Export it from ~/.zshenv, NOT ~/.bashrc: this VM's
+    # shell is zsh (chsh above), which never sources ~/.bashrc, and ~/.zshenv
+    # is the one zsh hook sourced for EVERY invocation — interactive,
+    # non-interactive, login, and non-login — so a `zsh -c` command sees the
+    # same value an interactive session does. The file-presence guard makes
+    # the line a no-op until the mode file is injected, so it is safe to bake
+    # into the uncredentialed image. The truly shell-less path (Claude Code
+    # spawned directly by sshd, SHLVL=0) sources no rc at all; there identity
+    # must come from the resolver's mode-file fallback
+    # (vergil_tooling.lib.identity_mode.current_mode()), never this env var.
+    cat > "$HOME/.zshenv" << 'ZSHENV'
+    [ -f ~/.config/vergil/identity-mode ] && export VRG_IDENTITY_MODE="$(cat ~/.config/vergil/identity-mode)"
+    ZSHENV
+
 # --- Rootless buildkit for `nerdctl build` (issue #97) ----------------------
 # Lima's nerdctl-full bundle (pulled via `containerd: {user: true}`) already
 # ships buildkitd/buildctl — the gap is that nothing starts the daemon. Use
