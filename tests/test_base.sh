@@ -23,4 +23,15 @@ sudo -n true
 # Defense-in-depth env-file line still present (issue #85).
 grep -q '^DISABLE_AUTOUPDATER=1$' /etc/environment
 
+# Identity-mode export lives in ~/.zshenv, not ~/.bashrc (issue #148). zsh is
+# the VM shell and never sources ~/.bashrc, so the old bashrc-only export was
+# invisible to every zsh session; ~/.zshenv is the hook sourced for every zsh
+# invocation. We assert the on-disk mechanism (same rationale as the
+# DISABLE_AUTOUPDATER checks above), not the runtime env var, which depends on
+# whether this particular test shell sourced an rc file. The export is guarded
+# on the mode file so it is present in the image even before credentials are
+# injected.
+grep -q 'VRG_IDENTITY_MODE' "$HOME/.zshenv"
+grep -q '\.config/vergil/identity-mode' "$HOME/.zshenv"
+
 echo "test_base: all checks passed"
