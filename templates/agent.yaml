@@ -277,8 +277,20 @@ provision:
     HISTSIZE=10000
     SAVEHIST=10000
 
-    # Prompt: user@hostname:dir$
-    PROMPT='%n@%m:%~$ '
+    # Prompt: identity-colored role + working dir on two lines (issue #153).
+    # Only the role token is colored, so "which agent am I" is a pre-attentive
+    # glance. Identity comes from VRG_IDENTITY_MODE (set in ~/.zshenv before
+    # this runs); it never changes within a VM, so we bake the value/color at
+    # init rather than re-evaluating per prompt. The path stays literal (%~
+    # shows a tilde only when genuinely in $HOME).
+    case "${VRG_IDENTITY_MODE:-}" in
+      user)  _vrg_role='user';        _vrg_role_c='%F{green}' ;;
+      audit) _vrg_role='audit';       _vrg_role_c='%F{214}'   ;;  # amber
+      admin) _vrg_role='admin';       _vrg_role_c='%F{red}'   ;;  # future
+      *)     _vrg_role='no-identity'; _vrg_role_c='%F{red}'   ;;  # uncredentialed
+    esac
+    PROMPT="[role=${_vrg_role_c}${_vrg_role}%f %~]
+%% "
     ZSHRC
 
     # Identity-mode export for zsh (issue #148). VRG_IDENTITY_MODE is the
