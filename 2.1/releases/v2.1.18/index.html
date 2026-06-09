@@ -11,10 +11,10 @@
       
       
       
-        <link rel="prev" href="../v2.1.4/">
+        <link rel="prev" href="../">
       
       
-        <link rel="next" href="../v2.1.0/">
+        <link rel="next" href="../v2.1.17/">
       
       
         
@@ -25,7 +25,7 @@
     
     
       
-        <title>2.1.3 - Vergil VM</title>
+        <title>2.1.18 - Vergil VM</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#release-213-2026-05-28" class="md-skip">
+        <a href="#release-2118-2026-06-09" class="md-skip">
           Skip to content
         </a>
       
@@ -116,7 +116,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              2.1.3
+              2.1.18
             
           </span>
         </div>
@@ -621,10 +621,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../v2.1.18/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.18
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -640,6 +667,37 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Features
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1041,19 +1099,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../v2.1.3/" class="md-nav__link">
         
   
   
@@ -1069,7 +1118,6 @@
   
 
       </a>
-      
     </li>
   
 
@@ -1541,6 +1589,25 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Features
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -1556,7 +1623,12 @@
 
 
 
-<h1 id="release-213-2026-05-28">Release 2.1.3 (2026-05-28)<a class="headerlink" href="#release-213-2026-05-28" title="Permanent link">&para;</a></h1>
+<h1 id="release-2118-2026-06-09">Release 2.1.18 (2026-06-09)<a class="headerlink" href="#release-2118-2026-06-09" title="Permanent link">&para;</a></h1>
+<h2 id="features">Features<a class="headerlink" href="#features" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>identity-aware two-line interactive prompt (#154)</strong>
+Replace the user@host:dir prompt with a two-line format that derives the agent role from VRG_IDENTITY_MODE and colors only the role token (user=green, audit=amber, admin/uncredentialed=red), so a human logging in can tell which agent identity they are at a glance. The host/user macros were uninteresting metadata and the org/project they encoded is already shown in the path. The role value and color are baked at .zshrc init since identity is fixed per VM. Adds a test_base.sh assertion on the on-disk .zshrc prompt block. Ref #153.</li>
+</ul>
 
 
 
