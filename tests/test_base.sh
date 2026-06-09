@@ -34,4 +34,12 @@ grep -q '^DISABLE_AUTOUPDATER=1$' /etc/environment
 grep -q 'VRG_IDENTITY_MODE' "$HOME/.zshenv"
 grep -q '\.config/vergil/identity-mode' "$HOME/.zshenv"
 
+# Interactive prompt is identity-aware (issue #153). The prompt derives the
+# agent role from VRG_IDENTITY_MODE and colors only the role token, so a human
+# logging in can tell user/audit apart at a glance. Assert the on-disk .zshrc
+# mechanism, consistent with the checks above. Use fixed-string grep so the
+# brackets/braces are matched literally.
+grep -qF 'case "${VRG_IDENTITY_MODE:-}" in' "$HOME/.zshrc"
+grep -qF 'PROMPT="[role=' "$HOME/.zshrc"
+
 echo "test_base: all checks passed"
