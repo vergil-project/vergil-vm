@@ -11,10 +11,10 @@
       
       
       
-        <link rel="prev" href="../v2.1.13/">
+        <link rel="prev" href="../">
       
       
-        <link rel="next" href="../v2.1.11/">
+        <link rel="next" href="../v2.1.19/">
       
       
         
@@ -25,7 +25,7 @@
     
     
       
-        <title>2.1.12 - Vergil VM</title>
+        <title>2.1.20 - Vergil VM</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#release-2112-2026-06-05" class="md-skip">
+        <a href="#release-2120-2026-06-11" class="md-skip">
           Skip to content
         </a>
       
@@ -116,7 +116,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              2.1.12
+              2.1.20
             
           </span>
         </div>
@@ -625,10 +625,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../v2.1.20/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.20
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -644,6 +671,37 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#bug-fixes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bug fixes
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -849,37 +907,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    2.1.12
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../v2.1.12/" class="md-nav__link">
         
   
   
@@ -895,37 +926,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#ci" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        CI
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1656,10 +1656,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#ci" class="md-nav__link">
+  <a href="#bug-fixes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        CI
+        Bug fixes
       
     </span>
   </a>
@@ -1683,12 +1683,13 @@
 
 
 
-<h1 id="release-2112-2026-06-05">Release 2.1.12 (2026-06-05)<a class="headerlink" href="#release-2112-2026-06-05" title="Permanent link">&para;</a></h1>
-<h2 id="ci">CI<a class="headerlink" href="#ci" title="Permanent link">&para;</a></h2>
+<h1 id="release-2120-2026-06-11">Release 2.1.20 (2026-06-11)<a class="headerlink" href="#release-2120-2026-06-11" title="Permanent link">&para;</a></h1>
+<h2 id="bug-fixes">Bug fixes<a class="headerlink" href="#bug-fixes" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>add build-only docs verification job</strong>
-Add a docs job to ci.yml calling the reusable ci-docs.yml@v2.0 workflow, so docs-build failures surface pre-merge as the docs / docs check context instead of post-merge in CD.</li>
+<li><strong>keep two-line prompt on one YAML line; use $ prompt char (#163) (#164)</strong>
+The two-line interactive prompt added in #154 wrote its continuation line at column 0 inside the .zshrc heredoc, which lives in a provision script block scalar. A column-0 line terminates the YAML block scalar and the leading % then reads as a YAML directive, so limactl create failed to unmarshal the template and every vrg-vm rebuild on v2.1 broke.</li>
 </ul>
+<p>Keep the newline inside the zsh string on a single, properly-indented line via $'\n' concatenation, and switch the prompt char from %% to $ (no special meaning in YAML or zsh prompt expansion; $ is the Bourne-family convention for a non-root user, which these user/audit/admin shells are). The full agent.yaml now parses as valid YAML and the prompt still renders as [role=<role> <path>] over a second line. Ref #163.</p>
 
 
 
