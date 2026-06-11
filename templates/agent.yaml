@@ -289,8 +289,7 @@ provision:
       admin) _vrg_role='admin';       _vrg_role_c='%F{red}'   ;;  # future
       *)     _vrg_role='no-identity'; _vrg_role_c='%F{red}'   ;;  # uncredentialed
     esac
-    PROMPT="[role=${_vrg_role_c}${_vrg_role}%f %~]
-%% "
+    PROMPT="[role=${_vrg_role_c}${_vrg_role}%f %~]"$'\n'"$ "
     ZSHRC
 
     # Identity-mode export for zsh (issue #148). VRG_IDENTITY_MODE is the
