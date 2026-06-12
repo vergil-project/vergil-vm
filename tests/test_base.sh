@@ -42,4 +42,22 @@ grep -q '\.config/vergil/identity-mode' "$HOME/.zshenv"
 grep -qF 'case "${VRG_IDENTITY_MODE:-}" in' "$HOME/.zshrc"
 grep -qF 'PROMPT="[role=' "$HOME/.zshrc"
 
+# Generic interactive zsh defaults (issue #171). Assert the on-disk .zshrc
+# mechanism, consistent with the prompt/identity checks above — these options
+# only take effect in interactive zsh sessions, so checking this test shell's
+# runtime state would be init-path dependent and prove nothing. The two
+# papercuts that motivated the collection (Ctrl-D no longer dropping the shell;
+# `#` honored on the command line) plus the silenced bell are the load-bearing
+# assertions; the rest of the collection is spot-checked.
+grep -q 'setopt IGNORE_EOF' "$HOME/.zshrc"
+grep -q 'setopt INTERACTIVE_COMMENTS' "$HOME/.zshrc"
+grep -q 'unsetopt BEEP' "$HOME/.zshrc"
+grep -q 'setopt EXTENDED_HISTORY' "$HOME/.zshrc"
+grep -q 'setopt HIST_IGNORE_SPACE' "$HOME/.zshrc"
+grep -q 'setopt AUTO_PUSHD' "$HOME/.zshrc"
+grep -q 'setopt EXTENDED_GLOB' "$HOME/.zshrc"
+# The deferred personal-override hook must NOT be present: a ~/.zshrc.local
+# source line implies a managed file the VM has no mechanism to maintain.
+! grep -q 'zshrc.local' "$HOME/.zshrc"
+
 echo "test_base: all checks passed"
