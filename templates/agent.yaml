@@ -272,11 +272,62 @@ provision:
     export DISABLE_AUTOUPDATER=1
 
     autoload -Uz compinit && compinit
+
+    # Generic, least-surprise interactive defaults (issue #171). Only
+    # conventional settings a normal zsh user would expect — no idiosyncratic
+    # or behavior-changing options. These affect interactive human sessions
+    # only; agents run shell-less or via non-interactive bash and never source
+    # this file. No ~/.zshrc.local override hook: the VM has no mechanism to
+    # provision such a file, so a dangling `source` line would only invite
+    # manual editing of VM contents. A personal-customization story is deferred
+    # until there is a real host-side provisioning mechanism to pair with it.
+
+    # --- Interactive papercuts ---
+    # IGNORE_EOF: Ctrl-D no longer drops the shell mid-session; type `exit` to
+    #   leave. zsh's option is all-or-nothing (no bash-style press-N-times
+    #   count). INTERACTIVE_COMMENTS: honor `#` on the command line so pasting a
+    #   command with a trailing `# comment` runs instead of erroring. BEEP: kill
+    #   the terminal bell.
+    setopt IGNORE_EOF
+    setopt INTERACTIVE_COMMENTS
+    unsetopt BEEP
+
+    # --- History ---
     setopt HIST_IGNORE_DUPS
     setopt SHARE_HISTORY
+    setopt EXTENDED_HISTORY        # timestamp each entry
+    setopt HIST_IGNORE_SPACE      # leading-space commands stay out of history
+    setopt HIST_REDUCE_BLANKS     # normalize whitespace before saving
+    setopt HIST_FIND_NO_DUPS      # history search skips repeats
     HISTFILE="$HOME/.zsh_history"
-    HISTSIZE=10000
-    SAVEHIST=10000
+    HISTSIZE=50000
+    SAVEHIST=50000
+
+    # --- Navigation ---
+    # cd maintains a directory stack; invisible unless you reach for `cd -<TAB>`.
+    setopt AUTO_PUSHD PUSHD_IGNORE_DUPS PUSHD_SILENT
+
+    # --- Completion ---
+    setopt COMPLETE_IN_WORD
+    zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'   # case-insensitive
+    zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"     # colored menu
+
+    # --- Globbing & misc ---
+    setopt EXTENDED_GLOB
+    export LESS=-R
+    alias ls='ls --color=auto'    # benign: adds color, changes no semantics
+
+    # --- Keybinding correctness over SSH/tmux ---
+    # Home / End / Delete / Ctrl-Left / Ctrl-Right are frequently broken under
+    # SSH and tmux. Bind the common escape sequences explicitly; this fixes
+    # broken keys rather than changing behavior.
+    bindkey '^[[H'    beginning-of-line       # Home
+    bindkey '^[[F'    end-of-line             # End
+    bindkey '^[[1~'   beginning-of-line       # Home (rxvt/linux console)
+    bindkey '^[[4~'   end-of-line             # End  (rxvt/linux console)
+    bindkey '^[[3~'   delete-char             # Delete
+    bindkey '^[[1;5C' forward-word            # Ctrl-Right
+    bindkey '^[[1;5D' backward-word           # Ctrl-Left
 
     # Prompt: identity-colored role + working dir on two lines (issue #153).
     # Only the role token is colored, so "which agent am I" is a pre-attentive
