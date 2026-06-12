@@ -68,6 +68,13 @@ echo "=== Running per-repo VM profile e2e ==="
 bash "${REPO_ROOT}/tests/e2e-vm-profile.sh"
 echo ""
 
+# Port-forward relay end-to-end (issue #170): builds its own throwaway instance
+# declaring a port_forwards entry to an in-VM test listener and asserts the
+# relay binds 0.0.0.0 and the Mac's localhost reaches it via Lima auto-forward.
+echo "=== Running port-forward relay e2e ==="
+bash "${REPO_ROOT}/tests/e2e-port-forwards.sh"
+echo ""
+
 # Nested-virtualization end-to-end (issue #131): builds its own throwaway
 # instance with nestedVirtualization enabled and asserts /dev/kvm appears.
 # Requires macOS 15+ on M3-or-later Apple silicon; fails loudly otherwise.

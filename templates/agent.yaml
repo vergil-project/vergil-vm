@@ -40,6 +40,7 @@ param:
   VAGRANT_PLUGINS: ""         # space-separated vagrant plugin names
   SPEC_FINGERPRINT: ""        # composed-spec fingerprint, stamped into the VM
   NESTED_VIRT: ""             # "true" when the composed spec declares nested = true
+  PORT_FORWARDS: ""           # ";"-joined "port|host:port" relay records (issue #170)
 
 # Nested virtualization (issue #131) — a per-profile knob, default OFF.
 # `nestedVirtualization` is static top-level Lima/vz config, so a template
@@ -474,6 +475,80 @@ provision:
         | tee /etc/vergil/provision-error >&2
       exit 1
     fi
+
+# --- Port-forward relays (issue #170) ---------------------------------------
+# Relay a VM port to a service reachable from inside the Lima VM — typically a
+# nested libvirt guest (e.g. an observability Grafana at 10.50.0.2:3000) that
+# Lima's own port-forwarding cannot see: Lima's guest agent only observes ports
+# in the Lima VM's network namespace, not a nested guest's. The fix is a relay
+# that listens on the Lima VM's 0.0.0.0:<port> and proxies to <to>; that
+# 0.0.0.0 bind is what Lima auto-forwards to the Mac's localhost (verified —
+# limactl binds 127.0.0.1:<port> on the host with no config change or restart).
+#
+# Each entry becomes a socket-activated systemd-socket-proxyd relay (ships with
+# systemd — no extra packages): a .socket binding 0.0.0.0:<port> and a matching
+# .service that proxies accepted connections to <to>. systemd keeps it alive
+# across reboots; a down guest yields a passed-through connection refusal
+# (transparent). PORT_FORWARDS is ";"-joined "port|host:port" records; empty
+# leaves the base box untouched. The marker records the declared-forward count
+# for the in-guest test suite (tests/test_port_forwards.sh).
+- mode: system
+  script: |
+    #!/bin/bash
+    set -eux -o pipefail
+
+    mkdir -p /etc/vergil
+    FORWARDS="{{.Param.PORT_FORWARDS}}"
+
+    if [ -z "$FORWARDS" ]; then
+      printf '0\n' > /etc/vergil/port-forwards.requested
+      exit 0
+    fi
+
+    IFS=';' read -ra _fwds <<< "$FORWARDS"
+    printf '%s\n' "${#_fwds[@]}" > /etc/vergil/port-forwards.requested
+
+    for _f in "${_fwds[@]}"; do
+      IFS='|' read -r _port _to <<< "$_f"
+      if ! printf '%s' "$_port" | grep -qE '^[0-9]+$' || [ -z "$_to" ]; then
+        printf 'ERROR: malformed port_forwards entry "%s" — expected "<port>|<host:port>" (declared in the repo vergil.toml [vm] port_forwards)\n' \
+          "$_f" | tee /etc/vergil/provision-error >&2
+        exit 1
+      fi
+      _unit="vergil-portforward-${_port}"
+      # Heredoc bodies/terminators sit at the YAML block-scalar base indent (4
+      # spaces) — flush-left after dedent — so the unit-file lines and the
+      # terminators land at column 0 in the executed script (cf. the
+      # managed-settings.json heredoc above). A less-indented line would end the
+      # YAML block; a non-column-0 terminator would never close the heredoc.
+      cat > "/etc/systemd/system/${_unit}.socket" <<SOCKET
+    [Unit]
+    Description=Vergil port-forward relay socket (:${_port} -> ${_to})
+
+    [Socket]
+    ListenStream=0.0.0.0:${_port}
+
+    [Install]
+    WantedBy=sockets.target
+    SOCKET
+      cat > "/etc/systemd/system/${_unit}.service" <<SERVICE
+    [Unit]
+    Description=Vergil port-forward relay (:${_port} -> ${_to})
+    Requires=${_unit}.socket
+    After=${_unit}.socket
+
+    [Service]
+    ExecStart=/usr/lib/systemd/systemd-socket-proxyd ${_to}
+    SERVICE
+      # Enable (boot persistence) and start now. A port already in use makes
+      # the socket start fail; set -e then aborts the build loudly (issue #130)
+      # rather than shipping a VM whose declared forward never bound.
+      if ! systemctl enable --now "${_unit}.socket"; then
+        printf 'ERROR: port-forward relay for :%s failed to start (port already in use?)\n' \
+          "$_port" | tee /etc/vergil/provision-error >&2
+        exit 1
+      fi
+    done
 
 probes:
 - mode: readiness
