@@ -40,6 +40,7 @@ param:
   VAGRANT_PLUGINS: ""         # space-separated vagrant plugin names
   SPEC_FINGERPRINT: ""        # composed-spec fingerprint, stamped into the VM
   NESTED_VIRT: ""             # "true" when the composed spec declares nested = true
+  PORT_FORWARDS: ""           # ";"-joined "port|host:port" relay records (issue #170)
 
 # Nested virtualization (issue #131) — a per-profile knob, default OFF.
 # `nestedVirtualization` is static top-level Lima/vz config, so a template
@@ -271,11 +272,62 @@ provision:
     export DISABLE_AUTOUPDATER=1
 
     autoload -Uz compinit && compinit
+
+    # Generic, least-surprise interactive defaults (issue #171). Only
+    # conventional settings a normal zsh user would expect — no idiosyncratic
+    # or behavior-changing options. These affect interactive human sessions
+    # only; agents run shell-less or via non-interactive bash and never source
+    # this file. No ~/.zshrc.local override hook: the VM has no mechanism to
+    # provision such a file, so a dangling `source` line would only invite
+    # manual editing of VM contents. A personal-customization story is deferred
+    # until there is a real host-side provisioning mechanism to pair with it.
+
+    # --- Interactive papercuts ---
+    # IGNORE_EOF: Ctrl-D no longer drops the shell mid-session; type `exit` to
+    #   leave. zsh's option is all-or-nothing (no bash-style press-N-times
+    #   count). INTERACTIVE_COMMENTS: honor `#` on the command line so pasting a
+    #   command with a trailing `# comment` runs instead of erroring. BEEP: kill
+    #   the terminal bell.
+    setopt IGNORE_EOF
+    setopt INTERACTIVE_COMMENTS
+    unsetopt BEEP
+
+    # --- History ---
     setopt HIST_IGNORE_DUPS
     setopt SHARE_HISTORY
+    setopt EXTENDED_HISTORY        # timestamp each entry
+    setopt HIST_IGNORE_SPACE      # leading-space commands stay out of history
+    setopt HIST_REDUCE_BLANKS     # normalize whitespace before saving
+    setopt HIST_FIND_NO_DUPS      # history search skips repeats
     HISTFILE="$HOME/.zsh_history"
-    HISTSIZE=10000
-    SAVEHIST=10000
+    HISTSIZE=50000
+    SAVEHIST=50000
+
+    # --- Navigation ---
+    # cd maintains a directory stack; invisible unless you reach for `cd -<TAB>`.
+    setopt AUTO_PUSHD PUSHD_IGNORE_DUPS PUSHD_SILENT
+
+    # --- Completion ---
+    setopt COMPLETE_IN_WORD
+    zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'   # case-insensitive
+    zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"     # colored menu
+
+    # --- Globbing & misc ---
+    setopt EXTENDED_GLOB
+    export LESS=-R
+    alias ls='ls --color=auto'    # benign: adds color, changes no semantics
+
+    # --- Keybinding correctness over SSH/tmux ---
+    # Home / End / Delete / Ctrl-Left / Ctrl-Right are frequently broken under
+    # SSH and tmux. Bind the common escape sequences explicitly; this fixes
+    # broken keys rather than changing behavior.
+    bindkey '^[[H'    beginning-of-line       # Home
+    bindkey '^[[F'    end-of-line             # End
+    bindkey '^[[1~'   beginning-of-line       # Home (rxvt/linux console)
+    bindkey '^[[4~'   end-of-line             # End  (rxvt/linux console)
+    bindkey '^[[3~'   delete-char             # Delete
+    bindkey '^[[1;5C' forward-word            # Ctrl-Right
+    bindkey '^[[1;5D' backward-word           # Ctrl-Left
 
     # Prompt: identity-colored role + working dir on two lines (issue #153).
     # Only the role token is colored, so "which agent am I" is a pre-attentive
@@ -474,6 +526,80 @@ provision:
         | tee /etc/vergil/provision-error >&2
       exit 1
     fi
+
+# --- Port-forward relays (issue #170) ---------------------------------------
+# Relay a VM port to a service reachable from inside the Lima VM — typically a
+# nested libvirt guest (e.g. an observability Grafana at 10.50.0.2:3000) that
+# Lima's own port-forwarding cannot see: Lima's guest agent only observes ports
+# in the Lima VM's network namespace, not a nested guest's. The fix is a relay
+# that listens on the Lima VM's 0.0.0.0:<port> and proxies to <to>; that
+# 0.0.0.0 bind is what Lima auto-forwards to the Mac's localhost (verified —
+# limactl binds 127.0.0.1:<port> on the host with no config change or restart).
+#
+# Each entry becomes a socket-activated systemd-socket-proxyd relay (ships with
+# systemd — no extra packages): a .socket binding 0.0.0.0:<port> and a matching
+# .service that proxies accepted connections to <to>. systemd keeps it alive
+# across reboots; a down guest yields a passed-through connection refusal
+# (transparent). PORT_FORWARDS is ";"-joined "port|host:port" records; empty
+# leaves the base box untouched. The marker records the declared-forward count
+# for the in-guest test suite (tests/test_port_forwards.sh).
+- mode: system
+  script: |
+    #!/bin/bash
+    set -eux -o pipefail
+
+    mkdir -p /etc/vergil
+    FORWARDS="{{.Param.PORT_FORWARDS}}"
+
+    if [ -z "$FORWARDS" ]; then
+      printf '0\n' > /etc/vergil/port-forwards.requested
+      exit 0
+    fi
+
+    IFS=';' read -ra _fwds <<< "$FORWARDS"
+    printf '%s\n' "${#_fwds[@]}" > /etc/vergil/port-forwards.requested
+
+    for _f in "${_fwds[@]}"; do
+      IFS='|' read -r _port _to <<< "$_f"
+      if ! printf '%s' "$_port" | grep -qE '^[0-9]+$' || [ -z "$_to" ]; then
+        printf 'ERROR: malformed port_forwards entry "%s" — expected "<port>|<host:port>" (declared in the repo vergil.toml [vm] port_forwards)\n' \
+          "$_f" | tee /etc/vergil/provision-error >&2
+        exit 1
+      fi
+      _unit="vergil-portforward-${_port}"
+      # Heredoc bodies/terminators sit at the YAML block-scalar base indent (4
+      # spaces) — flush-left after dedent — so the unit-file lines and the
+      # terminators land at column 0 in the executed script (cf. the
+      # managed-settings.json heredoc above). A less-indented line would end the
+      # YAML block; a non-column-0 terminator would never close the heredoc.
+      cat > "/etc/systemd/system/${_unit}.socket" <<SOCKET
+    [Unit]
+    Description=Vergil port-forward relay socket (:${_port} -> ${_to})
+
+    [Socket]
+    ListenStream=0.0.0.0:${_port}
+
+    [Install]
+    WantedBy=sockets.target
+    SOCKET
+      cat > "/etc/systemd/system/${_unit}.service" <<SERVICE
+    [Unit]
+    Description=Vergil port-forward relay (:${_port} -> ${_to})
+    Requires=${_unit}.socket
+    After=${_unit}.socket
+
+    [Service]
+    ExecStart=/usr/lib/systemd/systemd-socket-proxyd ${_to}
+    SERVICE
+      # Enable (boot persistence) and start now. A port already in use makes
+      # the socket start fail; set -e then aborts the build loudly (issue #130)
+      # rather than shipping a VM whose declared forward never bound.
+      if ! systemctl enable --now "${_unit}.socket"; then
+        printf 'ERROR: port-forward relay for :%s failed to start (port already in use?)\n' \
+          "$_port" | tee /etc/vergil/provision-error >&2
+        exit 1
+      fi
+    done
 
 probes:
 - mode: readiness

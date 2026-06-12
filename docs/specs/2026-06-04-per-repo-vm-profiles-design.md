@@ -55,6 +55,24 @@
 > clean cloud-init `done` — a failed provision now fails `vrg-vm create` at
 > the start boundary instead of shipping a box without its declared toolchain.
 
+> **Amended by [vergil-vm #170](https://github.com/vergil-project/vergil-vm/issues/170).**
+> Adds a `port_forwards` knob to the `[vm.*]` cascade (sibling of `nested` /
+> `vagrant_plugins`): a list of `{ port, to }` entries that relay a VM port to a
+> service reachable from *inside* the Lima VM — typically a nested libvirt guest
+> Lima's own port-forwarding cannot see, because its guest agent only observes
+> ports in the Lima VM's own network namespace. Per entry the `vergil-vm`
+> template provisions a socket-activated `systemd-socket-proxyd` relay (ships
+> with systemd — no extra packages): a `.socket` binding `0.0.0.0:<port>` and a
+> `.service` proxying to `<to>`. The `0.0.0.0` bind is what Lima auto-forwards
+> to the Mac's `127.0.0.1:<port>` — verified, with no Lima config change or
+> restart. The cross-repo param contract is `PORT_FORWARDS`: a `";"`-joined list
+> of `"<port>|<host:port>"` records that `vrg-vm` composes from the profile and
+> injects via `--set=.param.PORT_FORWARDS`; empty leaves the base box untouched.
+> The boundary is the point: the forward declaration lives in the consuming
+> repo's `vergil.toml` and the relay in the Vergil VM, so the consuming app/
+> tooling stays Vergil-free — on a native Linux host there is no profile and the
+> service is reached directly.
+
 **Spans two repositories.** This feature touches both `vergil-vm` (the VM image
 template and its tests) and `vergil-tooling` (the `vrg-vm` CLI, identity parsing,
 Lima driver, and in-VM session resolver). Each touch-point below is tagged with
