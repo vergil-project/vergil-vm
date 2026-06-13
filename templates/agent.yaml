@@ -94,6 +94,16 @@ provision:
     set -eux -o pipefail
     export DEBIAN_FRONTEND=noninteractive
 
+    # First-boot-only (#177). Lima re-runs every provisioning script on every
+    # boot (cloud-init per-boot runparts — Lima rotates the instance-id each
+    # boot to force it). These steps are network-bound; re-running them on a
+    # reboot is slow (a full apt re-download, npm, curl installers) and, under
+    # `set -e`, turns any transient apt/npm/registry timeout into a failed
+    # boot. This box is rebuilt from scratch, never updated in place, so
+    # install once and skip thereafter. The marker is stamped LAST (end of this
+    # block), so a failed install never leaves the box marked provisioned.
+    if [ -f /etc/vergil/provisioned.base ]; then exit 0; fi
+
     apt-get update
     apt-get install -y --no-install-recommends \
       curl wget unzip \
@@ -132,8 +142,17 @@ provision:
     AcceptEnv COLORTERM TERM_PROGRAM TERM_PROGRAM_VERSION
     SSHD_CONF
 
+    # Keep the apt lists cache — do NOT `rm -rf /var/lib/apt/lists/*`. This box
+    # is rebuilt from scratch, so per-boot cache hygiene buys nothing; the wipe
+    # only forced the next boot's apt-get update to re-fetch ~46 MB of indices
+    # (#177). apt-get clean (downloaded .debs) stays — it never forces a
+    # re-download of the lists.
     apt-get clean
-    rm -rf /var/lib/apt/lists/*
+
+    # Stamp the first-boot completion marker LAST, only after every install
+    # above succeeded (#177).
+    mkdir -p /etc/vergil
+    touch /etc/vergil/provisioned.base
 
 # PATH for non-login, non-interactive shells. uv and uv-installed vergil
 # tooling land in ~/.local/bin, which Claude Code's non-interactive shells
@@ -256,6 +275,13 @@ provision:
     #!/bin/bash
     set -eux -o pipefail
 
+    # First-boot-only (#177). Lima's user-phase provisioning, re-run on every
+    # boot; skip the network install and the rc-file writes once done. The
+    # marker is user-owned — this phase runs as the Lima user and /etc/vergil
+    # is root-owned — and is stamped LAST so a partial run (uv installed but
+    # rc files not yet written) re-runs on the next boot.
+    if [ -f "$HOME/.vergil/provisioned.uv" ]; then exit 0; fi
+
     # Install uv (Python package manager)
     curl -LsSf https://astral.sh/uv/install.sh | sh
     export PATH="$HOME/.local/bin:$PATH"
@@ -362,6 +388,11 @@ provision:
     [ -f ~/.config/vergil/identity-mode ] && export VRG_IDENTITY_MODE="$(cat ~/.config/vergil/identity-mode)"
     ZSHENV
 
+    # First-boot completion marker for this user-phase step (#177), stamped
+    # LAST so a partial run re-runs next boot.
+    mkdir -p "$HOME/.vergil"
+    touch "$HOME/.vergil/provisioned.uv"
+
 # --- Rootless buildkit for `nerdctl build` (issue #97) ----------------------
 # Lima's nerdctl-full bundle (pulled via `containerd: {user: true}`) already
 # ships buildkitd/buildctl — the gap is that nothing starts the daemon. Use
@@ -394,6 +425,11 @@ provision:
     #!/bin/bash
     set -eux -o pipefail
     export DEBIAN_FRONTEND=noninteractive
+
+    # First-boot-only (#177): skip the per-repo profile install (apt repos,
+    # extra packages, vagrant plugins) on every boot after the first. Marker
+    # stamped LAST so a failed install re-runs next boot.
+    if [ -f /etc/vergil/provisioned.profile ]; then exit 0; fi
 
     mkdir -p /etc/vergil
     printf '%s\n' '{{.Param.SPEC_FINGERPRINT}}' > /etc/vergil/vm-spec.fingerprint
@@ -492,8 +528,13 @@ provision:
       done
     fi
 
+    # Keep the apt lists cache (see the base-tools step): the wipe only forced
+    # a full re-download on the next boot (#177).
     apt-get clean
-    rm -rf /var/lib/apt/lists/*
+
+    # Stamp the profile completion marker LAST, only after the install above
+    # succeeded (#177).
+    touch /etc/vergil/provisioned.profile
 
 # --- Libvirt/KVM group membership (issue #137) -------------------------------
 # A profile that declares the libvirt stack leaves the Lima user unable to use
