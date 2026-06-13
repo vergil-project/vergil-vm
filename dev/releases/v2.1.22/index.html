@@ -11,10 +11,10 @@
       
       
       
-        <link rel="prev" href="../v2.1.8/">
+        <link rel="prev" href="../">
       
       
-        <link rel="next" href="../v2.1.6/">
+        <link rel="next" href="../v2.1.21/">
       
       
         
@@ -25,7 +25,7 @@
     
     
       
-        <title>2.1.7 - Vergil VM</title>
+        <title>2.1.22 - Vergil VM</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#release-217-2026-06-01" class="md-skip">
+        <a href="#release-2122-2026-06-13" class="md-skip">
           Skip to content
         </a>
       
@@ -116,7 +116,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              2.1.7
+              2.1.22
             
           </span>
         </div>
@@ -629,10 +629,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../v2.1.22/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.22
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -648,6 +675,37 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#bug-fixes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bug fixes
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1049,37 +1107,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    2.1.7
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../v2.1.7/" class="md-nav__link">
         
   
   
@@ -1095,37 +1126,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#bug-fixes" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Bug fixes
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1743,14 +1743,14 @@
 
 
 
-<h1 id="release-217-2026-06-01">Release 2.1.7 (2026-06-01)<a class="headerlink" href="#release-217-2026-06-01" title="Permanent link">&para;</a></h1>
+<h1 id="release-2122-2026-06-13">Release 2.1.22 (2026-06-13)<a class="headerlink" href="#release-2122-2026-06-13" title="Permanent link">&para;</a></h1>
 <h2 id="bug-fixes">Bug fixes<a class="headerlink" href="#bug-fixes" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>disable Claude Code background autoupdater (#85)</strong>
-The npm global Claude Code prefix is root-owned, but agent sessions run as the non-root Lima user, so the background autoupdater can't write to it and spams "Auto-update failed: no write permission to npm prefix" in the status line every session.</li>
+<li><strong>make vagrant plugin install idempotent and non-fatal (#177) (#178)</strong>
+vagrant plugin install contacts gems.hashicorp.com on every invocation, even when the plugin is already present. The plugin step is a cloud-init per-boot runpart under set -e, so the unconditional install re-hit the gem source on the cycle-ssh reboot; a transient timeout there flipped cloud-init to status: error and failed the whole rebuild.</li>
 </ul>
-<p>Set DISABLE_AUTOUPDATER=1 image-wide: in /etc/environment (PAM applies it to all login sessions, including SSH and limactl shell) and as a complement in the Lima user's ~/.zshrc for interactive shells. Using DISABLE_AUTOUPDATER rather than DISABLE_UPDATES keeps a deliberate 'claude update' working; only the failing background attempt is suppressed. Version control of Claude Code stays deliberate via rebuild.</p>
-<p>Add a test_base.sh assertion that the var is set in the VM.</p>
+<p>Guard the install with a local 'vagrant plugin list' check so the steady state (plugin already installed) makes zero network calls — the cycle-ssh reboot no longer touches the network. A genuine first install now retries 3x with backoff and is verified afterward: a still-absent plugin aborts loudly via provision-error, but a transient blip refreshing an already-present plugin is a no-op.</p>
+<p>Covers the two vergil-vm gates in #177; the cycle-ssh resilience and triage-message gates live in vergil-tooling.</p>
 
 
 
