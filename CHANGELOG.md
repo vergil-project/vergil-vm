@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.1.22] - 2026-06-13
+
+### Bug fixes
+
+- make vagrant plugin install idempotent and non-fatal (#177) (#178)
+
 ## [2.1.21] - 2026-06-12
 
 ### Features
