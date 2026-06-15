@@ -109,7 +109,14 @@ provision:
       curl wget unzip \
       jq ripgrep fzf \
       zsh vim tmux nano \
-      python3 python3-venv
+      python3 python3-venv \
+      chrony
+
+    # chrony — reliable, suspend-resilient time + NTP authority for nested
+    # libvirt guests (issue #187). Installed here (network-bound, first-boot
+    # only); its config + the timesyncd handoff + optional NTP serving are
+    # written by the dedicated time block near the end of provisioning, which
+    # runs every boot so the serving decision tracks the current profile.
 
     # GitHub CLI
     curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
@@ -211,10 +218,12 @@ provision:
 #
 # KEEP (load-bearing — never mask): ssh, lima-* (limactl access),
 #   containerd (user), cloud-init* (per-boot logind fix #74), dbus, journald,
-#   logind, resolved, timesyncd, networkd/networkd-dispatcher, serial-getty,
+#   logind, resolved, networkd/networkd-dispatcher, serial-getty,
 #   polkit, apparmor, LVM/dm/storage (lvm2-monitor, dm-event, *.lvmpolld),
 #   grub/boot/console units, and ALL netfilter*/iptables*/nftables*/ufw units
 #   (reserved for egress filtering — vergil-tooling #901).
+# NOTE: systemd-timesyncd is NOT kept — chrony owns the clock now (issue #187),
+#   and the time block below masks timesyncd so the two daemons never duel.
 # MASK: VMware tools (open-vm-tools, vgauth — wrong hypervisor), iSCSI
 #   (open-iscsi, iscsid), multipathd, udisks2, ModemManager, apport*, Ubuntu
 #   Pro (ubuntu-advantage, ua-*), sysstat*, fwupd-refresh, mdadm (mdcheck*,
@@ -570,6 +579,103 @@ provision:
       getent group kvm >/dev/null || groupadd --system kvm
       usermod -aG libvirt,kvm "{{.User}}"
     fi
+
+# --- Time: chrony with makestep + NTP authority for nested guests (issue #187)
+# Two jobs, both platform-general (every nested-virt repo hits the same skew):
+#
+#   1. Clock reliability (ALL VMs). chrony with `makestep 1.0 -1` STEPS the
+#      clock for any offset over a second, at ANY time — not just the first few
+#      updates, and not timesyncd's slow slew that never catches a large jump.
+#      A laptop suspend can leave the VM's wall clock hours off long after boot
+#      (stock timesyncd sat on a ~65-min skew while still reporting synced);
+#      chrony steps it back within a poll on resume. Safe for clustered guests:
+#      corosync's membership timers and DRBD use CLOCK_MONOTONIC, unaffected by
+#      a wall-clock step — only log timestamps move, which is exactly the thing
+#      we want corrected. timesyncd is masked here so the two never duel.
+#
+#   2. NTP authority for nested libvirt guests (VMs that declare the libvirt
+#      stack — same signal as the group block above). chrony SERVES NTP on the
+#      private ranges libvirt host-only networks draw from, so a nested guest
+#      pointed at the host's gateway address on its bridge (e.g. 10.50.0.1)
+#      syncs to it. `local stratum 10` keeps the host a valid source even fully
+#      offline, so the nested fleet stays internally consistent with no upstream
+#      — agreement across the fleet matters more than absolute accuracy. Gated,
+#      not default-on: a base VM with no nested guests must not open the NTP
+#      server port (service-surface minimization, #78). The `allow` ranges are
+#      generic (the template never sees a VM's declared subnets), which is why
+#      this stays entirely template-side — no per-VM rendering in tooling.
+#
+# Runs every boot (not first-boot-only): the install is in the base block, but
+# the config + serving decision are cheap and must track the current profile,
+# like the group/nested/port-forward blocks. The marker records the serving
+# decision for the in-guest test suite (tests/test_time.sh).
+- mode: system
+  script: |
+    #!/bin/bash
+    set -eux -o pipefail
+    PKGS="{{.Param.EXTRA_PACKAGES}}"
+    PLUGINS="{{.Param.VAGRANT_PLUGINS}}"
+    NESTED="{{.Param.NESTED_VIRT}}"
+
+    # Same libvirt-stack signal the group block derives: a VM that hosts nested
+    # libvirt guests is the natural NTP authority for them.
+    SERVE=false
+    case " ${PKGS} " in *" libvirt-daemon-system "*) SERVE=true ;; esac
+    case " ${PLUGINS} " in *" vagrant-libvirt "*) SERVE=true ;; esac
+    if [ "${NESTED}" = "true" ]; then SERVE=true; fi
+
+    mkdir -p /etc/vergil
+    printf '%s\n' "${SERVE}" > /etc/vergil/ntp-server.requested
+
+    # Base config — clock reliability for every Vergil VM. Heredoc body and
+    # terminator sit at the YAML block base indent (flush-left after dedent), so
+    # they land at column 0 in the executed script (cf. the heredocs above).
+    cat > /etc/chrony/chrony.conf <<'CHRONY'
+    # Managed by vergil-vm (issue #187) — do not hand-edit; rebuild the VM.
+
+    # Upstream discipline when reachable (Ubuntu's default pool; no new trust).
+    pool ntp.ubuntu.com iburst maxsources 4
+
+    # Step the clock for any offset over 1s, at ANY time (the -1 = unlimited,
+    # not just the first N updates) so a post-boot suspend jump self-corrects.
+    makestep 1.0 -1
+
+    # Hold a good estimate between syncs / across reboots, and discipline the RTC.
+    driftfile /var/lib/chrony/chrony.drift
+    rtcsync
+    CHRONY
+
+    # NTP authority for nested guests — appended only for libvirt-stack VMs.
+    if [ "${SERVE}" = "true" ]; then
+      cat >> /etc/chrony/chrony.conf <<'CHRONY_SERVE'
+
+    # Serve NTP to nested libvirt guests. The template can't know a VM's
+    # declared host-only subnets, so allow the RFC1918 ranges those networks
+    # draw from; the host's gateway address on each bridge is a valid server
+    # once chrony listens here. Time-only — no other surface is exposed.
+    allow 10.0.0.0/8
+    allow 172.16.0.0/12
+    allow 192.168.0.0/16
+
+    # Stay a valid source with no upstream reachable, so the nested fleet stays
+    # internally consistent offline (agreement beats absolute accuracy).
+    local stratum 10
+    CHRONY_SERVE
+    fi
+
+    # chrony owns the clock — mask AND stop timesyncd so the two daemons never
+    # duel (acceptance #4). `--now` closes the window where a running timesyncd
+    # lingers after masking. `mask` is not allowed to fail silently: timesyncd
+    # ships on this image, so a failure is a real anomaly — let set -e abort.
+    if systemctl cat systemd-timesyncd.service >/dev/null 2>&1; then
+      systemctl mask --now systemd-timesyncd.service
+    fi
+
+    # Apply the config. enable --now is idempotent; restart picks up a changed
+    # conf on later boots. A failure here means the box would ship with the
+    # clock undisciplined — abort loudly rather than ship it (no silent failure).
+    systemctl enable chrony
+    systemctl restart chrony
 
 # --- Nested-virtualization verification (issue #131) -------------------------
 # When the composed spec requests nested virt, vrg-vm sets both the top-level
