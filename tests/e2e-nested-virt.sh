@@ -37,4 +37,15 @@ limactl start "${INSTANCE}" --tty=false \
 limactl shell "${INSTANCE}" -- test -c /dev/kvm \
   || fail "/dev/kvm absent in nested-virt guest"
 
-echo "PASS: nested virtualization end-to-end (/dev/kvm present)"
+# A nested-virt VM is the NTP authority for its guests (issue #187): nested =
+# true drives the serving decision, so chrony must serve the host-only fleet.
+# The base-build (serve=false) path is covered by the in-guest tests/test_time.sh;
+# only this nested build exercises the serve=true branch end-to-end.
+limactl shell "${INSTANCE}" -- grep -q '^true' /etc/vergil/ntp-server.requested \
+  || fail "nested-virt VM did not request NTP serving"
+limactl shell "${INSTANCE}" -- grep -Eq '^[[:space:]]*allow[[:space:]]' /etc/chrony/chrony.conf \
+  || fail "nested-virt VM serves no NTP (no allow lines in chrony.conf)"
+limactl shell "${INSTANCE}" -- grep -Eq '^[[:space:]]*local[[:space:]]+stratum[[:space:]]' /etc/chrony/chrony.conf \
+  || fail "nested-virt VM lacks the offline 'local stratum' fallback"
+
+echo "PASS: nested virtualization end-to-end (/dev/kvm present, chrony serves NTP)"

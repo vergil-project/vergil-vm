@@ -1,0 +1,18 @@
+feat(time): chrony + makestep, serve NTP to nested guests (#187)
+
+Run chrony with `makestep 1.0 -1` on every Vergil VM so a laptop-suspend
+clock jump steps back into sync on the next poll, instead of timesyncd's
+slow slew that never catches a large offset (it sat on a ~65-min skew
+while reporting synced). timesyncd is masked so the two never duel.
+
+VMs that declare the libvirt stack (the same signal the group block uses)
+additionally serve NTP to their nested guests: chrony `allow`s the RFC1918
+ranges host-only networks draw from, with a `local stratum 10` fallback so
+the fleet stays internally consistent offline. Gated, not default-on, so a
+base VM never opens the NTP server port (#78).
+
+Entirely template-side: the serving config is generic, so no per-VM
+rendering in vergil-tooling is needed. Adds tests/test_time.sh (base path)
+and a serve=true assertion to e2e-nested-virt.sh; design in docs/specs.
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
