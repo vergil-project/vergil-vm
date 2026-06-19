@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.1.25] - 2026-06-19
+
+### Bug fixes
+
+- recover relay on its own when the downstream restarts (#193)
+
+### Chores
+
+- pin vergil-marketplace ref to v2.1 (#195)
+
 ## [2.1.24] - 2026-06-15
 
 ### Features
