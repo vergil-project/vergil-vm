@@ -34,7 +34,21 @@ rationale.
 ## Provisioning Pipeline
 
 The VM template (`templates/agent.yaml`) defines a four-stage pipeline
-that runs when a VM is created:
+that runs when a VM is created.
+
+> **`templates/agent.yaml` is generated — do not hand-edit it.** The
+> provisioning logic lives in backend-neutral scripts under
+> `templates/provision/*.sh`, and `scripts/build-template.sh` assembles
+> `agent.yaml` from the hand-authored skeleton `templates/agent.yaml.skel`
+> (which owns the Lima structure plus a `mode: boot` writer for
+> `/etc/vergil/provision.env`) by expanding `@@INCLUDE@@` markers. Edit the
+> provision scripts or the skeleton, run `scripts/build-template.sh`, and
+> commit the regenerated `agent.yaml`; `scripts/build.sh` and
+> `tests/check-template-generation.sh` fail on a stale copy. The scripts read
+> their inputs from `provision.env` (shell variables, not Lima `{{…}}`
+> templating) and each declares a `# vergil-provision:` context/cadence
+> manifest, so the **same** scripts drive the off-platform cloud-init backend
+> (vergil-vm #199).
 
 ### Stage 1: System provisioning (root)
 
