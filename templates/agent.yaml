@@ -717,7 +717,9 @@ provision:
 # systemd — no extra packages): a .socket binding 0.0.0.0:<port> and a matching
 # .service that proxies accepted connections to <to>. systemd keeps it alive
 # across reboots; a down guest yields a passed-through connection refusal
-# (transparent). PORT_FORWARDS is ";"-joined "port|host:port" records; empty
+# (transparent). The .service is hardened to survive a downstream restart on
+# its own (Restart=always + no start-rate-limit) — see the unit comments and
+# issue #192. PORT_FORWARDS is ";"-joined "port|host:port" records; empty
 # leaves the base box untouched. The marker records the declared-forward count
 # for the in-guest test suite (tests/test_port_forwards.sh).
 - mode: system
@@ -764,9 +766,26 @@ provision:
     Description=Vergil port-forward relay (:${_port} -> ${_to})
     Requires=${_unit}.socket
     After=${_unit}.socket
+    # Never let a restart storm wedge the relay (issue #192). When the
+    # downstream restarts it can RST the proxyd's held connections and the
+    # proxyd exits; Restart= below then respawns it. Under a rapid bounce
+    # those respawns would trip systemd's default start-rate-limiter, fail
+    # the unit AND cascade-fail the .socket, and the relay then accepts but
+    # resets every new connection until a manual restart — the exact symptom
+    # reported. Disabling the limiter keeps respawns unbounded so the relay
+    # always recovers on its own.
+    StartLimitIntervalSec=0
 
     [Service]
     ExecStart=/usr/lib/systemd/systemd-socket-proxyd ${_to}
+    # systemd-socket-proxyd is a single long-lived process that inherits the
+    # listening socket (its only supported mode — Accept=no; it cannot proxy
+    # a per-connection accepted socket, so the Accept=yes idiom resets every
+    # connection). Respawn it whenever it exits so a downstream restart that
+    # kills it is recovered transparently; the replacement re-inherits the
+    # socket and re-dials the current downstream per new connection.
+    Restart=always
+    RestartSec=100ms
     SERVICE
       # Enable (boot persistence) and start now. A port already in use makes
       # the socket start fail; set -e then aborts the build loudly (issue #130)
