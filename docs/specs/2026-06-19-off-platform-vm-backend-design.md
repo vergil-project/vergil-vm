@@ -127,23 +127,28 @@ backend  = "off-platform"     # default "local" (Lima). Only this value changes 
 provider = "gcp"              # "gcp" | "azure" — selects the OpenTofu module
 region   = "us-central1"      # provider-native region string
 instance = "n2-standard-16"   # provider-native nested-virt-capable instance type
-volume   = "300GiB"           # persistent volume size (created once, reused)
+volume   = "300GiB"           # PERSISTENT volume size (created once, reused, outlives the VM)
 nested   = true               # already exists (#131); means /dev/kvm here too
 
 cpus     = 12                 # still meaningful as a request / sanity floor;
 memory   = "64GiB"            #   the instance type is authoritative on cloud
-disk     = "300GiB"
 packages = [ ... ]            # composed + provisioned identically to Lima
 ```
+
+`disk` (the #99 Lima single-disk knob) is **not** a cloud knob and is ignored on the
+off-platform path: on cloud there are two disks with opposite lifecycles — the
+ephemeral VM's **boot disk** (a fixed module default, e.g. 30 GiB, dies with the VM)
+and the **persistent `volume`** (declared above, outlives the VM). Only `volume` is
+author-facing.
 
 ### Composition rules (extending #99, not replacing)
 
 - `backend`/`provider`/`region`/`instance`/`volume` are **scalars, last-wins** through
   the same precedence chain (built-in → identity → `[vm]` → `[vm.<identity>]` →
   `identities.toml` host-override).
-- `backend = "off-platform"` **requires** `provider`, `region`, and `instance`. The
-  composer hard-errors — loudly, no silent default — if any is missing.
-  `volume` defaults to `disk` when unset.
+- `backend = "off-platform"` **requires** `provider`, `region`, `instance`, and
+  `volume`. The composer hard-errors — loudly, no silent default — if any is missing.
+  (`volume` no longer falls back to `disk`; `disk` is not a cloud knob.)
 - `packages`, `nested`, `port_forwards`, `stale_days`, and the fingerprint all behave
   exactly as #99/#131/#170 define. Because provisioning is backend-neutral (see
   "Provisioning extraction"), a profile's package list yields the *same* box on Lima
@@ -179,52 +184,85 @@ deliverable.
 
 ### What moves
 
-The provisioning logic currently embedded in `agent.yaml`'s `provision:` blocks — apt
-base packages, gh/Node/Claude Code/yq installs, the
-`EXTRA_PACKAGES`/`APT_REPOS`/`VAGRANT_PLUGINS` layering, nested-virt `/dev/kvm`
-verification, service-surface minimization (#78), the chrony/time block (#187), the
-`managed-settings.json` autoupdater disable (#85/#110), and the fingerprint marker —
-is extracted into ordered, idempotent shell scripts under `templates/provision/`:
+The provisioning logic currently embedded in `agent.yaml`'s `provision:` blocks is
+extracted into idempotent shell scripts under `templates/provision/`. But the
+extraction is **not** a flat ordered list of root scripts, and modeling it that way
+(an earlier draft of this spec did) is wrong: `agent.yaml`'s provisioning spans four
+Lima execution modes — `boot` (pre-everything: the logind VT fix), `system` (root),
+`user` (runs as the unprivileged Lima user — this is where **uv + vergil-tooling**
+install, and the `.zshenv`/identity-prompt setup live), and `readiness` (Lima's
+"VM is ready" gate) — and it carries **three independent first-boot guards**
+(`provisioned.base`, `provisioned.uv`, `provisioned.profile`), with some blocks (the
+time block) deliberately running on **every** boot. `mode: user` and
+`mode: readiness` have no direct cloud-init equivalent, so "source the same scripts in
+order" understates the problem: the cloud backend must *synthesize* the user-context
+and readiness semantics Lima provides for free, or it will ship a box missing
+vergil-tooling or one that reports ready before provisioning finished.
 
-```
-templates/provision/
-  00-base.sh        # apt base, gh, node, claude code, yq, zsh, sshd acceptenv
-  10-packages.sh    # EXTRA_PACKAGES / APT_REPOS / VAGRANT_PLUGINS layering
-  20-nested-virt.sh # /dev/kvm verification (fails loudly if absent)
-  30-minimize.sh    # service-surface minimization (#78)
-  40-time.sh        # chrony + timesyncd handoff (#187)
-  90-fingerprint.sh # stamp /etc/vergil/vm-spec.fingerprint + provisioned.base
-```
+So each script declares a **context + cadence**, and the readiness signal is explicit.
 
-### The backend-neutral contract
+### The provisioning contract: context, cadence, readiness
 
-Each script reads its inputs from a single sourced env file
-(`/etc/vergil/provision.env`) rather than from Lima's `{{.User}}` templating or
-`.param.*` injection. That env file is the one thing each backend writes differently:
+Each `templates/provision/*.sh` script declares two attributes (as a header comment /
+manifest the backends read):
+
+- **context** — `root` (privileged) or `user` (runs as the unprivileged session user).
+- **cadence** — `once` (first-boot-only, gated by one of the named markers below) or
+  `boot` (re-run every boot, must be safely re-entrant).
+
+The real block inventory (replacing the placeholder six of the earlier draft):
+
+| Script | Context | Cadence | Guard | What it does |
+|---|---|---|---|---|
+| `00-logind-fix.sh`   | root | boot | — | the `mode: boot` VT/logind fix (must run before anything that logs in) |
+| `10-base.sh`         | root | once | `provisioned.base` | apt base, gh, Node, Claude Code, yq, zsh, sshd AcceptEnv, PATH/`managed-settings.json` autoupdater disable (#85/#110) |
+| `20-packages.sh`     | root | once | `provisioned.base` | `EXTRA_PACKAGES`/`APT_REPOS`/`VAGRANT_PLUGINS` layering |
+| `30-nested-virt.sh`  | root | once | `provisioned.base` | `/dev/kvm` verification — fails loudly if absent (the `driver=kvm` guarantee) |
+| `40-minimize.sh`     | root | once | `provisioned.base` | service-surface minimization (#78) |
+| `50-toolchain.sh`    | **user** | once | `provisioned.uv` | uv + **vergil-tooling** install; `.zshenv`/`VRG_IDENTITY_MODE` (#149) + identity-aware prompt (#154/#171) |
+| `60-time.sh`         | root | **boot** | — | chrony config + timesyncd handoff + optional NTP serving (#187) — re-runs each boot so serving tracks the current profile |
+| `90-profile.sh`      | root | once | `provisioned.profile` | stamp `/etc/vergil/vm-spec.fingerprint`; register declared apt repos; libvirt group membership |
+
+The `mode: readiness` Lima gate is **not** a script — it is the backend-specific
+"provisioning finished cleanly" signal (see below).
+
+### How each backend realizes context, cadence, and readiness
+
+Inputs flow through a single sourced env file (`/etc/vergil/provision.env`) instead of
+Lima's `{{.User}}` templating or `.param.*` injection — the one thing each backend
+writes differently:
 
 | Input | Lima writes it via | Cloud writes it via |
 |---|---|---|
 | `VERGIL_USER`, `HOME` | resolve from `{{.User}}` / `getent` | cloud-init default user |
 | `EXTRA_PACKAGES`, `APT_REPOS`, `VAGRANT_PLUGINS`, `NESTED_VIRT`, `PORT_FORWARDS`, `SPEC_FINGERPRINT` | `--set=.param.*`, written to the env file in a `mode: boot` shim | OpenTofu templates them into cloud-init, which writes the env file |
 
-How each backend invokes the scripts:
+Context + cadence + readiness mapping:
 
-- **Lima** (`agent.yaml`): the `provision:` blocks shrink to a `mode: boot` shim that
-  writes `/etc/vergil/provision.env` from the injected params, then `mode: system`
-  blocks that `source` each `templates/provision/*.sh` in order. The scripts must be
-  on the box; Lima gets them at template-fetch time (the template is tag-versioned and
-  fetched by `vrg-vm`, so the scripts version alongside it).
-- **Cloud** (OpenTofu module): cloud-init's `write_files` drops the env file plus the
-  `provision/*.sh` (templated in from the module, referencing the same `vergil-vm`
-  tree), and `runcmd` runs them in order. The `/dev/kvm` check is the **same**
-  `20-nested-virt.sh`, so "resolved `driver=kvm`, not TCG" is verified identically on
-  both paths.
+- **Lima** (`agent.yaml`): keeps the native modes — a `mode: boot` shim writes
+  `provision.env`, then each script runs under the mode matching its declared context
+  (`root`→`mode: system`, `user`→`mode: user`), and `mode: readiness` stays Lima's
+  readiness gate. Cadence is enforced by the script's own first-boot guard. Scripts are
+  fetched onto the box at template-fetch time (the template is tag-versioned, so the
+  scripts version alongside it).
+- **Cloud** (OpenTofu module): cloud-init `write_files` drops `provision.env` + the
+  scripts; `runcmd` runs each in declared order, mapping context as
+  `root`→direct `runcmd` and `user`→`runcmd` with `sudo -iu "$VERGIL_USER"`. There is
+  no native readiness gate, so the module **synthesizes** one: `create` polls
+  `cloud-init status --wait` over SSH and then checks the fingerprint marker exists —
+  a non-zero cloud-init status or a missing marker is a **hard failure** of `create`
+  (no-silent-failures), mirroring Lima refusing to mark a half-provisioned box ready.
+  The `/dev/kvm` check is the **same** `30-nested-virt.sh`, so "resolved `driver=kvm`,
+  not TCG" is verified identically on both paths.
 
 ### Invariants preserved
 
-- **First-boot-only marker (#177).** `90-fingerprint.sh` stamps `provisioned.base`
-  last, after every script succeeds. Both backends honor "install once, fail loudly,
-  never mark a half-provisioned box ready."
+- **First-boot-only markers (#177).** The three guards (`provisioned.base`,
+  `provisioned.uv`, `provisioned.profile`) are each stamped **last** in their owning
+  block, only after its steps succeed — so a failed install never leaves the box
+  marked provisioned. Both backends honor "install once, fail loudly, never mark a
+  half-provisioned box ready"; the cloud readiness synthesis above is what enforces
+  "fail loudly" where Lima's `mode: readiness` does on the local path.
 - **Lima behavior is unchanged.** The existing `tests/` suite (`test_base.sh`,
   `test_nested_virt.sh`, `test_services.sh`, `test_tools.sh`, `test_vergil.sh`, and the
   e2e scripts) is the regression guardrail. Phase 1 is not done until they are all
@@ -278,13 +316,22 @@ is provider-blind.
 | in | `name` | `<identity>--<org>--<repo>` (also the label set `vergil-identity`/`vergil-repo`) |
 | in | `region`, `size_gib` | from composed spec |
 | out | `volume_id` | provider-native handle the vm module attaches |
+| out | `zone` | the **zone the volume actually landed in** — chosen once at first `create`, recorded in `volume.tfstate` and as a label |
+
+A cloud block volume is **zonal**: a disk in `us-central1-a` only attaches to an
+instance in `us-central1-a`. So the volume owns its zone, and the VM **follows** it —
+otherwise the "destroy VM → next VM reattaches" loop fails intermittently when the new
+instance lands in a sibling zone. `region` stays the human-facing knob; the zone is a
+derived property of the volume.
 
 `vm` module:
 
 | Direction | Name | Meaning |
 |---|---|---|
-| in | `name`, `region`, `instance_type`, `nested` | composed spec |
+| in | `name`, `instance_type`, `nested` | composed spec |
+| in | `zone` | the volume's zone (from the volume module's `zone` output) — pins the instance to the volume |
 | in | `volume_id` | from the volume module's output |
+| in | `boot_disk_gib` | fixed module default for the ephemeral boot disk (not author-facing) |
 | in | `ssh_public_key` | Vergil-managed keypair for this instance |
 | in | `provision_env`, `provision_scripts` | the env file + `provision/*.sh`, templated into cloud-init |
 | out | `host`, `ssh_user` | public IP/DNS and login user `session` SSHes to |
@@ -299,13 +346,24 @@ module to realize it.
 ### Two-state lifecycle in practice (tooling, #1706)
 
 - `create`: `tofu apply` **volume** (idempotent — no-op if it exists) → read
-  `volume_id` → `tofu apply` **vm** with it.
+  `volume_id` + `zone` → `tofu apply` **vm** pinned to that zone with that volume.
 - `destroy`: `tofu destroy` on **vm state only**. Volume state is never in scope —
   structurally impossible to delete by a teardown.
 - `rebuild`: `destroy` vm + `apply` vm (volume untouched → data survives, the whole
   point).
 - a separate explicit **`destroy-volume`** verb (or `destroy --volume`) is the *only*
   path that tears down the volume state — guarded, never the default.
+
+### Host dependency: OpenTofu + providers (pinned, preflighted)
+
+The off-platform path adds `tofu` and the provider plugins as host dependencies on the
+Mac — the off-platform analog of the tag-versioned Lima template. They are **pinned**,
+not assumed: each module declares `required_version` for OpenTofu and
+`required_providers` with `~>` constraints, and a committed `.terraform.lock.hcl` pins
+provider versions so two `apply`s a week apart behave identically (the reproducibility
+posture #99 already takes). The dispatcher **preflights** `tofu` presence and version
+before any cloud verb and fails with a clear remediation message ("install OpenTofu
+≥ x.y") rather than an opaque stack trace (no-silent-failures).
 
 ## Lifecycle verb mapping
 
@@ -322,7 +380,7 @@ OpenTofu+SSH path based on the composed `backend`.
 | `rebuild [org/repo]` | `destroy` vm → `create` vm against the **existing** volume. Reproduces the data-less box from the composed spec; volume data (checkout + `.claude` + `build/`) reattaches intact. |
 | `destroy-volume [org/repo]` | **New, guarded verb.** The only path that tears down the volume state and deletes the persistent disk. Requires explicit confirmation; never implied by `destroy`. |
 | `update [org/repo]` | Off-platform is rebuild-not-update by default → `update` maps to `rebuild`. A lightweight in-place tooling refresh is a noted fallback if rebuilds prove slow, not built now. |
-| `list` | Adds the **BACKEND** column; off-platform rows query the cloud for running/stopped status and occupancy. AGENTS/HUMANS process-tree classification (#99) runs in-guest over SSH, unchanged. |
+| `list` | Adds the **BACKEND** column. With cloud creds present, off-platform rows query the cloud for running/stopped status and occupancy (AGENTS/HUMANS process-tree classification (#99) runs in-guest over SSH, unchanged). **Without creds, `list` degrades visibly** — the off-platform row still shows from local state/profile with status `unknown (no <provider> creds)`; `list` never errors because a cloud isn't authed, and never silently hides a possibly-running row. |
 
 Notes:
 
@@ -415,12 +473,28 @@ volume** — a destroyed VM leaves no key behind.
 
 Repo-declared provisioning runs as root in a credentialed VM — the #99 trust boundary
 still applies, now with the added surface that the VM is **internet-reachable** (public
-IP for SSH). The module locks SSH to **key-only + the operator's source IP/range** via
-the provider firewall/security-group. The "credentialed VM on a public IP" seam is
-logged into the strategic security-boundary register
+IP for SSH). Two concrete controls, because "lock it down" stated abstractly drifts
+toward too-wide:
+
+- **SSH allow-list derived from the create-initiator's origin address(es).** At
+  `create` time we already know where the operation is coming from — the operator's
+  current public address(es). The module sets the SSH ingress rule to exactly that set
+  (a `/32` per address), and **re-applies it on every `create`**, so the allow-list
+  naturally tracks wherever the operator is working from without any hand-maintained
+  CIDR. sshd is **key-only** (passwords disabled). `0.0.0.0/0` is forbidden — never a
+  fallback. A provider-native bastion / tunnel (GCP IAP, Azure Bastion) that removes
+  the open port entirely is logged as the **hardening path** (it cuts against the
+  provider-agnostic interface, so it is future work, not the first cut).
+- **App key on the ephemeral boot disk, never the volume.** The injected GitHub App
+  private key lands on the **ephemeral boot disk** (mode `600`, owned by the session
+  user), so `destroy` (which deletes the boot disk) destroys the key. It is never
+  written to the persistent `volume`, so a surviving volume never carries a key.
+
+The "credentialed VM on a public IP" seam is logged into the strategic
+security-boundary register
 ([vergil-tooling #1369](https://github.com/vergil-project/vergil-tooling/issues/1369))
 alongside the existing entries (the repo-root-in-credentialed-VM seam, GitHub
-permission-granularity gaps).
+permission-granularity gaps), with the bastion/tunnel option as its tracked hardening.
 
 ## Testing
 
@@ -437,13 +511,32 @@ Three tiers, scaled to cost:
 - **Gated real e2e (manual/opt-in, costs money).** `tests/e2e-off-platform.sh`
   actually stands up a GCP (then Azure) instance, asserts `driver=kvm` resolves (not
   TCG), the volume survives `destroy`+`create`, and cred injection works. Off by
-  default, never in CI, explicitly invoked.
+  default, never in CI, explicitly invoked. **Every real instance is wrapped in a
+  shell `trap … EXIT` that always `tofu destroy`s the vm state** — a failed or aborted
+  (Ctrl-C) test can never leak a paid instance. This trap is the one *mechanical*
+  cost guard; see "Operational discipline" below for the rest.
+
+## Operational discipline (cost)
+
+A running off-platform VM costs real money; the design's cost story rests on
+**ephemerality**, not on automation. We deliberately do **not** build an auto-reaper
+or a billing-state surface in `list` (rejected as over-machinery for fleet-of-one):
+the guard is documented discipline plus the one mechanical backstop above.
+
+- **Default cadence is destroy-at-end-of-day.** `destroy` (vm state only; volume
+  survives) is the routine teardown. `stop` is the deliberate "keep it overnight for a
+  long test" exception, not the default.
+- **The e2e teardown trap is mandatory** (above) — the only place automation enforces
+  teardown, because un-trapped real-cloud tests are a money bug.
+- If forgotten-instance spend proves to be a real problem in practice, a staleness
+  nudge (reusing the #99 `stale_days` mechanism) or an opt-in reaper is an easy
+  follow-up — not built now.
 
 ## Acceptance criteria
 
 1. `vrg-vm create/session/destroy` work against a nested-virt instance on **both GCP
    and Azure** via the OpenTofu modules.
-2. Lab guests resolve **`driver=kvm`**, not TCG — verified by `20-nested-virt.sh`'s
+2. Lab guests resolve **`driver=kvm`**, not TCG — verified by `30-nested-virt.sh`'s
    `/dev/kvm` check passing on the cloud box.
 3. The VM is **ephemeral/rebuild-only**; `destroy` then `create` reattaches the volume
    with the repo checkout + `.claude` intact; the volume's tofu state is never in
@@ -458,28 +551,75 @@ Three tiers, scaled to cost:
 
 **`vergil-vm` (this repo):**
 
-- `templates/provision/*.sh` — the extracted, ordered, idempotent, backend-neutral
-  provisioning scripts driven by `/etc/vergil/provision.env`.
+- `templates/provision/*.sh` — the extracted, idempotent, backend-neutral provisioning
+  scripts driven by `/etc/vergil/provision.env`, each declaring its **context**
+  (`root`/`user`) and **cadence** (`once`/`boot`); the real block inventory (logind-fix,
+  base, packages, nested-virt, minimize, toolchain/uv+vergil-tooling, time, profile)
+  with its three first-boot guards.
 - `templates/agent.yaml` — refactored so the Lima `provision:` blocks write
-  `provision.env` and source `provision/*.sh`; behavior unchanged.
+  `provision.env` and run each script under the mode matching its declared context
+  (`root`→`system`, `user`→`user`), readiness via `mode: readiness`; behavior unchanged
+  (existing `tests/` are the guardrail).
 - `opentofu/modules/{gcp,azure}/{volume,vm}` — the two-module-per-provider OpenTofu
-  modules implementing the provider-agnostic interface; cloud-init invokes the same
-  provisioning scripts; SSH locked to key-only + operator source IP.
+  modules implementing the provider-agnostic interface (volume owns its `zone`; vm
+  follows it; ephemeral boot disk is a fixed module default); cloud-init invokes the
+  same provisioning scripts (`root`→`runcmd`, `user`→`sudo -iu`) and **synthesizes
+  readiness** via `cloud-init status --wait` + fingerprint-marker check; SSH ingress
+  set to the create-initiator's origin address(es), key-only, never `0.0.0.0/0`;
+  App key on the ephemeral boot disk only; pinned `required_version`/`required_providers`
+  + committed `.terraform.lock.hcl`.
 - `tests/` — offline `tofu validate`/`plan`; interface-symmetry assertion; gated
-  `e2e-off-platform.sh`; the existing Lima suite as the phase-1 regression guardrail.
+  `e2e-off-platform.sh` with a mandatory `trap … EXIT` teardown; the existing Lima
+  suite as the phase-1 regression guardrail.
 
 **`vergil-tooling` ([#1706](https://github.com/vergil-project/vergil-tooling/issues/1706)):**
 
-- Backend dispatch (Lima vs off-platform) keyed on composed `backend`.
+- Backend dispatch (Lima vs off-platform) keyed on composed `backend`; preflight that
+  `tofu` is present at the required version (clear remediation on failure).
 - Parse and compose `backend`/`provider`/`region`/`instance`/`volume`; hard-error on
-  missing required keys; fold them into the fingerprint; the `instance`-vs-`cpus`/
-  `memory` under-provisioning warning.
+  any missing required key (now including `volume`); `disk` ignored on cloud; fold the
+  keys into the fingerprint; the `instance`-vs-`cpus`/`memory` under-provisioning
+  warning.
 - `tofu` invocation + local state-path management (two states per
-  `(identity, org/repo, provider)`); the volume bootstrap-vs-reattach step.
-- SSH `session` transport; GitHub App cred injection over SSH; provider-credential
-  selection from the SDK default chain.
-- `vrg-vm list` BACKEND column; `destroy-volume` verb; `update`→`rebuild` mapping for
-  off-platform.
+  `(identity, org/repo, provider)`); read the volume's `zone`/`volume_id` and pin the
+  vm to them; the volume bootstrap-vs-reattach step.
+- SSH `session` transport; resolve the create-initiator's origin address(es) for the
+  ingress rule; GitHub App cred injection over SSH onto the ephemeral boot disk;
+  provider-credential selection from the SDK default chain.
+- `vrg-vm list` BACKEND column with graceful degradation when cloud creds are absent
+  (`unknown (no <provider> creds)`); `destroy-volume` verb; `update`→`rebuild` mapping
+  for off-platform.
+
+## Pushback resolutions (2026-06-19)
+
+A structured pushback review (paad:pushback) ran against the first draft. No
+source-control conflicts; the spec is appropriately phased and not splittable. Six
+findings, all folded into the body above:
+
+1. **Provisioning extraction underspecified across execution contexts** (serious) —
+   replaced the flat "ordered scripts" model with an explicit **context + cadence +
+   readiness contract**, the real block inventory (including the `mode: user`
+   uv/vergil-tooling install) and its three first-boot guards, and a cloud readiness
+   synthesis (`cloud-init status --wait` + fingerprint check). See "Provisioning
+   extraction".
+2. **No guard against orphaned paid instances** (serious) — chose documented
+   discipline + a mandatory e2e `trap … EXIT` teardown; deliberately **no** auto-reaper
+   or billing surface in `list`. See "Operational discipline".
+3. **Volume zonal pinning + boot/persistent disk conflation** (moderate-serious) — the
+   volume **owns its zone** (state + label) and the vm **follows** it; `volume` is the
+   persistent-disk size (now required), the ephemeral boot disk is a fixed module
+   default, and `disk` is not a cloud knob. See "Profile schema" + "OpenTofu module
+   interface".
+4. **Public-IP SSH exposure + key-at-rest window** (moderate, security) — SSH ingress
+   is derived from the **create-initiator's origin address(es)**, re-applied each
+   `create`, key-only, never `0.0.0.0/0`; the App key lives on the **ephemeral boot
+   disk** only. Bastion/tunnel logged as hardening in #1369. See "Security boundary".
+5. **OpenTofu as an unmanaged host dependency** (minor-moderate) — pinned
+   `required_version`/`required_providers` + committed `.terraform.lock.hcl`, with a
+   dispatcher preflight. See "Host dependency".
+6. **`list` without cloud creds** (minor) — degrades visibly to
+   `unknown (no <provider> creds)`; never errors, never hides a row. See "Lifecycle
+   verb mapping".
 
 ## Related
 
