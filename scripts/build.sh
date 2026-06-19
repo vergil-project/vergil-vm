@@ -34,10 +34,11 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# agent.yaml is generated from the skeleton + provision scripts. Fail early if
-# the committed copy is stale, so we never build/test an out-of-date template.
-echo "=== Checking templates/agent.yaml is up to date ==="
-"${REPO_ROOT}/scripts/build-template.sh" --check
+# Host-side checks (no Lima): generation freshness (agent.yaml + cloud-init),
+# provision manifests, and the OpenTofu interface + validate. Fail early if any is
+# stale/invalid, so we never build/test an out-of-date template.
+echo "=== Host-side checks (generation, manifests, opentofu) ==="
+bash "${REPO_ROOT}/tests/run-host-tests.sh"
 echo ""
 
 echo "=== Building vergil-agent VM ==="
