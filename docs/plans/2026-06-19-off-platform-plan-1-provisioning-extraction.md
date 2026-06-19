@@ -39,8 +39,8 @@ for every Part A move.
 - `templates/agent.yaml.skel` — hand-authored Lima skeleton with `@@INCLUDE@@` markers; owns all non-script structure + the Lima `provision.env` writer + the readiness probe.
 - `templates/provision/00-logind-fix.sh` … `80-port-forwards.sh` — the extracted, backend-neutral provision scripts (inventory in Task 3).
 - `scripts/build-template.sh` — the generator: `skel + provision/*.sh → templates/agent.yaml`.
-- `tests/test_template_generation.sh` — host-side; regenerates into a temp file and diffs against the committed `agent.yaml`. Runs anywhere (no Lima).
-- `tests/test_provision_manifest.sh` — host-side; validates every script's `# vergil-provision:` manifest and that the skel's `mode:` for each include matches the script's declared `context`.
+- `tests/check-template-generation.sh` — host-side; regenerates into a temp file and diffs against the committed `agent.yaml`. Runs anywhere (no Lima).
+- `tests/check-provision-manifest.sh` — host-side; validates every script's `# vergil-provision:` manifest and that the skel's `mode:` for each include matches the script's declared `context`.
 
 **Modified:**
 - `templates/agent.yaml` — becomes generated output of `build-template.sh` (still committed, so Lima consumers and tests that read it directly keep working).
@@ -56,7 +56,7 @@ for every Part A move.
 Goal of Part A: introduce the generator and move every provision block into a script
 **without changing a single byte of the effective `agent.yaml`**. Scripts in Part A
 still contain Lima `{{.User}}`/`{{.Param.*}}` templating — they are exact slices of
-today's file. Success criterion throughout: `tests/test_template_generation.sh`
+today's file. Success criterion throughout: `tests/check-template-generation.sh`
 passes (generated == committed `agent.yaml`).
 
 ### Task 1: The generator and its skeleton (identity transform)
@@ -68,7 +68,7 @@ generation is the identity transform. This proves the harness before any block m
 **Files:**
 - Create: `scripts/build-template.sh`
 - Create: `templates/agent.yaml.skel` (initial copy of `templates/agent.yaml`)
-- Create: `tests/test_template_generation.sh`
+- Create: `tests/check-template-generation.sh`
 - Modify: `scripts/build.sh` (add freshness assertion)
 
 **Interfaces:**
@@ -82,11 +82,11 @@ generation is the identity transform. This proves the harness before any block m
 
 - [ ] **Step 1: Write the failing generation test**
 
-Create `tests/test_template_generation.sh`:
+Create `tests/check-template-generation.sh`:
 
 ```bash
 #!/usr/bin/env bash
-# tests/test_template_generation.sh — Assert templates/agent.yaml is the
+# tests/check-template-generation.sh — Assert templates/agent.yaml is the
 # current output of scripts/build-template.sh (skel + provision/*.sh).
 # HOST-side (no Lima): deliberately NOT named test_*.sh so run-tests.sh does
 # not pipe it into a guest. Runs in CI and locally.
@@ -103,7 +103,7 @@ fi
 
 - [ ] **Step 2: Run it to verify it fails**
 
-Run: `cd <worktree> && bash tests/test_template_generation.sh`
+Run: `cd <worktree> && bash tests/check-template-generation.sh`
 Expected: FAIL — `scripts/build-template.sh: No such file or directory`.
 
 - [ ] **Step 3: Write the generator**
@@ -171,7 +171,7 @@ identity transform.)
 
 - [ ] **Step 5: Run the generation test to verify it passes**
 
-Run: `cd <worktree> && chmod +x scripts/build-template.sh && bash tests/test_template_generation.sh`
+Run: `cd <worktree> && chmod +x scripts/build-template.sh && bash tests/check-template-generation.sh`
 Expected: PASS — `templates/agent.yaml is up to date …`.
 
 - [ ] **Step 6: Wire the freshness assertion into build.sh**
@@ -191,10 +191,10 @@ echo ""
 
 ```bash
 cd <worktree>
-vrg-git add scripts/build-template.sh templates/agent.yaml.skel tests/test_template_generation.sh scripts/build.sh
+vrg-git add scripts/build-template.sh templates/agent.yaml.skel tests/check-template-generation.sh scripts/build.sh
 vrg-commit --type build --scope provision \
   --message "add agent.yaml generator with identity-transform skeleton (#199)" \
-  --body "templates/agent.yaml becomes a generated artifact assembled by scripts/build-template.sh from templates/agent.yaml.skel. The skeleton is seeded as a byte-for-byte copy (no markers yet), so generation is the identity transform and tests/test_template_generation.sh passes. build.sh now fails early on a stale agent.yaml. Blocks are extracted in subsequent tasks."
+  --body "templates/agent.yaml becomes a generated artifact assembled by scripts/build-template.sh from templates/agent.yaml.skel. The skeleton is seeded as a byte-for-byte copy (no markers yet), so generation is the identity transform and tests/check-template-generation.sh passes. build.sh now fails early on a stale agent.yaml. Blocks are extracted in subsequent tasks."
 ```
 
 ### Task 2: Extract the readiness probe boundary and prove a single include round-trips
@@ -245,7 +245,7 @@ under `script: |`) with a single marker at that same 4-space indent:
 
 - [ ] **Step 3: Run the freshness test — expect FAIL (proves the marker changed output)**
 
-Run: `cd <worktree> && bash tests/test_template_generation.sh`
+Run: `cd <worktree> && bash tests/check-template-generation.sh`
 Expected: PASS if the include reproduces the body byte-for-byte. If it FAILs, the diff
 shows an indentation mismatch — fix the marker indent (must equal the original body
 indent) until the diff is empty.
@@ -255,7 +255,7 @@ indent) until the diff is empty.
 
 - [ ] **Step 4: Regenerate and confirm green**
 
-Run: `cd <worktree> && scripts/build-template.sh && bash tests/test_template_generation.sh`
+Run: `cd <worktree> && scripts/build-template.sh && bash tests/check-template-generation.sh`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
@@ -265,7 +265,7 @@ cd <worktree>
 vrg-git add templates/provision/00-logind-fix.sh templates/agent.yaml.skel templates/agent.yaml
 vrg-commit --type refactor --scope provision \
   --message "extract logind-fix boot block into provision/00-logind-fix.sh (#199)" \
-  --body "First @@INCLUDE@@ round-trip: the mode:boot logind fix moves verbatim into a provision script; generated agent.yaml is byte-identical (test_template_generation green). Proves the include/indentation mechanism."
+  --body "First @@INCLUDE@@ round-trip: the mode:boot logind fix moves verbatim into a provision script; generated agent.yaml is byte-identical (check-template-generation green). Proves the include/indentation mechanism."
 ```
 
 ### Task 3: Extract the remaining provision blocks (verbatim, one commit each)
@@ -273,7 +273,7 @@ vrg-commit --type refactor --scope provision \
 Move every remaining provision block into its script, in this exact inventory. Each is
 a **verbatim move** per the convention above: cut the block's `script:` body into the
 new file at column 0, replace it with a `# @@INCLUDE@@` marker at the body's original
-indent, regenerate, and confirm `test_template_generation.sh` stays green. Do them in
+indent, regenerate, and confirm `check-template-generation.sh` stays green. Do them in
 this order, one commit per row.
 
 **Inventory** (source block identified by leading comment + `mode:`; all are
@@ -303,7 +303,7 @@ at the original 4-space body indent.
 
 - [ ] **Step 2: Regenerate + freshness test**
 
-Run: `cd <worktree> && scripts/build-template.sh && bash tests/test_template_generation.sh`
+Run: `cd <worktree> && scripts/build-template.sh && bash tests/check-template-generation.sh`
 Expected: PASS (byte-identical). If FAIL, the diff localizes the discrepancy — fix
 indent/whitespace until empty.
 
@@ -319,13 +319,13 @@ vrg-commit --type refactor --scope provision --message "extract base-tools block
 
 For each remaining row: cut the block body verbatim into the named file at column 0;
 replace with the `@@INCLUDE@@` marker at the original body indent; preserve `- mode:`
-(note rows #4 and #5 are `mode: user`); regenerate; confirm `test_template_generation.sh`
+(note rows #4 and #5 are `mode: user`); regenerate; confirm `check-template-generation.sh`
 is green; commit with message `extract <block> into provision/<file> (#199)`. The
 freshness test passing on every row is the proof the split changed nothing.
 
 - [ ] **Step 5: Final Part-A verification — full generation is faithful**
 
-Run: `cd <worktree> && scripts/build-template.sh && bash tests/test_template_generation.sh && vrg-git status`
+Run: `cd <worktree> && scripts/build-template.sh && bash tests/check-template-generation.sh && vrg-git status`
 Expected: PASS, and `git status` shows a clean tree (regenerated `agent.yaml` matches
 the committed one). At this point `agent.yaml` is fully generated from the skel + all
 provision scripts, and is byte-identical to the original pre-refactor file.
@@ -398,7 +398,7 @@ logind `mode: boot` block) a new `mode: boot` block. This block keeps Lima templ
 
 - [ ] **Step 2: Regenerate and confirm the env-writer appears**
 
-Run: `cd <worktree> && scripts/build-template.sh && bash tests/test_template_generation.sh`
+Run: `cd <worktree> && scripts/build-template.sh && bash tests/check-template-generation.sh`
 Expected: FAIL (the generated `agent.yaml` now contains the new block, differing from
 the committed one). This is expected for a structural addition.
 
@@ -408,7 +408,7 @@ Run: `cd <worktree> && scripts/build-template.sh`
 Create `docs/site/docs/architecture/decisions/provision-env-contract.md` (≤1 screen)
 documenting: agent.yaml is generated; the provision.env key list above; that scripts
 source it and use `$VAR`; that Lima and cloud-init each write provision.env their own
-way. Re-run `bash tests/test_template_generation.sh` → PASS.
+way. Re-run `bash tests/check-template-generation.sh` → PASS.
 
 - [ ] **Step 4: Manual macOS gate — env-writer is inert so far**
 
@@ -464,7 +464,7 @@ Apply the table rows + the `. /etc/vergil/provision.env` source line to both fil
 
 - [ ] **Step 2: Regenerate + freshness + shellcheck**
 
-Run: `cd <worktree> && scripts/build-template.sh && bash tests/test_template_generation.sh`
+Run: `cd <worktree> && scripts/build-template.sh && bash tests/check-template-generation.sh`
 Expected: PASS (committed agent.yaml matches regeneration).
 Run validation (shellcheck of the scripts is part of it):
 Run: `vrg-container-run -- vrg-validate`
@@ -474,7 +474,7 @@ Expected: passes (no shellcheck regressions; `$VERGIL_USER` is a normal var ref)
 
 Apply the table rows + source line to `40-profile.sh`, `50-libvirt-groups.sh`,
 `60-time.sh`, `70-nested-virt.sh`, `80-port-forwards.sh`. Regenerate after each and
-keep `test_template_generation.sh` green.
+keep `check-template-generation.sh` green.
 
 - [ ] **Step 4: Manual macOS gate — behavior identical via provision.env**
 
@@ -508,7 +508,7 @@ their consistency with the skel's Lima `mode:`.
 
 **Files:**
 - Modify: every `templates/provision/*.sh` (prepend manifest line)
-- Create: `tests/test_provision_manifest.sh`
+- Create: `tests/check-provision-manifest.sh`
 
 **Interfaces:**
 - Produces: a manifest line as the **second line** of each script (after `#!/bin/bash`):
@@ -533,11 +533,11 @@ Manifest values per script (matches the Task 3 inventory):
 
 - [ ] **Step 1: Write the failing manifest test**
 
-Create `tests/test_provision_manifest.sh`:
+Create `tests/check-provision-manifest.sh`:
 
 ```bash
 #!/usr/bin/env bash
-# tests/test_provision_manifest.sh — Validate every templates/provision/*.sh has a
+# tests/check-provision-manifest.sh — Validate every templates/provision/*.sh has a
 # well-formed `# vergil-provision:` manifest, and that the skeleton's Lima mode for
 # each include is consistent with the script's declared context (root->system/boot,
 # user->user). HOST-side; runs in CI. Not named test_*.sh (no guest pipe).
@@ -582,7 +582,7 @@ echo "PASS: all provision manifests valid and consistent with skeleton modes"
 
 - [ ] **Step 2: Run it to verify it fails**
 
-Run: `cd <worktree> && bash tests/test_provision_manifest.sh`
+Run: `cd <worktree> && bash tests/check-provision-manifest.sh`
 Expected: FAIL — `… missing or misplaced manifest on line 2` (no headers yet).
 
 - [ ] **Step 3: Add the manifest line to every script**
@@ -610,7 +610,7 @@ set -eu
 
 - [ ] **Step 4: Regenerate, freshness, manifest test, validate**
 
-Run: `cd <worktree> && scripts/build-template.sh && bash tests/test_template_generation.sh && bash tests/test_provision_manifest.sh`
+Run: `cd <worktree> && scripts/build-template.sh && bash tests/check-template-generation.sh && bash tests/check-provision-manifest.sh`
 Expected: both PASS.
 Run: `vrg-container-run -- vrg-validate` → passes.
 
@@ -622,10 +622,10 @@ On a Mac: `./scripts/build.sh`. Expected: `0 failures` and every e2e `PASS`.
 
 ```bash
 cd <worktree>
-vrg-git add templates/provision/*.sh templates/agent.yaml tests/test_provision_manifest.sh
+vrg-git add templates/provision/*.sh templates/agent.yaml tests/check-provision-manifest.sh
 vrg-commit --type feat --scope provision \
   --message "add provision script manifests and validation test (#199)" \
-  --body "Each provision/*.sh declares context+cadence(+guard) in a # vergil-provision: header; test_provision_manifest.sh validates them and their consistency with the skeleton's Lima modes. These manifests drive Phase 2 cloud-init generation (runcmd vs sudo -iu)."
+  --body "Each provision/*.sh declares context+cadence(+guard) in a # vergil-provision: header; check-provision-manifest.sh validates them and their consistency with the skeleton's Lima modes. These manifests drive Phase 2 cloud-init generation (runcmd vs sudo -iu)."
 ```
 
 ### Task 7: Documentation + final sweep
@@ -651,7 +651,7 @@ Match the existing `CHANGELOG.md` style; one line, e.g.:
 
 - [ ] **Step 3: Validate + freshness + manifest, all green**
 
-Run: `cd <worktree> && bash tests/test_template_generation.sh && bash tests/test_provision_manifest.sh && vrg-container-run -- vrg-validate`
+Run: `cd <worktree> && bash tests/check-template-generation.sh && bash tests/check-provision-manifest.sh && vrg-container-run -- vrg-validate`
 Expected: all PASS.
 
 - [ ] **Step 4: Commit**

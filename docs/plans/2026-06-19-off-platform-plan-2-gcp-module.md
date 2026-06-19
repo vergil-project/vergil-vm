@@ -30,9 +30,9 @@
 - `opentofu/modules/gcp/vm/{main.tf,variables.tf,outputs.tf,versions.tf,cloud-init.yaml.skel}` — the ephemeral instance + attach + cloud-init.
 - `opentofu/modules/gcp/vm/cloud-init.yaml` — **generated** by `scripts/build-cloud-init.sh`; committed.
 - `scripts/build-cloud-init.sh` — generator: cloud-init skeleton + `templates/provision/*.sh` → `cloud-init.yaml`.
-- `tests/test_cloud_init_generation.sh` — host-side freshness check (regenerate, diff). Runs anywhere.
-- `tests/test_opentofu_contract.sh` — host-side; asserts each gcp module's `variables.tf`/`outputs.tf` declares exactly the names in `opentofu/interface.json`.
-- `tests/test_opentofu_validate.sh` — host-side; runs `tofu fmt -check`, `tofu init -backend=false`, `tofu validate` per module **if `tofu` is on PATH**, else prints a visible `SKIP (tofu not installed)` and exits 0 (visible skip, not a silent pass).
+- `tests/check-cloud-init-generation.sh` — host-side freshness check (regenerate, diff). Runs anywhere.
+- `tests/check-opentofu-contract.sh` — host-side; asserts each gcp module's `variables.tf`/`outputs.tf` declares exactly the names in `opentofu/interface.json`.
+- `tests/check-opentofu-validate.sh` — host-side; runs `tofu fmt -check`, `tofu init -backend=false`, `tofu validate` per module **if `tofu` is on PATH**, else prints a visible `SKIP (tofu not installed)` and exits 0 (visible skip, not a silent pass).
 
 **Modified:**
 - `.gitignore` — ignore `.terraform/` and `*.tfstate*` under `opentofu/` (but **not** `.terraform.lock.hcl`, which is committed).
@@ -72,19 +72,19 @@ from the spec); the module writes it to the guest and the shared scripts source 
 - Create: `opentofu/interface.json`
 - Create: `opentofu/modules/gcp/volume/versions.tf`, `opentofu/modules/gcp/vm/versions.tf`
 - Modify: `.gitignore`
-- Create: `tests/test_opentofu_contract.sh`
+- Create: `tests/check-opentofu-contract.sh`
 
 **Interfaces:**
 - Produces: `versions.tf` (shared content) pinning OpenTofu + the google provider;
-  `interface.json` (above) consumed by `test_opentofu_contract.sh`.
+  `interface.json` (above) consumed by `check-opentofu-contract.sh`.
 
 - [ ] **Step 1: Write the failing contract test**
 
-Create `tests/test_opentofu_contract.sh`:
+Create `tests/check-opentofu-contract.sh`:
 
 ```bash
 #!/usr/bin/env bash
-# tests/test_opentofu_contract.sh — Assert each provider's volume/vm modules declare
+# tests/check-opentofu-contract.sh — Assert each provider's volume/vm modules declare
 # exactly the variable/output names in opentofu/interface.json. This is the
 # provider-agnostic guard: Azure (Phase 3) must satisfy the same contract. HOST-side,
 # no tofu needed (text inspection of *.tf). Not named test_*.sh.
@@ -124,7 +124,7 @@ echo "PASS: all modules satisfy opentofu/interface.json"
 
 - [ ] **Step 2: Run it to verify it fails**
 
-Run: `cd <worktree> && bash tests/test_opentofu_contract.sh`
+Run: `cd <worktree> && bash tests/check-opentofu-contract.sh`
 Expected: FAIL — `opentofu/interface.json` missing (or no module dirs).
 
 - [ ] **Step 3: Create the interface contract and versions files**
@@ -157,7 +157,7 @@ opentofu/**/*.tfstate.*
 
 - [ ] **Step 5: Contract test still fails (no modules yet) — that's expected**
 
-Run: `cd <worktree> && bash tests/test_opentofu_contract.sh`
+Run: `cd <worktree> && bash tests/check-opentofu-contract.sh`
 Expected: FAIL — `gcp/volume: module dir missing`. (The `.tf` arrive in Tasks 2–3.)
 
 - [ ] **Step 6: Commit**
@@ -165,10 +165,10 @@ Expected: FAIL — `gcp/volume: module dir missing`. (The `.tf` arrive in Tasks 
 ```bash
 cd <worktree>
 vrg-git add opentofu/interface.json opentofu/modules/gcp/volume/versions.tf \
-  opentofu/modules/gcp/vm/versions.tf .gitignore tests/test_opentofu_contract.sh
+  opentofu/modules/gcp/vm/versions.tf .gitignore tests/check-opentofu-contract.sh
 vrg-commit --type build --scope opentofu \
   --message "pin OpenTofu/google versions and seed provider-agnostic interface contract (#199)" \
-  --body "opentofu/interface.json is the canonical variable/output contract both providers must satisfy; test_opentofu_contract.sh enforces it. versions.tf pins OpenTofu >=1.8 and hashicorp/google ~>6.0."
+  --body "opentofu/interface.json is the canonical variable/output contract both providers must satisfy; check-opentofu-contract.sh enforces it. versions.tf pins OpenTofu >=1.8 and hashicorp/google ~>6.0."
 ```
 
 ## Task 2: The volume module (zonal, zone-owning)
@@ -237,7 +237,7 @@ output "zone"      { value = google_compute_disk.data.zone }
 Run (where `tofu` is installed):
 `cd <worktree>/opentofu/modules/gcp/volume && tofu fmt -check && tofu init -backend=false && tofu validate`
 Expected: `Success! The configuration is valid.`
-(If `tofu` is not installed, run the Task-5 `test_opentofu_validate.sh`, which prints a
+(If `tofu` is not installed, run the Task-5 `check-opentofu-validate.sh`, which prints a
 visible SKIP — but install tofu before merging so this is actually exercised.)
 
 - [ ] **Step 5: Commit**
@@ -260,7 +260,7 @@ references it.
 - Create: `opentofu/modules/gcp/vm/cloud-init.yaml.skel`
 - Create: `scripts/build-cloud-init.sh`
 - Create: `opentofu/modules/gcp/vm/cloud-init.yaml` (generated)
-- Create: `tests/test_cloud_init_generation.sh`
+- Create: `tests/check-cloud-init-generation.sh`
 
 **Interfaces:**
 - Produces: `cloud-init.yaml` — a cloud-config that `write_files` the `provision.env`
@@ -282,11 +282,11 @@ references it.
 
 - [ ] **Step 1: Write the failing generation test**
 
-Create `tests/test_cloud_init_generation.sh`:
+Create `tests/check-cloud-init-generation.sh`:
 
 ```bash
 #!/usr/bin/env bash
-# tests/test_cloud_init_generation.sh — Assert the committed gcp vm cloud-init.yaml is
+# tests/check-cloud-init-generation.sh — Assert the committed gcp vm cloud-init.yaml is
 # the current output of scripts/build-cloud-init.sh (skeleton + templates/provision/*.sh).
 # HOST-side, no tofu. Not named test_*.sh.
 set -euo pipefail
@@ -302,7 +302,7 @@ fi
 
 - [ ] **Step 2: Run it to verify it fails**
 
-Run: `cd <worktree> && bash tests/test_cloud_init_generation.sh`
+Run: `cd <worktree> && bash tests/check-cloud-init-generation.sh`
 Expected: FAIL — `build-cloud-init.sh: No such file or directory`.
 
 - [ ] **Step 3: Write the cloud-init skeleton**
@@ -430,7 +430,7 @@ fi
 
 - [ ] **Step 5: Generate and pass the freshness test**
 
-Run: `cd <worktree> && chmod +x scripts/build-cloud-init.sh && scripts/build-cloud-init.sh && bash tests/test_cloud_init_generation.sh`
+Run: `cd <worktree> && chmod +x scripts/build-cloud-init.sh && scripts/build-cloud-init.sh && bash tests/check-cloud-init-generation.sh`
 Expected: PASS.
 
 - [ ] **Step 6: Commit**
@@ -438,10 +438,10 @@ Expected: PASS.
 ```bash
 cd <worktree>
 vrg-git add opentofu/modules/gcp/vm/cloud-init.yaml.skel scripts/build-cloud-init.sh \
-  opentofu/modules/gcp/vm/cloud-init.yaml tests/test_cloud_init_generation.sh
+  opentofu/modules/gcp/vm/cloud-init.yaml tests/check-cloud-init-generation.sh
 vrg-commit --type feat --scope opentofu \
   --message "generate gcp vm cloud-init from shared provision scripts (#199)" \
-  --body "scripts/build-cloud-init.sh assembles cloud-init.yaml from the skeleton + templates/provision/*.sh, mapping manifest context to runcmd (root) or sudo -iu (user). Same provisioning truth as Lima; freshness guarded by test_cloud_init_generation.sh."
+  --body "scripts/build-cloud-init.sh assembles cloud-init.yaml from the skeleton + templates/provision/*.sh, mapping manifest context to runcmd (root) or sudo -iu (user). Same provisioning truth as Lima; freshness guarded by check-cloud-init-generation.sh."
 ```
 
 ## Task 4: The vm module (instance + attach + nested-virt + SSH ingress + cloud-init)
@@ -577,7 +577,7 @@ Expected: `Success! The configuration is valid.`
 
 - [ ] **Step 5: Contract test now passes**
 
-Run: `cd <worktree> && bash tests/test_opentofu_contract.sh`
+Run: `cd <worktree> && bash tests/check-opentofu-contract.sh`
 Expected: PASS — both `gcp/volume` and `gcp/vm` declare exactly `interface.json`'s sets.
 (If it fails, the message names the offending module + the variable/output delta — fix
 the `.tf` to match the contract, not the contract.)
@@ -595,22 +595,22 @@ vrg-commit --type feat --scope opentofu \
 ## Task 5: Offline validation harness + lockfile + version pinning gate
 
 **Files:**
-- Create: `tests/test_opentofu_validate.sh`
+- Create: `tests/check-opentofu-validate.sh`
 - Create: `opentofu/modules/gcp/volume/.terraform.lock.hcl`, `opentofu/modules/gcp/vm/.terraform.lock.hcl` (committed)
 
 **Interfaces:**
-- Produces: `test_opentofu_validate.sh` — runs `tofu fmt -check`, `tofu init -backend=false`,
+- Produces: `check-opentofu-validate.sh` — runs `tofu fmt -check`, `tofu init -backend=false`,
   `tofu validate` for each `opentofu/modules/*/{volume,vm}`; if `tofu` is absent prints
   a single visible `SKIP (tofu not installed; install to exercise module validation)`
   and exits 0.
 
 - [ ] **Step 1: Write the validate harness**
 
-Create `tests/test_opentofu_validate.sh`:
+Create `tests/check-opentofu-validate.sh`:
 
 ```bash
 #!/usr/bin/env bash
-# tests/test_opentofu_validate.sh — fmt-check + init(-backend=false) + validate every
+# tests/check-opentofu-validate.sh — fmt-check + init(-backend=false) + validate every
 # OpenTofu module. Visible SKIP if tofu is not installed (no silent pass). HOST-side.
 set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
@@ -638,7 +638,7 @@ and the same for `…/vm`. This writes `.terraform.lock.hcl` pinning the resolve
 
 - [ ] **Step 3: Run the validate harness**
 
-Run: `cd <worktree> && bash tests/test_opentofu_validate.sh`
+Run: `cd <worktree> && bash tests/check-opentofu-validate.sh`
 Expected: `PASS: all modules fmt-clean and valid` (or a visible `SKIP` if tofu absent —
 in which case run it on a machine with tofu before merging).
 
@@ -646,11 +646,11 @@ in which case run it on a machine with tofu before merging).
 
 ```bash
 cd <worktree>
-vrg-git add tests/test_opentofu_validate.sh \
+vrg-git add tests/check-opentofu-validate.sh \
   opentofu/modules/gcp/volume/.terraform.lock.hcl opentofu/modules/gcp/vm/.terraform.lock.hcl
 vrg-commit --type test --scope opentofu \
   --message "add offline tofu validate harness and commit provider lockfiles (#199)" \
-  --body "test_opentofu_validate.sh runs fmt-check/init(-backend=false)/validate per module (visible SKIP without tofu). Committed .terraform.lock.hcl pins hashicorp/google for darwin_arm64 + linux_amd64 (reproducible applies)."
+  --body "check-opentofu-validate.sh runs fmt-check/init(-backend=false)/validate per module (visible SKIP without tofu). Committed .terraform.lock.hcl pins hashicorp/google for darwin_arm64 + linux_amd64 (reproducible applies)."
 ```
 
 ## Task 6: Wire the offline checks into validation + docs + changelog
@@ -660,9 +660,9 @@ vrg-commit --type test --scope opentofu \
   flow. `tests/run-tests.sh` runs **in-guest**, so it is the wrong host for these.
   Add them where the existing host-side e2e are invoked: `scripts/build.sh` (and note
   for #1706 that CI should call them). If a lighter host-only runner is preferred,
-  create `tests/run-host-tests.sh` that runs `test_template_generation.sh`,
-  `test_provision_manifest.sh`, `test_cloud_init_generation.sh`,
-  `test_opentofu_contract.sh`, `test_opentofu_validate.sh`.
+  create `tests/run-host-tests.sh` that runs `check-template-generation.sh`,
+  `check-provision-manifest.sh`, `check-cloud-init-generation.sh`,
+  `check-opentofu-contract.sh`, `check-opentofu-validate.sh`.
 - Modify: `docs/site/docs/architecture/` — a short "off-platform GCP modules" page.
 - Modify: `CHANGELOG.md`.
 
@@ -677,8 +677,8 @@ Create `tests/run-host-tests.sh`:
 # validate. Safe in CI and on any dev box. (Lima integration stays in scripts/build.sh.)
 set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
-for t in test_template_generation test_provision_manifest test_cloud_init_generation \
-         test_opentofu_contract test_opentofu_validate; do
+for t in check-template-generation check-provision-manifest check-cloud-init-generation \
+         check-opentofu-contract check-opentofu-validate; do
   echo "== ${t} =="
   bash "${HERE}/${t}.sh"
 done
@@ -699,7 +699,7 @@ echo ""
 - [ ] **Step 3: Run the full host suite**
 
 Run: `cd <worktree> && bash tests/run-host-tests.sh`
-Expected: every section PASS (or `test_opentofu_validate` SKIP without tofu).
+Expected: every section PASS (or `check-opentofu-validate` SKIP without tofu).
 Run: `vrg-container-run -- vrg-validate` → passes (shellcheck on the new scripts).
 
 - [ ] **Step 4: Docs + changelog**
@@ -722,7 +722,7 @@ vrg-commit --type test --scope opentofu \
 
 ## Self-review notes (coverage against the spec)
 
-- **Provider-agnostic interface** → `opentofu/interface.json` + `test_opentofu_contract.sh`
+- **Provider-agnostic interface** → `opentofu/interface.json` + `check-opentofu-contract.sh`
   (the symmetry guard Azure must satisfy in Phase 3).
 - **Volume owns zone; vm follows** → volume `outputs.zone`; vm `var.zone`; `prevent_destroy`.
 - **Boot disk fixed default; `disk` not a cloud knob; only `volume` author-facing** →
