@@ -78,6 +78,28 @@ special-case backend for repos that need native x86, not a replacement.
 - **Identity×repo volume scoping.** The volume is 1:1 with `(identity, org/repo)`;
   finer scoping is a possible later refinement, not built now.
 
+## Tradeoffs (accepted)
+
+These are capabilities the local-Lima backend has that off-platform gives up. They are
+accepted, not solved — recorded so the choice is deliberate.
+
+- **Loss of transparent session portability.** With local Lima, a session can be lifted
+  out of the sandbox onto the host macOS and back, seamlessly, because the VM is a
+  *child* of the laptop sharing its filesystem — the operator can temporarily remove the
+  agent from the sandbox to do host-only work (e.g. a macOS-only build, or granting the
+  human's full host rights for a bounded window), then return it. Off-platform, the VM
+  is a network *peer* with its own checkout and **no shared filesystem**, so that
+  lift-in/lift-out move does not exist: the cloud session lives entirely on the remote
+  host. This is the most significant capability lost, and it is intrinsic to the
+  peer-not-child model (the same property that makes the cloud VM a clean native-x86
+  box is what removes the shared-FS portability). The mitigation is positioning: the
+  local Lima backend stays the default, and off-platform is reserved for the specific
+  repos that need native x86.
+- **Worse visual parity.** Screenshots and other visual/interactive feedback are harder
+  over SSH to a remote box than on a local nested-macOS session.
+- **Real cost while running.** A cloud VM bills per hour; mitigated by ephemerality and
+  the teardown discipline (see "Operational discipline").
+
 ## Repository boundary
 
 | Concern | Owner |
