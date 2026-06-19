@@ -371,9 +371,12 @@ original), and is proven behavior-identical by a Mac `build.sh` run.
 
 - [ ] **Step 1: Add the env-writer to the skel**
 
-In `templates/agent.yaml.skel`, add as the **first** `provision:` entry (before the
-logind `mode: boot` block) a new `mode: boot` block. This block keeps Lima templating
-(it is the one Lima-specific shim; it is **not** an `@@INCLUDE@@`):
+In `templates/agent.yaml.skel`, add a new `mode: boot` block **immediately after the
+logind `mode: boot` block** (NOT before it — the logind fix is timing-critical and must
+stay the first `provision:` entry, or it intermittently slows boot; see the regression
+fixed in #199). The env-writer only needs to precede the `mode: system` scripts that
+source `provision.env`, which it does as the second `mode: boot`. This block keeps Lima
+templating (it is the one Lima-specific shim; it is **not** an `@@INCLUDE@@`):
 
 ```yaml
 - mode: boot
