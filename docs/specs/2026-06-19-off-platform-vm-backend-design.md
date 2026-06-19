@@ -219,7 +219,7 @@ The real block inventory (replacing the placeholder six of the earlier draft):
 | `20-packages.sh`     | root | once | `provisioned.base` | `EXTRA_PACKAGES`/`APT_REPOS`/`VAGRANT_PLUGINS` layering |
 | `30-nested-virt.sh`  | root | once | `provisioned.base` | `/dev/kvm` verification — fails loudly if absent (the `driver=kvm` guarantee) |
 | `40-minimize.sh`     | root | once | `provisioned.base` | service-surface minimization (#78) |
-| `50-toolchain.sh`    | **user** | once | `provisioned.uv` | uv + **vergil-tooling** install; `.zshenv`/`VRG_IDENTITY_MODE` (#149) + identity-aware prompt (#154/#171) |
+| `50-toolchain.sh`    | **user** | once | `provisioned.uv` | uv + shell/identity config (`.zshenv`/`VRG_IDENTITY_MODE` (#149) + identity-aware prompt (#154/#171)). `vergil-tooling` itself installs later, at credential-injection time (`vrg-vm-init.sh`), not in this block. |
 | `60-time.sh`         | root | **boot** | — | chrony config + timesyncd handoff + optional NTP serving (#187) — re-runs each boot so serving tracks the current profile |
 | `90-profile.sh`      | root | once | `provisioned.profile` | stamp `/etc/vergil/vm-spec.fingerprint`; register declared apt repos; libvirt group membership |
 
