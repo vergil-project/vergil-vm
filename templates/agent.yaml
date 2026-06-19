@@ -100,6 +100,8 @@ provision:
 # init stage, before the built-in boot.Linux containerd script.
 - mode: boot
   script: |
+    #!/bin/bash
+    # vergil-provision: context=root cadence=boot
     set -eu
     mkdir -p /etc/systemd/logind.conf.d
     printf '[Login]\nNAutoVTs=0\nReserveVT=0\n' \
@@ -111,6 +113,7 @@ provision:
 - mode: system
   script: |
     #!/bin/bash
+    # vergil-provision: context=root cadence=once guard=provisioned.base
     set -eux -o pipefail
     # Backend-neutral inputs (#199): Lima/cloud each write this file their own way.
     . /etc/vergil/provision.env
@@ -194,6 +197,7 @@ provision:
 - mode: system
   script: |
     #!/bin/bash
+    # vergil-provision: context=root cadence=boot
     set -eux -o pipefail
     # Backend-neutral inputs (#199): Lima/cloud each write this file their own way.
     . /etc/vergil/provision.env
@@ -257,6 +261,7 @@ provision:
 - mode: system
   script: |
     #!/bin/bash
+    # vergil-provision: context=root cadence=boot
     set -eux -o pipefail
     export DEBIAN_FRONTEND=noninteractive
 
@@ -306,6 +311,7 @@ provision:
 - mode: user
   script: |
     #!/bin/bash
+    # vergil-provision: context=user cadence=once guard=provisioned.uv
     set -eux -o pipefail
 
     # First-boot-only (#177). Lima's user-phase provisioning, re-run on every
@@ -437,6 +443,7 @@ provision:
 - mode: user
   script: |
     #!/bin/bash
+    # vergil-provision: context=user cadence=boot
     set -eux -o pipefail
     export PATH="$HOME/.local/bin:/usr/local/bin:$PATH"
     export XDG_RUNTIME_DIR="/run/user/$(id -u)"
@@ -456,6 +463,7 @@ provision:
 - mode: system
   script: |
     #!/bin/bash
+    # vergil-provision: context=root cadence=once guard=provisioned.profile
     set -eux -o pipefail
     # Backend-neutral inputs (#199): Lima/cloud each write this file their own way.
     . /etc/vergil/provision.env
@@ -587,6 +595,7 @@ provision:
 - mode: system
   script: |
     #!/bin/bash
+    # vergil-provision: context=root cadence=boot
     set -eux -o pipefail
     # Backend-neutral inputs (#199): Lima/cloud each write this file their own way.
     . /etc/vergil/provision.env
@@ -640,6 +649,7 @@ provision:
 - mode: system
   script: |
     #!/bin/bash
+    # vergil-provision: context=root cadence=boot
     set -eux -o pipefail
     # Backend-neutral inputs (#199): Lima/cloud each write this file their own way.
     . /etc/vergil/provision.env
@@ -718,6 +728,7 @@ provision:
 - mode: system
   script: |
     #!/bin/bash
+    # vergil-provision: context=root cadence=boot
     set -eux -o pipefail
     # Backend-neutral inputs (#199): Lima/cloud each write this file their own way.
     . /etc/vergil/provision.env
@@ -757,6 +768,7 @@ provision:
 - mode: system
   script: |
     #!/bin/bash
+    # vergil-provision: context=root cadence=boot
     set -eux -o pipefail
     # Backend-neutral inputs (#199): Lima/cloud each write this file their own way.
     . /etc/vergil/provision.env

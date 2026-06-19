@@ -1,4 +1,5 @@
 #!/bin/bash
+# vergil-provision: context=root cadence=once guard=provisioned.profile
 set -eux -o pipefail
 # Backend-neutral inputs (#199): Lima/cloud each write this file their own way.
 . /etc/vergil/provision.env

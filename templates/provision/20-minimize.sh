@@ -1,4 +1,5 @@
 #!/bin/bash
+# vergil-provision: context=root cadence=boot
 set -eux -o pipefail
 export DEBIAN_FRONTEND=noninteractive
 

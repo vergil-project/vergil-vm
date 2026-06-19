@@ -1,4 +1,5 @@
 #!/bin/bash
+# vergil-provision: context=user cadence=once guard=provisioned.uv
 set -eux -o pipefail
 
 # First-boot-only (#177). Lima's user-phase provisioning, re-run on every

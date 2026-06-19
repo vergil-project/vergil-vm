@@ -1,4 +1,5 @@
 #!/bin/bash
+# vergil-provision: context=user cadence=boot
 set -eux -o pipefail
 export PATH="$HOME/.local/bin:/usr/local/bin:$PATH"
 export XDG_RUNTIME_DIR="/run/user/$(id -u)"

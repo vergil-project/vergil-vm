@@ -1,3 +1,5 @@
+#!/bin/bash
+# vergil-provision: context=root cadence=boot
 set -eu
 mkdir -p /etc/systemd/logind.conf.d
 printf '[Login]\nNAutoVTs=0\nReserveVT=0\n' \
