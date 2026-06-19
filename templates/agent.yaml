@@ -72,11 +72,32 @@ ssh:
   forwardAgent: false
 
 provision:
+# systemd-logind busy-loops at 100% CPU polling VT fds under this VM's
+# virtual console hardware, which starves D-Bus and hangs every PAM login
+# (including the `sudo -i` in Lima's rootless-containerd setup), wedging
+# cloud-init and leaving `limactl start` stuck at "Starting VM...".
+# Disabling VT management stops the spin. mode:boot runs in cloud-init's
+# init stage, before the built-in boot.Linux containerd script. This MUST stay the
+# FIRST provision entry — it is timing-critical, and delaying it (e.g. behind the
+# provision.env writer) widens the busy-loop race and intermittently slows boot (#199).
+- mode: boot
+  script: |
+    #!/bin/bash
+    # vergil-provision: context=root cadence=boot
+    set -eu
+    mkdir -p /etc/systemd/logind.conf.d
+    printf '[Login]\nNAutoVTs=0\nReserveVT=0\n' \
+      > /etc/systemd/logind.conf.d/10-vergil-novt.conf
+    if systemctl is-active --quiet systemd-logind 2>/dev/null; then
+      systemctl try-restart systemd-logind || true
+    fi
+
 # Backend-neutral provisioning contract (#199) — write /etc/vergil/provision.env from
 # Lima's template params so the extracted provision/*.sh read shell variables, not Lima
 # {{...}} templating (the same scripts cloud-init drives off-platform). mode:boot so it
-# exists before any system/user script sources it. Quoted heredoc ('ENV') keeps the
-# values literal at write time; Lima still substitutes {{...}} at render time.
+# exists before any system/user script sources it; placed AFTER the logind fix, which
+# stays first. Quoted heredoc ('ENV') keeps the values literal at write time; Lima
+# still substitutes {{...}} at render time.
 - mode: boot
   script: |
     set -eu
@@ -91,24 +112,6 @@ provision:
     export SPEC_FINGERPRINT="{{.Param.SPEC_FINGERPRINT}}"
     ENV
     chmod 0644 /etc/vergil/provision.env
-
-# systemd-logind busy-loops at 100% CPU polling VT fds under this VM's
-# virtual console hardware, which starves D-Bus and hangs every PAM login
-# (including the `sudo -i` in Lima's rootless-containerd setup), wedging
-# cloud-init and leaving `limactl start` stuck at "Starting VM...".
-# Disabling VT management stops the spin. mode:boot runs in cloud-init's
-# init stage, before the built-in boot.Linux containerd script.
-- mode: boot
-  script: |
-    #!/bin/bash
-    # vergil-provision: context=root cadence=boot
-    set -eu
-    mkdir -p /etc/systemd/logind.conf.d
-    printf '[Login]\nNAutoVTs=0\nReserveVT=0\n' \
-      > /etc/systemd/logind.conf.d/10-vergil-novt.conf
-    if systemctl is-active --quiet systemd-logind 2>/dev/null; then
-      systemctl try-restart systemd-logind || true
-    fi
 
 - mode: system
   script: |
