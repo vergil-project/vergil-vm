@@ -72,6 +72,26 @@ ssh:
   forwardAgent: false
 
 provision:
+# Backend-neutral provisioning contract (#199) — write /etc/vergil/provision.env from
+# Lima's template params so the extracted provision/*.sh read shell variables, not Lima
+# {{...}} templating (the same scripts cloud-init drives off-platform). mode:boot so it
+# exists before any system/user script sources it. Quoted heredoc ('ENV') keeps the
+# values literal at write time; Lima still substitutes {{...}} at render time.
+- mode: boot
+  script: |
+    set -eu
+    mkdir -p /etc/vergil
+    cat > /etc/vergil/provision.env <<'ENV'
+    export VERGIL_USER="{{.User}}"
+    export EXTRA_PACKAGES="{{.Param.EXTRA_PACKAGES}}"
+    export APT_REPOS="{{.Param.APT_REPOS}}"
+    export VAGRANT_PLUGINS="{{.Param.VAGRANT_PLUGINS}}"
+    export NESTED_VIRT="{{.Param.NESTED_VIRT}}"
+    export PORT_FORWARDS="{{.Param.PORT_FORWARDS}}"
+    export SPEC_FINGERPRINT="{{.Param.SPEC_FINGERPRINT}}"
+    ENV
+    chmod 0644 /etc/vergil/provision.env
+
 # systemd-logind busy-loops at 100% CPU polling VT fds under this VM's
 # virtual console hardware, which starves D-Bus and hangs every PAM login
 # (including the `sudo -i` in Lima's rootless-containerd setup), wedging

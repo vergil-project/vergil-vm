@@ -1,5 +1,7 @@
 #!/bin/bash
 set -eux -o pipefail
+# Backend-neutral inputs (#199): Lima/cloud each write this file their own way.
+. /etc/vergil/provision.env
 export DEBIAN_FRONTEND=noninteractive
 
 # First-boot-only (#177). Lima re-runs every provisioning script on every
@@ -49,7 +51,7 @@ chmod +x /usr/local/bin/yq
 npm install -g @anthropic-ai/claude-code
 
 # Set zsh as default shell for the Lima user
-chsh -s /bin/zsh "{{.User}}"
+chsh -s /bin/zsh "$VERGIL_USER"
 
 # sshd: accept terminal env vars so Claude Code detects keyboard
 # protocol support when accessed over SSH

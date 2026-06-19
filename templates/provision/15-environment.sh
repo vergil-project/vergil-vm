@@ -1,6 +1,8 @@
 #!/bin/bash
 set -eux -o pipefail
-USER_HOME="$(getent passwd "{{.User}}" | cut -d: -f6)"
+# Backend-neutral inputs (#199): Lima/cloud each write this file their own way.
+. /etc/vergil/provision.env
+USER_HOME="$(getent passwd "$VERGIL_USER" | cut -d: -f6)"
 sed -i "s|^PATH=.*|PATH=\"${USER_HOME}/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games\"|" /etc/environment
 
 # Disable Claude Code's background autoupdater image-wide (issues #85,

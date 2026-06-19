@@ -1,8 +1,10 @@
 #!/bin/bash
 set -eux -o pipefail
-PKGS="{{.Param.EXTRA_PACKAGES}}"
-PLUGINS="{{.Param.VAGRANT_PLUGINS}}"
-NESTED="{{.Param.NESTED_VIRT}}"
+# Backend-neutral inputs (#199): Lima/cloud each write this file their own way.
+. /etc/vergil/provision.env
+PKGS="$EXTRA_PACKAGES"
+PLUGINS="$VAGRANT_PLUGINS"
+NESTED="$NESTED_VIRT"
 
 WANTED=false
 case " ${PKGS} " in *" libvirt-daemon-system "*) WANTED=true ;; esac
@@ -15,5 +17,5 @@ printf '%s\n' "${WANTED}" > /etc/vergil/libvirt-groups.requested
 if [ "${WANTED}" = "true" ]; then
   getent group libvirt >/dev/null || groupadd --system libvirt
   getent group kvm >/dev/null || groupadd --system kvm
-  usermod -aG libvirt,kvm "{{.User}}"
+  usermod -aG libvirt,kvm "$VERGIL_USER"
 fi

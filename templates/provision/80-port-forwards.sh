@@ -1,8 +1,10 @@
 #!/bin/bash
 set -eux -o pipefail
+# Backend-neutral inputs (#199): Lima/cloud each write this file their own way.
+. /etc/vergil/provision.env
 
 mkdir -p /etc/vergil
-FORWARDS="{{.Param.PORT_FORWARDS}}"
+FORWARDS="$PORT_FORWARDS"
 
 if [ -z "$FORWARDS" ]; then
   printf '0\n' > /etc/vergil/port-forwards.requested

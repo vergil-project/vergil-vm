@@ -1,6 +1,8 @@
 #!/bin/bash
 set -eux -o pipefail
-NESTED="{{.Param.NESTED_VIRT}}"
+# Backend-neutral inputs (#199): Lima/cloud each write this file their own way.
+. /etc/vergil/provision.env
+NESTED="$NESTED_VIRT"
 mkdir -p /etc/vergil
 printf '%s\n' "${NESTED:-false}" > /etc/vergil/nested-virt.requested
 if [ "${NESTED}" = "true" ] && [ ! -c /dev/kvm ]; then

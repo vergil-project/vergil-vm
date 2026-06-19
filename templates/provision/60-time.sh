@@ -1,8 +1,10 @@
 #!/bin/bash
 set -eux -o pipefail
-PKGS="{{.Param.EXTRA_PACKAGES}}"
-PLUGINS="{{.Param.VAGRANT_PLUGINS}}"
-NESTED="{{.Param.NESTED_VIRT}}"
+# Backend-neutral inputs (#199): Lima/cloud each write this file their own way.
+. /etc/vergil/provision.env
+PKGS="$EXTRA_PACKAGES"
+PLUGINS="$VAGRANT_PLUGINS"
+NESTED="$NESTED_VIRT"
 
 # Same libvirt-stack signal the group block derives: a VM that hosts nested
 # libvirt guests is the natural NTP authority for them.

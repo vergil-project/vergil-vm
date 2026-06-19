@@ -1,5 +1,7 @@
 #!/bin/bash
 set -eux -o pipefail
+# Backend-neutral inputs (#199): Lima/cloud each write this file their own way.
+. /etc/vergil/provision.env
 export DEBIAN_FRONTEND=noninteractive
 
 # First-boot-only (#177): skip the per-repo profile install (apt repos,
@@ -8,11 +10,11 @@ export DEBIAN_FRONTEND=noninteractive
 if [ -f /etc/vergil/provisioned.profile ]; then exit 0; fi
 
 mkdir -p /etc/vergil
-printf '%s\n' '{{.Param.SPEC_FINGERPRINT}}' > /etc/vergil/vm-spec.fingerprint
+printf '%s\n' "$SPEC_FINGERPRINT" > /etc/vergil/vm-spec.fingerprint
 
 # Extra apt repositories: each record is "name|key_url|uri|suite|components";
 # records are ";"-separated. Keys are expected ASCII-armored (gpg --dearmor).
-REPOS="{{.Param.APT_REPOS}}"
+REPOS="$APT_REPOS"
 if [ -n "$REPOS" ]; then
   IFS=';' read -ra _repos <<< "$REPOS"
   for _r in "${_repos[@]}"; do
@@ -23,7 +25,7 @@ if [ -n "$REPOS" ]; then
   done
 fi
 
-PKGS="{{.Param.EXTRA_PACKAGES}}"
+PKGS="$EXTRA_PACKAGES"
 if [ -n "$PKGS" ]; then
   apt-get update
   # Per-package resolution diagnostics (issue #130): apt transactions are
@@ -59,7 +61,7 @@ fi
 # — so the only supported Linux/arm64 path is HashiCorp's Ruby gem.
 # Consuming repos declare plugins plus the build deps (ruby-dev, gcc,
 # make, pkg-config) in packages; "vagrant" never belongs in the apt list.
-PLUGINS="{{.Param.VAGRANT_PLUGINS}}"
+PLUGINS="$VAGRANT_PLUGINS"
 if [ -n "$PLUGINS" ]; then
   if ! command -v vagrant >/dev/null 2>&1; then
     if ! command -v gem >/dev/null 2>&1; then
@@ -78,7 +80,7 @@ if [ -n "$PLUGINS" ]; then
     # (cloud-init status: error → cycle-ssh failed the whole rebuild). The
     # plugin list is read locally from ~/.vagrant.d — no network — so the
     # steady state (plugin already installed) now makes zero network calls.
-    if sudo -u "{{.User}}" -H vagrant plugin list 2>/dev/null \
+    if sudo -u "$VERGIL_USER" -H vagrant plugin list 2>/dev/null \
          | grep -q "^${_p} "; then
       continue
     fi
@@ -86,7 +88,7 @@ if [ -n "$PLUGINS" ]; then
     # source hiccup; tolerate the attempts failing (the post-check below is
     # the real gate) so a transient blip warns instead of aborting the boot.
     for _try in 1 2 3; do
-      if sudo -u "{{.User}}" -H vagrant plugin install "$_p"; then
+      if sudo -u "$VERGIL_USER" -H vagrant plugin install "$_p"; then
         break
       fi
       echo "WARNING: vagrant plugin install '$_p' attempt ${_try}/3 failed; retrying" >&2
@@ -95,7 +97,7 @@ if [ -n "$PLUGINS" ]; then
     # A still-absent plugin after the retries is a real failure, not a
     # transient refresh blip — abort loudly rather than ship a VM missing
     # its declared plugin (no-silent-failures).
-    if ! sudo -u "{{.User}}" -H vagrant plugin list 2>/dev/null \
+    if ! sudo -u "$VERGIL_USER" -H vagrant plugin list 2>/dev/null \
           | grep -q "^${_p} "; then
       printf 'ERROR: vagrant plugin "%s" could not be installed after 3 attempts — gems.hashicorp.com unreachable? (declared in the repo vergil.toml [vm] vagrant_plugins)\n' \
         "$_p" | tee /etc/vergil/provision-error >&2

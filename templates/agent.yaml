@@ -72,6 +72,26 @@ ssh:
   forwardAgent: false
 
 provision:
+# Backend-neutral provisioning contract (#199) — write /etc/vergil/provision.env from
+# Lima's template params so the extracted provision/*.sh read shell variables, not Lima
+# {{...}} templating (the same scripts cloud-init drives off-platform). mode:boot so it
+# exists before any system/user script sources it. Quoted heredoc ('ENV') keeps the
+# values literal at write time; Lima still substitutes {{...}} at render time.
+- mode: boot
+  script: |
+    set -eu
+    mkdir -p /etc/vergil
+    cat > /etc/vergil/provision.env <<'ENV'
+    export VERGIL_USER="{{.User}}"
+    export EXTRA_PACKAGES="{{.Param.EXTRA_PACKAGES}}"
+    export APT_REPOS="{{.Param.APT_REPOS}}"
+    export VAGRANT_PLUGINS="{{.Param.VAGRANT_PLUGINS}}"
+    export NESTED_VIRT="{{.Param.NESTED_VIRT}}"
+    export PORT_FORWARDS="{{.Param.PORT_FORWARDS}}"
+    export SPEC_FINGERPRINT="{{.Param.SPEC_FINGERPRINT}}"
+    ENV
+    chmod 0644 /etc/vergil/provision.env
+
 # systemd-logind busy-loops at 100% CPU polling VT fds under this VM's
 # virtual console hardware, which starves D-Bus and hangs every PAM login
 # (including the `sudo -i` in Lima's rootless-containerd setup), wedging
@@ -92,6 +112,8 @@ provision:
   script: |
     #!/bin/bash
     set -eux -o pipefail
+    # Backend-neutral inputs (#199): Lima/cloud each write this file their own way.
+    . /etc/vergil/provision.env
     export DEBIAN_FRONTEND=noninteractive
 
     # First-boot-only (#177). Lima re-runs every provisioning script on every
@@ -141,7 +163,7 @@ provision:
     npm install -g @anthropic-ai/claude-code
 
     # Set zsh as default shell for the Lima user
-    chsh -s /bin/zsh "{{.User}}"
+    chsh -s /bin/zsh "$VERGIL_USER"
 
     # sshd: accept terminal env vars so Claude Code detects keyboard
     # protocol support when accessed over SSH
@@ -173,7 +195,9 @@ provision:
   script: |
     #!/bin/bash
     set -eux -o pipefail
-    USER_HOME="$(getent passwd "{{.User}}" | cut -d: -f6)"
+    # Backend-neutral inputs (#199): Lima/cloud each write this file their own way.
+    . /etc/vergil/provision.env
+    USER_HOME="$(getent passwd "$VERGIL_USER" | cut -d: -f6)"
     sed -i "s|^PATH=.*|PATH=\"${USER_HOME}/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games\"|" /etc/environment
 
     # Disable Claude Code's background autoupdater image-wide (issues #85,
@@ -433,6 +457,8 @@ provision:
   script: |
     #!/bin/bash
     set -eux -o pipefail
+    # Backend-neutral inputs (#199): Lima/cloud each write this file their own way.
+    . /etc/vergil/provision.env
     export DEBIAN_FRONTEND=noninteractive
 
     # First-boot-only (#177): skip the per-repo profile install (apt repos,
@@ -441,11 +467,11 @@ provision:
     if [ -f /etc/vergil/provisioned.profile ]; then exit 0; fi
 
     mkdir -p /etc/vergil
-    printf '%s\n' '{{.Param.SPEC_FINGERPRINT}}' > /etc/vergil/vm-spec.fingerprint
+    printf '%s\n' "$SPEC_FINGERPRINT" > /etc/vergil/vm-spec.fingerprint
 
     # Extra apt repositories: each record is "name|key_url|uri|suite|components";
     # records are ";"-separated. Keys are expected ASCII-armored (gpg --dearmor).
-    REPOS="{{.Param.APT_REPOS}}"
+    REPOS="$APT_REPOS"
     if [ -n "$REPOS" ]; then
       IFS=';' read -ra _repos <<< "$REPOS"
       for _r in "${_repos[@]}"; do
@@ -456,7 +482,7 @@ provision:
       done
     fi
 
-    PKGS="{{.Param.EXTRA_PACKAGES}}"
+    PKGS="$EXTRA_PACKAGES"
     if [ -n "$PKGS" ]; then
       apt-get update
       # Per-package resolution diagnostics (issue #130): apt transactions are
@@ -492,7 +518,7 @@ provision:
     # — so the only supported Linux/arm64 path is HashiCorp's Ruby gem.
     # Consuming repos declare plugins plus the build deps (ruby-dev, gcc,
     # make, pkg-config) in packages; "vagrant" never belongs in the apt list.
-    PLUGINS="{{.Param.VAGRANT_PLUGINS}}"
+    PLUGINS="$VAGRANT_PLUGINS"
     if [ -n "$PLUGINS" ]; then
       if ! command -v vagrant >/dev/null 2>&1; then
         if ! command -v gem >/dev/null 2>&1; then
@@ -511,7 +537,7 @@ provision:
         # (cloud-init status: error → cycle-ssh failed the whole rebuild). The
         # plugin list is read locally from ~/.vagrant.d — no network — so the
         # steady state (plugin already installed) now makes zero network calls.
-        if sudo -u "{{.User}}" -H vagrant plugin list 2>/dev/null \
+        if sudo -u "$VERGIL_USER" -H vagrant plugin list 2>/dev/null \
              | grep -q "^${_p} "; then
           continue
         fi
@@ -519,7 +545,7 @@ provision:
         # source hiccup; tolerate the attempts failing (the post-check below is
         # the real gate) so a transient blip warns instead of aborting the boot.
         for _try in 1 2 3; do
-          if sudo -u "{{.User}}" -H vagrant plugin install "$_p"; then
+          if sudo -u "$VERGIL_USER" -H vagrant plugin install "$_p"; then
             break
           fi
           echo "WARNING: vagrant plugin install '$_p' attempt ${_try}/3 failed; retrying" >&2
@@ -528,7 +554,7 @@ provision:
         # A still-absent plugin after the retries is a real failure, not a
         # transient refresh blip — abort loudly rather than ship a VM missing
         # its declared plugin (no-silent-failures).
-        if ! sudo -u "{{.User}}" -H vagrant plugin list 2>/dev/null \
+        if ! sudo -u "$VERGIL_USER" -H vagrant plugin list 2>/dev/null \
               | grep -q "^${_p} "; then
           printf 'ERROR: vagrant plugin "%s" could not be installed after 3 attempts — gems.hashicorp.com unreachable? (declared in the repo vergil.toml [vm] vagrant_plugins)\n' \
             "$_p" | tee /etc/vergil/provision-error >&2
@@ -562,9 +588,11 @@ provision:
   script: |
     #!/bin/bash
     set -eux -o pipefail
-    PKGS="{{.Param.EXTRA_PACKAGES}}"
-    PLUGINS="{{.Param.VAGRANT_PLUGINS}}"
-    NESTED="{{.Param.NESTED_VIRT}}"
+    # Backend-neutral inputs (#199): Lima/cloud each write this file their own way.
+    . /etc/vergil/provision.env
+    PKGS="$EXTRA_PACKAGES"
+    PLUGINS="$VAGRANT_PLUGINS"
+    NESTED="$NESTED_VIRT"
 
     WANTED=false
     case " ${PKGS} " in *" libvirt-daemon-system "*) WANTED=true ;; esac
@@ -577,7 +605,7 @@ provision:
     if [ "${WANTED}" = "true" ]; then
       getent group libvirt >/dev/null || groupadd --system libvirt
       getent group kvm >/dev/null || groupadd --system kvm
-      usermod -aG libvirt,kvm "{{.User}}"
+      usermod -aG libvirt,kvm "$VERGIL_USER"
     fi
 
 # --- Time: chrony with makestep + NTP authority for nested guests (issue #187)
@@ -613,9 +641,11 @@ provision:
   script: |
     #!/bin/bash
     set -eux -o pipefail
-    PKGS="{{.Param.EXTRA_PACKAGES}}"
-    PLUGINS="{{.Param.VAGRANT_PLUGINS}}"
-    NESTED="{{.Param.NESTED_VIRT}}"
+    # Backend-neutral inputs (#199): Lima/cloud each write this file their own way.
+    . /etc/vergil/provision.env
+    PKGS="$EXTRA_PACKAGES"
+    PLUGINS="$VAGRANT_PLUGINS"
+    NESTED="$NESTED_VIRT"
 
     # Same libvirt-stack signal the group block derives: a VM that hosts nested
     # libvirt guests is the natural NTP authority for them.
@@ -689,7 +719,9 @@ provision:
   script: |
     #!/bin/bash
     set -eux -o pipefail
-    NESTED="{{.Param.NESTED_VIRT}}"
+    # Backend-neutral inputs (#199): Lima/cloud each write this file their own way.
+    . /etc/vergil/provision.env
+    NESTED="$NESTED_VIRT"
     mkdir -p /etc/vergil
     printf '%s\n' "${NESTED:-false}" > /etc/vergil/nested-virt.requested
     if [ "${NESTED}" = "true" ] && [ ! -c /dev/kvm ]; then
@@ -726,9 +758,11 @@ provision:
   script: |
     #!/bin/bash
     set -eux -o pipefail
+    # Backend-neutral inputs (#199): Lima/cloud each write this file their own way.
+    . /etc/vergil/provision.env
 
     mkdir -p /etc/vergil
-    FORWARDS="{{.Param.PORT_FORWARDS}}"
+    FORWARDS="$PORT_FORWARDS"
 
     if [ -z "$FORWARDS" ]; then
       printf '0\n' > /etc/vergil/port-forwards.requested
