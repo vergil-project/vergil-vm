@@ -34,6 +34,12 @@ cleanup() {
 }
 trap cleanup EXIT
 
+# agent.yaml is generated from the skeleton + provision scripts. Fail early if
+# the committed copy is stale, so we never build/test an out-of-date template.
+echo "=== Checking templates/agent.yaml is up to date ==="
+"${REPO_ROOT}/scripts/build-template.sh" --check
+echo ""
+
 echo "=== Building vergil-agent VM ==="
 echo "Instance: $INSTANCE"
 echo "Template: $TEMPLATE"
