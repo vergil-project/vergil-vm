@@ -567,6 +567,8 @@
       
         
       
+        
+      
     
     
     
@@ -619,6 +621,34 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../releases/v2.1.26/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.26
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
               
             
               
@@ -1449,6 +1479,8 @@
       
         
       
+        
+      
     
     
     
@@ -1540,6 +1572,34 @@
     
   
     Credential Injection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="decisions/off-platform-gcp-modules/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Off-Platform GCP Modules
   
 
     
@@ -1884,7 +1944,22 @@ agents to pull and run containers without root privileges. See
 rationale.</p>
 <h2 id="provisioning-pipeline">Provisioning Pipeline<a class="headerlink" href="#provisioning-pipeline" title="Permanent link">&para;</a></h2>
 <p>The VM template (<code>templates/agent.yaml</code>) defines a four-stage pipeline
-that runs when a VM is created:</p>
+that runs when a VM is created.</p>
+<blockquote>
+<p><strong><code>templates/agent.yaml</code> is generated — do not hand-edit it.</strong> The
+provisioning logic lives in backend-neutral scripts under
+<code>templates/provision/*.sh</code>, and <code>scripts/build-template.sh</code> assembles
+<code>agent.yaml</code> from the hand-authored skeleton <code>templates/agent.yaml.skel</code>
+(which owns the Lima structure plus a <code>mode: boot</code> writer for
+<code>/etc/vergil/provision.env</code>) by expanding <code>@@INCLUDE@@</code> markers. Edit the
+provision scripts or the skeleton, run <code>scripts/build-template.sh</code>, and
+commit the regenerated <code>agent.yaml</code>; <code>scripts/build.sh</code> and
+<code>tests/check-template-generation.sh</code> fail on a stale copy. The scripts read
+their inputs from <code>provision.env</code> (shell variables, not Lima <code>{{…}}</code>
+templating) and each declares a <code># vergil-provision:</code> context/cadence
+manifest, so the <strong>same</strong> scripts drive the off-platform cloud-init backend
+(vergil-vm #199).</p>
+</blockquote>
 <h3 id="stage-1-system-provisioning-root">Stage 1: System provisioning (root)<a class="headerlink" href="#stage-1-system-provisioning-root" title="Permanent link">&para;</a></h3>
 <p>Installs OS packages and development tools:</p>
 <table>
