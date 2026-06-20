@@ -68,6 +68,7 @@ nav:
       - Design Decisions:
           - VM Isolation Model: architecture/decisions/vm-isolation-model.md
           - Credential Injection: architecture/decisions/credential-injection.md
+          - Off-Platform GCP Modules: architecture/decisions/off-platform-gcp-modules.md
   - Operations:
       - Build and Test: operations/build-and-test.md
       - Resource Tuning: operations/resource-tuning.md

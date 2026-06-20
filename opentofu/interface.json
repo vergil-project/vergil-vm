@@ -1,0 +1,12 @@
+{
+  "volume": {
+    "variables": ["name", "region", "zone", "size_gib", "labels"],
+    "outputs": ["volume_id", "zone"]
+  },
+  "vm": {
+    "variables": ["name", "zone", "instance_type", "nested", "volume_id",
+                  "boot_disk_gib", "ssh_user", "ssh_public_key",
+                  "ssh_source_ranges", "provision_env", "labels"],
+    "outputs": ["host", "ssh_user"]
+  }
+}

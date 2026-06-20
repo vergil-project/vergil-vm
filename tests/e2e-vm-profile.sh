@@ -29,7 +29,11 @@ fail() {
 
 # libvirt-daemon-system both exercises the package layer alongside cowsay and
 # triggers the libvirt/kvm group-membership derivation (issue #137).
+# Resolve the template's HOST_PROJECTS_DIR mount to an absolute path: limactl 2.1.1
+# rejects a non-absolute mount location as fatal. This throwaway VM does not use
+# /projects, so any valid absolute dir (the test tree here) satisfies the validator.
 limactl create --name="${INSTANCE}" --tty=false \
+  --set=".mounts[0].location = \"${HERE}\"" \
   --set=".param.APT_REPOS = \"${REPO}\"" \
   --set='.param.EXTRA_PACKAGES = "cowsay libvirt-daemon-system"' \
   --set=".param.SPEC_FINGERPRINT = \"${FP}\"" \

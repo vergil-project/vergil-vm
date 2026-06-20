@@ -38,13 +38,20 @@ else
     echo "  FAIL: chronyc missing"; fail=1
 fi
 
-# timesyncd must be masked — chrony owns the clock, no dueling daemons.
+# chrony owns the clock; systemd-timesyncd must never run alongside it. The invariant
+# holds two ways: the unit is present and masked (images that still ship timesyncd —
+# the time block masks it), OR the unit is absent entirely (newer minimal Ubuntu cloud
+# images no longer install systemd-timesyncd, so there is no daemon to duel with). Both
+# are correct end states; only an installed, un-masked timesyncd is a failure.
 state=$(systemctl is-enabled systemd-timesyncd 2>/dev/null || true)
-if [ "$state" = "masked" ]; then
-    echo "  PASS: systemd-timesyncd masked"
-else
-    echo "  FAIL: systemd-timesyncd expected masked, got '${state:-absent}'"; fail=1
-fi
+case "$state" in
+    masked)
+        echo "  PASS: systemd-timesyncd masked" ;;
+    not-found|"")
+        echo "  PASS: systemd-timesyncd absent (not installed — no dueling daemon)" ;;
+    *)
+        echo "  FAIL: systemd-timesyncd present and not masked, got '${state}'"; fail=1 ;;
+esac
 
 if [ ! -f "$CONF" ]; then
     echo "  FAIL: $CONF missing (time provisioning step did not run)"; fail=1

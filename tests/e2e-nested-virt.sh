@@ -25,7 +25,11 @@ fail() {
   exit 1
 }
 
+# Resolve the template's HOST_PROJECTS_DIR mount to an absolute path: limactl 2.1.1
+# rejects a non-absolute mount location as fatal. This throwaway VM does not use
+# /projects, so any valid absolute dir (the test tree here) satisfies the validator.
 limactl create --name="${INSTANCE}" --tty=false \
+  --set=".mounts[0].location = \"${HERE}\"" \
   --set='.nestedVirtualization = true' \
   --set='.param.NESTED_VIRT = "true"' \
   "${TEMPLATE}" \
