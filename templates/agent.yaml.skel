@@ -1,0 +1,305 @@
+# vergil-agent — Identity VM for Vergil agent sessions.
+#
+# Creates an Ubuntu 24.04 VM with rootless containerd, core
+# development tools, and dynamic vergil-tooling installation.
+#
+# The projects mount is required — vrg-vm (vergil-tooling) drives this
+# template and injects HOST_PROJECTS_DIR from the identity config at
+# create time:
+#
+#   vrg-vm create
+#   vrg-vm start
+#
+# Reference:
+#   docs/specs/2026-05-20-identity-vm-isolation-design.md
+#   docs/specs/2026-05-20-vergil-vm-image-management-design.md
+
+minimumLimaVersion: "2.0.0"
+
+base:
+- template:_images/ubuntu-lts
+
+# Resource allocation — conservative defaults for modest hardware.
+#
+# Override per-identity in ~/.config/vergil/identities.toml:
+#   cpus = 12
+#   memory = "32GiB"
+#   disk = "100GiB"
+#
+# vrg-vm applies these at create time; apply a changed footprint to an
+# existing VM with `vrg-vm rebuild`.
+cpus: 4
+memory: "4GiB"
+disk: "50GiB"
+
+# Per-repo VM profile parameters (issue #99). Overridden at create time by
+# vrg-vm via `--set=.param.<KEY>`. Empty defaults keep the base box unchanged.
+param:
+  EXTRA_PACKAGES: ""          # space-separated apt package list, layered additively
+  APT_REPOS: ""               # ";"-joined "name|key_url|uri|suite|components" records
+  VAGRANT_PLUGINS: ""         # space-separated vagrant plugin names
+  SPEC_FINGERPRINT: ""        # composed-spec fingerprint, stamped into the VM
+  NESTED_VIRT: ""             # "true" when the composed spec declares nested = true
+  PORT_FORWARDS: ""           # ";"-joined "port|host:port" relay records (issue #170)
+
+# Nested virtualization (issue #131) — a per-profile knob, default OFF.
+# `nestedVirtualization` is static top-level Lima/vz config, so a template
+# cannot express "host permitting"; the consuming repo's spec drives it at
+# create time instead. When the composed spec declares `nested = true`,
+# vrg-vm sets BOTH halves together:
+#
+#   --set='.nestedVirtualization = true'
+#   --set='.param.NESTED_VIRT = "true"'
+#
+# The flag makes Lima's vz driver expose virtualization extensions to the
+# guest (so /dev/kvm appears); the param drives the in-guest verification
+# step below, which fails the build loudly if /dev/kvm did not materialize.
+# Requires macOS 15+ on M3-or-later Apple silicon — Lima itself rejects the
+# flag at create/start on unsupported hosts. Default-off keeps the KVM API
+# out of base agent VMs (service-surface minimization, issue #78).
+nestedVirtualization: false
+
+containerd:
+  system: false
+  user: true
+
+mounts:
+- location: "HOST_PROJECTS_DIR"
+  mountPoint: "/projects"
+  writable: true
+
+ssh:
+  forwardAgent: false
+
+provision:
+# systemd-logind busy-loops at 100% CPU polling VT fds under this VM's
+# virtual console hardware, which starves D-Bus and hangs every PAM login
+# (including the `sudo -i` in Lima's rootless-containerd setup), wedging
+# cloud-init and leaving `limactl start` stuck at "Starting VM...".
+# Disabling VT management stops the spin. mode:boot runs in cloud-init's
+# init stage, before the built-in boot.Linux containerd script. This MUST stay the
+# FIRST provision entry — it is timing-critical, and delaying it (e.g. behind the
+# provision.env writer) widens the busy-loop race and intermittently slows boot (#199).
+- mode: boot
+  script: |
+    # @@INCLUDE templates/provision/00-logind-fix.sh@@
+
+# Backend-neutral provisioning contract (#199) — write /etc/vergil/provision.env from
+# Lima's template params so the extracted provision/*.sh read shell variables, not Lima
+# {{...}} templating (the same scripts cloud-init drives off-platform). mode:boot so it
+# exists before any system/user script sources it; placed AFTER the logind fix, which
+# stays first. Quoted heredoc ('ENV') keeps the values literal at write time; Lima
+# still substitutes {{...}} at render time.
+- mode: boot
+  script: |
+    set -eu
+    mkdir -p /etc/vergil
+    cat > /etc/vergil/provision.env <<'ENV'
+    export VERGIL_USER="{{.User}}"
+    export EXTRA_PACKAGES="{{.Param.EXTRA_PACKAGES}}"
+    export APT_REPOS="{{.Param.APT_REPOS}}"
+    export VAGRANT_PLUGINS="{{.Param.VAGRANT_PLUGINS}}"
+    export NESTED_VIRT="{{.Param.NESTED_VIRT}}"
+    export PORT_FORWARDS="{{.Param.PORT_FORWARDS}}"
+    export SPEC_FINGERPRINT="{{.Param.SPEC_FINGERPRINT}}"
+    ENV
+    chmod 0644 /etc/vergil/provision.env
+
+- mode: system
+  script: |
+    # @@INCLUDE templates/provision/10-base.sh@@
+
+# PATH for non-login, non-interactive shells. uv and uv-installed vergil
+# tooling land in ~/.local/bin, which Claude Code's non-interactive shells
+# (e.g. `limactl shell -- ...`) must resolve. Those shells don't source
+# ~/.zshrc or /etc/profile.d — their PATH comes solely from /etc/environment
+# via PAM (pam_env). So prepend ~/.local/bin there. pam_env does NOT expand
+# $HOME, and Lima may suffix the home dir (e.g. <user>.guest), so resolve the
+# real home with getent rather than assuming /home/{{.User}}. Also drop the
+# now-stale /snap/bin (snapd is purged in the minimization step below).
+- mode: system
+  script: |
+    # @@INCLUDE templates/provision/15-environment.sh@@
+
+# --- Service-surface minimization (issue #78) -------------------------------
+# Strip the general-purpose Ubuntu default service set down to what this
+# special-purpose agent VM needs. Mask-by-default (reversible, resists
+# dependency pull-in) + a curated purge of dead-weight packages. The mask list
+# is the reconciled "expanded" set from the baseline audit (see
+# docs/specs/2026-05-31-vm-service-surface-minimization-design.md and the
+# decision table on issue #78); it MUST match tests/test_services.sh exactly.
+#
+# KEEP (load-bearing — never mask): ssh, lima-* (limactl access),
+#   containerd (user), cloud-init* (per-boot logind fix #74), dbus, journald,
+#   logind, resolved, networkd/networkd-dispatcher, serial-getty,
+#   polkit, apparmor, LVM/dm/storage (lvm2-monitor, dm-event, *.lvmpolld),
+#   grub/boot/console units, and ALL netfilter*/iptables*/nftables*/ufw units
+#   (reserved for egress filtering — vergil-tooling #901).
+# NOTE: systemd-timesyncd is NOT kept — chrony owns the clock now (issue #187),
+#   and the time block below masks timesyncd so the two daemons never duel.
+# MASK: VMware tools (open-vm-tools, vgauth — wrong hypervisor), iSCSI
+#   (open-iscsi, iscsid), multipathd, udisks2, ModemManager, apport*, Ubuntu
+#   Pro (ubuntu-advantage, ua-*), sysstat*, fwupd-refresh, mdadm (mdcheck*,
+#   mdmonitor*), update-notifier*, lxd-installer, motd-news*, apt-daily*,
+#   getty@tty1, systemd-networkd-wait-online.
+# PURGE: snapd, unattended-upgrades.
+- mode: system
+  script: |
+    # @@INCLUDE templates/provision/20-minimize.sh@@
+
+- mode: user
+  script: |
+    # @@INCLUDE templates/provision/30-toolchain.sh@@
+
+# --- Rootless buildkit for `nerdctl build` (issue #97) ----------------------
+# Lima's nerdctl-full bundle (pulled via `containerd: {user: true}`) already
+# ships buildkitd/buildctl — the gap is that nothing starts the daemon. Use
+# upstream's own containerd-rootless-setuptool.sh to install and start the
+# rootless buildkit systemd --user unit (rootless OCI worker). It exposes the
+# default socket nerdctl auto-probes, so `nerdctl build` needs no
+# --buildkit-host wiring. Lingering is already enabled by Lima's containerd
+# setup, so the unit survives logout and reboot.
+- mode: user
+  script: |
+    # @@INCLUDE templates/provision/35-buildkit.sh@@
+
+# --- Per-repo VM profile layering (issue #99, #105) ------------------------
+# Declarative tooling install, owned by this (reviewed) template — repos supply
+# data, never a script. Stamp the fingerprint, register declared apt repos, install
+# the additive apt packages, then install declared vagrant plugins for the Lima user.
+# Every step is a no-op when its param is empty, so the base box is unaffected.
+- mode: system
+  script: |
+    # @@INCLUDE templates/provision/40-profile.sh@@
+
+# --- Libvirt/KVM group membership (issue #137) -------------------------------
+# A profile that declares the libvirt stack leaves the Lima user unable to use
+# it: the `libvirt` group gates the qemu:///system socket (vagrant-libvirt's
+# default URI) and the `kvm` group gates /dev/kvm once nested virt exposes it.
+# The vm-spec schema has no way to express group membership, so derive the
+# intent from what the profile already declares — libvirt-daemon-system in
+# packages, vagrant-libvirt in vagrant_plugins, or nested = true — and add the
+# memberships here. Consuming repos stay declarative; profiles without the
+# libvirt stack get no new memberships. Runs after profile layering so the
+# libvirt group created by the package postinst already exists; a missing
+# group is created rather than silently skipped. The marker records the
+# decision for the in-guest test suite (tests/test_libvirt_groups.sh), which
+# asserts the contract in both directions.
+- mode: system
+  script: |
+    # @@INCLUDE templates/provision/50-libvirt-groups.sh@@
+
+# --- Time: chrony with makestep + NTP authority for nested guests (issue #187)
+# Two jobs, both platform-general (every nested-virt repo hits the same skew):
+#
+#   1. Clock reliability (ALL VMs). chrony with `makestep 1.0 -1` STEPS the
+#      clock for any offset over a second, at ANY time — not just the first few
+#      updates, and not timesyncd's slow slew that never catches a large jump.
+#      A laptop suspend can leave the VM's wall clock hours off long after boot
+#      (stock timesyncd sat on a ~65-min skew while still reporting synced);
+#      chrony steps it back within a poll on resume. Safe for clustered guests:
+#      corosync's membership timers and DRBD use CLOCK_MONOTONIC, unaffected by
+#      a wall-clock step — only log timestamps move, which is exactly the thing
+#      we want corrected. timesyncd is masked here so the two never duel.
+#
+#   2. NTP authority for nested libvirt guests (VMs that declare the libvirt
+#      stack — same signal as the group block above). chrony SERVES NTP on the
+#      private ranges libvirt host-only networks draw from, so a nested guest
+#      pointed at the host's gateway address on its bridge (e.g. 10.50.0.1)
+#      syncs to it. `local stratum 10` keeps the host a valid source even fully
+#      offline, so the nested fleet stays internally consistent with no upstream
+#      — agreement across the fleet matters more than absolute accuracy. Gated,
+#      not default-on: a base VM with no nested guests must not open the NTP
+#      server port (service-surface minimization, #78). The `allow` ranges are
+#      generic (the template never sees a VM's declared subnets), which is why
+#      this stays entirely template-side — no per-VM rendering in tooling.
+#
+# Runs every boot (not first-boot-only): the install is in the base block, but
+# the config + serving decision are cheap and must track the current profile,
+# like the group/nested/port-forward blocks. The marker records the serving
+# decision for the in-guest test suite (tests/test_time.sh).
+- mode: system
+  script: |
+    # @@INCLUDE templates/provision/60-time.sh@@
+
+# --- Nested-virtualization verification (issue #131) -------------------------
+# When the composed spec requests nested virt, vrg-vm sets both the top-level
+# `nestedVirtualization` flag and the NESTED_VIRT param (see the param block).
+# Verify the request actually produced /dev/kvm: without it, anything that
+# needs KVM falls back to TCG software emulation — a silent order-of-magnitude
+# slowdown the no-silent-failures policy forbids. Fail the build loudly
+# instead. The marker records the request for the in-guest test suite
+# (tests/test_nested_virt.sh), which asserts the contract in both directions.
+- mode: system
+  script: |
+    # @@INCLUDE templates/provision/70-nested-virt.sh@@
+
+# --- Port-forward relays (issue #170) ---------------------------------------
+# Relay a VM port to a service reachable from inside the Lima VM — typically a
+# nested libvirt guest (e.g. an observability Grafana at 10.50.0.2:3000) that
+# Lima's own port-forwarding cannot see: Lima's guest agent only observes ports
+# in the Lima VM's network namespace, not a nested guest's. The fix is a relay
+# that listens on the Lima VM's 0.0.0.0:<port> and proxies to <to>; that
+# 0.0.0.0 bind is what Lima auto-forwards to the Mac's localhost (verified —
+# limactl binds 127.0.0.1:<port> on the host with no config change or restart).
+#
+# Each entry becomes a socket-activated systemd-socket-proxyd relay (ships with
+# systemd — no extra packages): a .socket binding 0.0.0.0:<port> and a matching
+# .service that proxies accepted connections to <to>. systemd keeps it alive
+# across reboots; a down guest yields a passed-through connection refusal
+# (transparent). The .service is hardened to survive a downstream restart on
+# its own (Restart=always + no start-rate-limit) — see the unit comments and
+# issue #192. PORT_FORWARDS is ";"-joined "port|host:port" records; empty
+# leaves the base box untouched. The marker records the declared-forward count
+# for the in-guest test suite (tests/test_port_forwards.sh).
+- mode: system
+  script: |
+    # @@INCLUDE templates/provision/80-port-forwards.sh@@
+
+probes:
+- mode: readiness
+  description: "provisioning completed, core tools installed, containerd and buildkit running"
+  script: |
+    #!/bin/bash
+    set -eux -o pipefail
+    export PATH="$HOME/.local/bin:$PATH"
+    # Readiness means ALL provisioning finished cleanly, not merely "the base
+    # tools answer" (issue #130): the extra-package layer runs after the tools
+    # this probe used to wait for, so a failed profile layer previously
+    # slipped through as a ready VM that silently lacked its declared
+    # toolchain. Gate on cloud-init reaching a clean "done", and bail out
+    # immediately when provisioning has recorded a failure — those tools are
+    # never coming, so spinning out the timeout would only bury the error.
+    timeout 1800 bash -c '
+      until cloud-init status 2>/dev/null | grep -q "^status: done" &&
+            command -v gh >/dev/null 2>&1 &&
+            command -v uv >/dev/null 2>&1 &&
+            command -v claude >/dev/null 2>&1 &&
+            pgrep -f containerd >/dev/null 2>&1 &&
+            pgrep -f buildkitd >/dev/null 2>&1; do
+        if [ -f /etc/vergil/provision-error ]; then exit 1; fi
+        if cloud-init status 2>/dev/null | grep -q "^status: error"; then exit 1; fi
+        sleep 5
+      done
+    '
+  hint: |
+    Provisioning may have failed. Check the named error first, then the full log:
+      vrg-vm session . -- cat /etc/vergil/provision-error
+      vrg-vm session . -- cat /var/log/cloud-init-output.log
+
+message: |
+  vergil-agent VM is ready.
+
+  Projects mount: /projects
+
+  Shell into the VM:
+    vrg-vm session . -- bash
+
+  Run nerdctl:
+    vrg-vm session . -- nerdctl run --rm alpine echo hello
+
+  Launch Claude Code (workspace is relative to the projects dir):
+    vrg-vm session <org>/<repo>
+
+  Update vergil-tooling:
+    vrg-vm update

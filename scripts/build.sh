@@ -34,6 +34,13 @@ cleanup() {
 }
 trap cleanup EXIT
 
+# Host-side checks (no Lima): generation freshness (agent.yaml + cloud-init),
+# provision manifests, and the OpenTofu interface + validate. Fail early if any is
+# stale/invalid, so we never build/test an out-of-date template.
+echo "=== Host-side checks (generation, manifests, opentofu) ==="
+bash "${REPO_ROOT}/tests/run-host-tests.sh"
+echo ""
+
 echo "=== Building vergil-agent VM ==="
 echo "Instance: $INSTANCE"
 echo "Template: $TEMPLATE"

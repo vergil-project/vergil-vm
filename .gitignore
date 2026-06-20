@@ -24,3 +24,8 @@ Thumbs.db
 
 # Build output
 /build/
+
+# OpenTofu local scratch (off-platform backend, #199). Keep .terraform.lock.hcl.
+opentofu/**/.terraform/
+opentofu/**/*.tfstate
+opentofu/**/*.tfstate.*
