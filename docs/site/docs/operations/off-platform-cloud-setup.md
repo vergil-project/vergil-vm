@@ -322,10 +322,35 @@ gcloud config list                  # -> account + project set
 
 > This user login is separate from the **Application Default Credentials** OpenTofu
 > uses (Step 8). You need both: the user login to drive `gcloud`, and ADC for `tofu`.
+>
+> **macOS prompts for Local Network access.** The first time a `gcloud auth …` command
+> opens a browser, macOS pops an alert asking to allow **Python** to discover
+> applications/devices on the network. The OAuth flow runs a short-lived `localhost`
+> listener to catch the browser redirect, so you must click **Allow** or the hand-off
+> never completes. Same prompt for `gcloud auth login` and
+> `gcloud auth application-default login`.
 
 ## Step 7 — Enable the Compute Engine API (TODO)
 
-## Step 8 — Application Default Credentials for OpenTofu (TODO)
+## Step 8 — Application Default Credentials for OpenTofu
+
+OpenTofu authenticates to GCP via **Application Default Credentials (ADC)**, which are
+separate from your `gcloud` user login. Create them (browser login again — same macOS
+Local Network prompt as Step 6):
+
+```bash
+gcloud auth application-default login
+```
+
+It writes `~/.config/gcloud/application_default_credentials.json` and notes that your
+project was added as the **ADC quota project**. That JSON file is the credential `tofu`
+reads at apply time.
+
+> **This is the host-local credential the off-platform design calls out.** Unlike the
+> GitHub App credentials (which are injected into the VM), the gcloud ADC credential
+> lives **only on your Mac** and does **not** propagate anywhere — a distinct class of
+> credential, with none of the usual propagation machinery. Keep it on the operator's
+> machine.
 
 ## Step 9 — IAM permissions (TODO)
 
