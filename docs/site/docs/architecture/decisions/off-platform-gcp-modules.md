@@ -19,8 +19,11 @@ opentofu/modules/gcp/
 - **The volume owns its zone.** A GCP disk is zonal, so the `volume` module records the
   zone it landed in (`coalesce(zone, "${region}-b")`) and outputs it; the `vm` module
   consumes that zone, so a rebuilt instance always lands where its disk lives.
-  `prevent_destroy` on the disk backstops the "destroy the VM, keep the volume"
-  contract.
+  The "destroy the VM, keep the volume" contract holds structurally: routine
+  teardown runs `tofu destroy` on the VM state only, never the volume state, and
+  the dedicated `destroy-volume` verb is confirmation-gated. (An earlier
+  `prevent_destroy` guard on the disk was removed — a literal can't be
+  conditionalized, so it also blocked that legitimate verb.)
 - **The boot disk is ephemeral and fixed-size** (`boot_disk_gib`, default 30); only the
   persistent `volume` size is author-facing. (`disk` is a Lima knob, not a cloud one.)
 
@@ -45,9 +48,22 @@ password SSH.
 
 ## Security
 
-- **SSH ingress is locked to the create-initiator's origin address(es)**
-  (`ssh_source_ranges`), re-applied each create; the module's variable validation
-  **rejects an empty list and `0.0.0.0/0`**. Password auth is off (`ssh_pwauth: false`).
+- **No public attack surface.** The instance has **no public IP** (`access_config` is
+  dropped), so there is no internet-facing sshd. Access is via **GCP Identity-Aware
+  Proxy (IAP) TCP tunneling**: the SSH firewall allows ingress only from Google's fixed
+  IAP range `35.235.240.0/20` — a module constant, not an operator address, so nothing
+  refreshes when the operator roams. IAP supersedes the original operator-IP allow-list,
+  which was unsound behind NAT (a host cannot self-detect its public IP without a
+  third-party echo — an unacceptable dependency in a create-blocking, security-critical
+  path).
+- **No Vergil-managed SSH keypair.** Auth is the operator's existing GCP IAM —
+  `roles/iap.tunnelResourceAccessor` gates the tunnel — and `gcloud compute ssh
+  --tunnel-through-iap` provisions ephemeral keys itself, so the module carries no
+  `ssh_public_key`. Password auth is off (`ssh_pwauth: false`).
+- **Precondition (operator account setup, see #204):** the IAP API enabled and
+  `roles/iap.tunnelResourceAccessor` granted on the project. Azure's future module
+  mirrors this access model via Azure Bastion (separate follow-up); the
+  provider-agnostic module interface stays connection-method-blind.
 - The GitHub App private key (injected by #1706) lands on the **ephemeral boot disk**,
   never the persistent volume — teardown destroys it.
 

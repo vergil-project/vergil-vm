@@ -73,3 +73,4 @@ nav:
       - Build and Test: operations/build-and-test.md
       - Resource Tuning: operations/resource-tuning.md
       - Troubleshooting: operations/troubleshooting.md
+      - Off-Platform Cloud Setup: operations/off-platform-cloud-setup.md

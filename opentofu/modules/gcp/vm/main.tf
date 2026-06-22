@@ -5,10 +5,17 @@ locals {
   # contain shell ${...}, which templatefile would try to interpret as Terraform.
   provision_env_block = replace(var.provision_env, "\n", "\n      ")
   user_data           = replace(file("${path.module}/cloud-init.yaml"), "@@PROVISION_ENV@@", local.provision_env_block)
+
+  # Google's fixed Identity-Aware Proxy (IAP) TCP-forwarding source range. IAP
+  # terminates the operator's connection and originates the tunnel to the instance's
+  # internal IP from within this Google-owned block, so the firewall trusts a module
+  # constant — never an operator's (NAT-masked, unknowable) public address.
+  iap_source_range = "35.235.240.0/20"
 }
 
-# Ingress: SSH only, from the create-initiator's origin address(es). The variable
-# validation already forbids an empty list and 0.0.0.0/0.
+# Ingress: SSH only, from Google's IAP range. There is no public IP and no
+# operator-IP allow-list — IAP gates access via the operator's GCP IAM
+# (roles/iap.tunnelResourceAccessor), so nothing here refreshes when they roam.
 resource "google_compute_firewall" "ssh" {
   name    = "${var.name}-ssh"
   network = "default"
@@ -17,7 +24,7 @@ resource "google_compute_firewall" "ssh" {
     protocol = "tcp"
     ports    = ["22"]
   }
-  source_ranges = var.ssh_source_ranges
+  source_ranges = [local.iap_source_range]
   target_tags   = [var.name]
 }
 
@@ -51,13 +58,14 @@ resource "google_compute_instance" "vm" {
     enable_nested_virtualization = var.nested
   }
 
+  # Internal IP only — no access_config, so no ephemeral public IP. SSH reaches the
+  # box through the IAP tunnel (gcloud compute ssh --tunnel-through-iap), which
+  # provisions ephemeral keys itself; the module manages no SSH keypair.
   network_interface {
     network = "default"
-    access_config {} # ephemeral public IP for SSH
   }
 
   metadata = {
-    ssh-keys  = "${var.ssh_user}:${var.ssh_public_key}"
     user-data = local.user_data
   }
 }
