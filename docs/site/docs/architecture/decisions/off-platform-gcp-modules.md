@@ -19,8 +19,11 @@ opentofu/modules/gcp/
 - **The volume owns its zone.** A GCP disk is zonal, so the `volume` module records the
   zone it landed in (`coalesce(zone, "${region}-b")`) and outputs it; the `vm` module
   consumes that zone, so a rebuilt instance always lands where its disk lives.
-  `prevent_destroy` on the disk backstops the "destroy the VM, keep the volume"
-  contract.
+  The "destroy the VM, keep the volume" contract holds structurally: routine
+  teardown runs `tofu destroy` on the VM state only, never the volume state, and
+  the dedicated `destroy-volume` verb is confirmation-gated. (An earlier
+  `prevent_destroy` guard on the disk was removed — a literal can't be
+  conditionalized, so it also blocked that legitimate verb.)
 - **The boot disk is ephemeral and fixed-size** (`boot_disk_gib`, default 30); only the
   persistent `volume` size is author-facing. (`disk` is a Lima knob, not a cloud one.)
 
