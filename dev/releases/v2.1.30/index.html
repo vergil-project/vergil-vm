@@ -11,10 +11,10 @@
       
       
       
-        <link rel="prev" href="../v2.1.13/">
+        <link rel="prev" href="../">
       
       
-        <link rel="next" href="../v2.1.11/">
+        <link rel="next" href="../v2.1.29/">
       
       
         
@@ -25,7 +25,7 @@
     
     
       
-        <title>2.1.12 - Vergil VM</title>
+        <title>2.1.30 - Vergil VM</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#release-2112-2026-06-05" class="md-skip">
+        <a href="#release-2130-2026-06-22" class="md-skip">
           Skip to content
         </a>
       
@@ -116,7 +116,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              2.1.12
+              2.1.30
             
           </span>
         </div>
@@ -645,10 +645,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../v2.1.30/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.30
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -664,6 +691,37 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Documentation
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1149,37 +1207,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    2.1.12
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../v2.1.12/" class="md-nav__link">
         
   
   
@@ -1195,37 +1226,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#ci" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        CI
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -2016,10 +2016,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#ci" class="md-nav__link">
+  <a href="#documentation" class="md-nav__link">
     <span class="md-ellipsis">
       
-        CI
+        Documentation
       
     </span>
   </a>
@@ -2043,12 +2043,29 @@
 
 
 
-<h1 id="release-2112-2026-06-05">Release 2.1.12 (2026-06-05)<a class="headerlink" href="#release-2112-2026-06-05" title="Permanent link">&para;</a></h1>
-<h2 id="ci">CI<a class="headerlink" href="#ci" title="Permanent link">&para;</a></h2>
+<h1 id="release-2130-2026-06-22">Release 2.1.30 (2026-06-22)<a class="headerlink" href="#release-2130-2026-06-22" title="Permanent link">&para;</a></h1>
+<h2 id="documentation">Documentation<a class="headerlink" href="#documentation" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>add build-only docs verification job</strong>
-Add a docs job to ci.yml calling the reusable ci-docs.yml@v2.0 workflow, so docs-build failures surface pre-merge as the docs / docs check context instead of post-merge in CD.</li>
+<li>
+<p><strong>document Cloud NAT egress and correct the private-VM (no public IP) model (#228)</strong>
+The off-platform VM is private (no public IP): SSH ingress over an IAP
+tunnel, internet egress via Cloud NAT. The setup guide predated this model and
+described SSH over a public IP, which is wrong and contradicts the egress need.</p>
+</li>
+<li>
+<p>Add Step 11b: create a Cloud Router + Cloud NAT once per region. NAT is the
+  outbound-only, no-inbound-exposure pattern for IAP-ingress instances, and a
+  regional singleton (one per region/network covers all repos+VMs), so it lives
+  in setup rather than the per-instance OpenTofu module.</p>
+</li>
+<li>Correct the org-policy reconciliation: compute.vmExternalIpAccess does NOT
+  block the VM — it has no external IP, so the restriction aligns with the
+  design. OS Login is the one real reconciliation item.</li>
+<li>Fix the 'SSH is over the external IP' / 'the VM needs a public IP' claims and
+  the framing bullets to state the IAP-ingress + Cloud-NAT-egress model.</li>
 </ul>
+<p>Without egress, cloud-init hangs ~300s per public fetch (uv installer, apt,
+GitHub) and create fails at await-readiness.</p>
 
 
 
