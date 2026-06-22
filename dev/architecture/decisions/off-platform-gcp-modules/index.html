@@ -2050,8 +2050,11 @@ companion and is <strong>out of scope here</strong>.</p>
 <li><strong>The volume owns its zone.</strong> A GCP disk is zonal, so the <code>volume</code> module records the
   zone it landed in (<code>coalesce(zone, "${region}-b")</code>) and outputs it; the <code>vm</code> module
   consumes that zone, so a rebuilt instance always lands where its disk lives.
-  <code>prevent_destroy</code> on the disk backstops the "destroy the VM, keep the volume"
-  contract.</li>
+  The "destroy the VM, keep the volume" contract holds structurally: routine
+  teardown runs <code>tofu destroy</code> on the VM state only, never the volume state, and
+  the dedicated <code>destroy-volume</code> verb is confirmation-gated. (An earlier
+  <code>prevent_destroy</code> guard on the disk was removed — a literal can't be
+  conditionalized, so it also blocked that legitimate verb.)</li>
 <li><strong>The boot disk is ephemeral and fixed-size</strong> (<code>boot_disk_gib</code>, default 30); only the
   persistent <code>volume</code> size is author-facing. (<code>disk</code> is a Lima knob, not a cloud one.)</li>
 </ul>
