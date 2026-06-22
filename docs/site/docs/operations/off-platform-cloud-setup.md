@@ -184,9 +184,30 @@ a project into an organization later (the **Project ID stays fixed** through the
 so the safe order is: **choose the ID well now; decide the org consciously** (set it up
 now for the clean structure, or stay under "No organization" and migrate later).
 
-**Don't build on "My First Project."** Create a **dedicated, clearly-named project** for
-the off-platform backend — it isolates the cloud resources, gives clean billing
-attribution, and lets you delete the whole project to clean up later.
+**The decision for this use case: "No organization."** These off-platform VMs are a
+**personal developer sandbox** — the same Vergil VMs you'd run on your own Mac, extended
+to a cloud host for native x86 and more horsepower. They are paid for and managed by
+*you*, for *you*; they are **not** shared team infrastructure. The GitHub
+"repo = shared resource" analogy breaks down here, so these projects stay under **No
+organization** and do **not** migrate to an org later. (Shared Vergil *team*
+infrastructure in the cloud — a shared Forgejo, a team service — would be a different
+use case that *would* warrant an Organization.)
+
+**Naming, decided:**
+
+- **Display name** — cosmetic and editable; use something friendly, e.g.
+  `Vergil Project Personal Sandbox`.
+- **Project ID** — instead of accepting GCP's random suggestion (e.g.
+  `articulate-fort-500213-e2`), choose a **coherent self-namespace** so all your personal
+  Vergil projects share a prefix: `vergil-project-<n>-a1`, `-a2`, … (using the GitHub org
+  name `vergil-project` as the prefix). The 6-digit number in GCP's auto-suggestions is
+  **not** a stable account id — it drifts across refreshes — so don't read meaning into
+  it; just pick a clean prefix you control. The ID is **immutable**, the display name is
+  not.
+
+**Don't build on "My First Project."** Create the **dedicated project** with the name/ID
+above — it isolates the cloud resources, gives clean billing attribution, and lets you
+delete the whole project to clean up later.
 
 1. Open the **project picker** (the project name in the top bar) and choose **New
    Project**.
@@ -201,6 +222,14 @@ Record the **Project ID** — you need it for `gcloud config set project <PROJEC
 > **Trial billing is account-wide.** The free-trial billing account already covers any
 > project you create under it, so a new project is billed to the trial automatically —
 > no separate billing setup per project during the trial.
+
+> **Gotcha — accidental creation and "pending deletion."** Pressing **Return** in the
+> New Project form can submit it before you've set the name/ID, creating a stray
+> project. The project **picker** is an unreliable view of what exists — for the
+> authoritative list use the CLI (`gcloud projects list`, after Step 6 auth) or **IAM &
+> Admin → Manage Resources**. Deleting a project **soft-deletes** it: it sits under
+> **"Resources pending deletion"** for ~30 days (recoverable) before it is purged. So a
+> stray project is harmless — list it, delete it, carry on.
 
 <!-- Capture: the New Project form + the selected dedicated project. -->
 
