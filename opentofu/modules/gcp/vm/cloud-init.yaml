@@ -243,6 +243,31 @@ write_files:
       # never reaches it on that path.
       export DISABLE_AUTOUPDATER=1
 
+      # Separate host-side uv environment for interactive shells (issue #205).
+      # Agent development happens INSIDE the container (vrg-container-run), which
+      # builds and owns the default project venv (.venv). A uv/virtualenv hard-codes
+      # the absolute paths of whatever built it, so the container's .venv is not
+      # reusable from an interactive host shell: humans (and agents in interactive /
+      # worktree shells) running uv outside the container would clobber .venv and hit
+      # constant path conflicts. Point interactive uv at its own .venv-host so the two
+      # contexts never share an environment.
+      #
+      # This lives in ~/.zshrc, NOT ~/.zshenv, precisely because the split must be
+      # interactive-only: ~/.zshrc is sourced for interactive shells alone, while
+      # ~/.zshenv runs for EVERY zsh invocation (including non-interactive `zsh -c`)
+      # and would leak .venv-host onto host-side non-interactive paths the issue wants
+      # left on the default. The container path stays clean from the other direction
+      # too: vrg-container-run forwards only the env-var prefixes a repo allowlists in
+      # vergil.toml ([container].env-prefixes, empty by default), so even a human who
+      # runs vrg-container-run from an interactive shell does not pass this variable
+      # into the container — the container keeps using .venv.
+      #
+      # Only UV_PROJECT_ENVIRONMENT is set. UV_CACHE_DIR is deliberately left alone:
+      # uv's cache is content-addressed and safe to share across environments, and the
+      # container has its own isolated cache inside the container (the host cache is
+      # never mounted in), so there is no host/container cache collision to split.
+      export UV_PROJECT_ENVIRONMENT=.venv-host
+
       autoload -Uz compinit && compinit
 
       # Generic, least-surprise interactive defaults (issue #171). Only

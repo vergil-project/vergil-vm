@@ -60,4 +60,13 @@ grep -q 'setopt EXTENDED_GLOB' "$HOME/.zshrc"
 # source line implies a managed file the VM has no mechanism to maintain.
 ! grep -q 'zshrc.local' "$HOME/.zshrc"
 
+# Separate host-side uv environment for interactive shells (issue #205). The
+# container (vrg-container-run) builds and owns .venv; an interactive host shell
+# must use its own .venv-host so the two never clobber each other. Assert the
+# on-disk .zshrc mechanism (consistent with the checks above). It must live in
+# ~/.zshrc, the interactive-only hook — NOT ~/.zshenv, which runs for every zsh
+# invocation and would leak .venv-host onto non-interactive host paths.
+grep -q 'UV_PROJECT_ENVIRONMENT=.venv-host' "$HOME/.zshrc"
+! grep -q 'UV_PROJECT_ENVIRONMENT' "$HOME/.zshenv"
+
 echo "test_base: all checks passed"
