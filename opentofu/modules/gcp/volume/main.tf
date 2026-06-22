@@ -11,7 +11,13 @@ locals {
 # gated verb are the real guard. Resize-down is impossible on GCP disks, so a
 # shrink in size_gib must be a deliberate destroy-volume, not an in-place apply.
 resource "google_compute_disk" "data" {
-  name   = var.name
+  # "-data" suffix is load-bearing: the VM instance uses `var.name`, and its
+  # initialize_params boot disk auto-takes the *instance* name. If this disk were
+  # also `var.name`, instance creation fails with resourceInUseByAnotherResource
+  # (the boot-disk name clashes with this attached disk). The vm module references
+  # this disk by self_link, not name, so the suffix is transparent. The dispatch
+  # budgets `var.name` so `<name>-data` stays within GCP's 63-char limit.
+  name   = "${var.name}-data"
   type   = "pd-ssd"
   zone   = local.zone
   size   = var.size_gib
