@@ -2072,9 +2072,22 @@ and mounts the persistent volume at <code>/vergil</code> before provisioning, an
 password SSH.</p>
 <h2 id="security">Security<a class="headerlink" href="#security" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>SSH ingress is locked to the create-initiator's origin address(es)</strong>
-  (<code>ssh_source_ranges</code>), re-applied each create; the module's variable validation
-  <strong>rejects an empty list and <code>0.0.0.0/0</code></strong>. Password auth is off (<code>ssh_pwauth: false</code>).</li>
+<li><strong>No public attack surface.</strong> The instance has <strong>no public IP</strong> (<code>access_config</code> is
+  dropped), so there is no internet-facing sshd. Access is via <strong>GCP Identity-Aware
+  Proxy (IAP) TCP tunneling</strong>: the SSH firewall allows ingress only from Google's fixed
+  IAP range <code>35.235.240.0/20</code> — a module constant, not an operator address, so nothing
+  refreshes when the operator roams. IAP supersedes the original operator-IP allow-list,
+  which was unsound behind NAT (a host cannot self-detect its public IP without a
+  third-party echo — an unacceptable dependency in a create-blocking, security-critical
+  path).</li>
+<li><strong>No Vergil-managed SSH keypair.</strong> Auth is the operator's existing GCP IAM —
+  <code>roles/iap.tunnelResourceAccessor</code> gates the tunnel — and <code>gcloud compute ssh
+  --tunnel-through-iap</code> provisions ephemeral keys itself, so the module carries no
+  <code>ssh_public_key</code>. Password auth is off (<code>ssh_pwauth: false</code>).</li>
+<li><strong>Precondition (operator account setup, see #204):</strong> the IAP API enabled and
+  <code>roles/iap.tunnelResourceAccessor</code> granted on the project. Azure's future module
+  mirrors this access model via Azure Bastion (separate follow-up); the
+  provider-agnostic module interface stays connection-method-blind.</li>
 <li>The GitHub App private key (injected by #1706) lands on the <strong>ephemeral boot disk</strong>,
   never the persistent volume — teardown destroys it.</li>
 </ul>
