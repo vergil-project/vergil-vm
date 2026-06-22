@@ -184,14 +184,23 @@ a project into an organization later (the **Project ID stays fixed** through the
 so the safe order is: **choose the ID well now; decide the org consciously** (set it up
 now for the clean structure, or stay under "No organization" and migrate later).
 
-**The decision for this use case: "No organization."** These off-platform VMs are a
-**personal developer sandbox** — the same Vergil VMs you'd run on your own Mac, extended
-to a cloud host for native x86 and more horsepower. They are paid for and managed by
-*you*, for *you*; they are **not** shared team infrastructure. The GitHub
-"repo = shared resource" analogy breaks down here, so these projects stay under **No
-organization** and do **not** migrate to an org later. (Shared Vergil *team*
-infrastructure in the cloud — a shared Forgejo, a team service — would be a different
-use case that *would* warrant an Organization.)
+**Org vs. "No organization" — a real choice.** These off-platform VMs are a **personal
+developer sandbox** (not shared team infrastructure), so the usual "use an org to share
+with a team" driver doesn't apply. That leaves two defensible options:
+
+- **"No organization"** — simplest; **no org policies inherit**, so nothing at the org
+  level can block the VM (e.g. its public IP). Zero friction.
+- **Your own (personal) org** — if your account has a Cloud Identity / Workspace org
+  (here `w-phillip-moore-org`), putting the project under it gives **central governance**
+  and lets you apply org-level security policy *on purpose* (e.g. SSH/external-IP
+  restrictions). The cost: **org policies inherit into the project** and can restrict it
+  (external IPs, OS Login, Shielded VM), so you must reconcile them with what the VM
+  needs (Step 5b).
+
+**This guide uses the personal org deliberately** — managing everything in one place and
+*leveraging* org-level SSH/security controls beats treating the org as a black box. If
+you have no org (a plain `@gmail.com` with no Cloud Identity), stay under "No
+organization" — it works the same for the VM.
 
 **Naming, decided:**
 
@@ -211,10 +220,21 @@ delete the whole project to clean up later.
 
 1. Open the **project picker** (the project name in the top bar) and choose **New
    Project**.
-2. Give it a clear **name** (e.g. `vergil-off-platform`). GCP derives a globally-unique
-   **Project ID** from the name (it may append digits); you can edit the ID.
-3. Leave **Organization / Location** as **No organization** unless you have one.
+2. Set the **name** (e.g. `Vergil Project Personal Sandbox`). GCP shows an
+   auto-generated **Project ID** beneath it — to use *your* ID you must click the small
+   **EDIT** link next to it and type it (e.g. `vergil-project-500213-a1`). **Skip EDIT
+   (or hit Return early) and you get the random ID**, with your text only as the display
+   name — the most common trip-up on this screen.
+3. **Organization / Location**: pick your org, or **No organization**, per the choice
+   above.
 4. **Create**, then **select** the new project in the picker.
+
+**Cleaner alternative — create it from the CLI** (after Step 6 auth). This sets the ID
+explicitly and skips the fiddly form entirely:
+
+```bash
+gcloud projects create vergil-project-500213-a1 --name="Vergil Project Personal Sandbox"
+```
 
 Record the **Project ID** — you need it for `gcloud config set project <PROJECT_ID>`
 (Step 6) and the repo's off-platform profile.
@@ -223,15 +243,70 @@ Record the **Project ID** — you need it for `gcloud config set project <PROJEC
 > project you create under it, so a new project is billed to the trial automatically —
 > no separate billing setup per project during the trial.
 >
-> **Gotcha — accidental creation and "pending deletion."** Pressing **Return** in the
-> New Project form can submit it before you've set the name/ID, creating a stray
-> project. The project **picker** is an unreliable view of what exists — for the
-> authoritative list use the CLI (`gcloud projects list`, after Step 6 auth) or **IAM &
-> Admin → Manage Resources**. Deleting a project **soft-deletes** it: it sits under
-> **"Resources pending deletion"** for ~30 days (recoverable) before it is purged. So a
-> stray project is harmless — list it, delete it, carry on.
+> **Gotchas on this screen (we hit all of these).**
+>
+> - **The Console is not the source of truth — the CLI is.** A just-created project can
+>   be missing from the picker, and a project you just moved can keep showing under its
+>   *old* parent for a while (the resource hierarchy caches/propagates, then catches
+>   up). Trust `gcloud projects list` and
+>   `gcloud projects describe <id> --format="value(parent)"`, not the Console.
+> - **A custom Project ID needs the EDIT link** (step 2): skip it and you get a random
+>   ID, with your text only as the display name.
+> - **Accidental creation / "pending deletion."** Hitting **Return** can create a stray
+>   project. Deleting one **soft-deletes** it (recoverable ~30 days under "Resources
+>   pending deletion"); harmless — `gcloud projects delete <id>` and carry on.
+> - **Moving a project into an org is a `beta` command:** `gcloud beta projects move`
+>   (gcloud installs the `beta` component on first use), and it warns that org policies
+>   may change what's enforced — see Step 5b.
 
 <!-- Capture: the New Project form + the selected dedicated project. -->
+
+## Step 5b — (org path) move the project in and reconcile org policies
+
+Skip this step if you stayed under "No organization." If you chose your personal org,
+move the project into it — the **Project ID survives**; only the parent changes:
+
+```bash
+gcloud organizations list                                         # find <ORG_ID> + display name
+gcloud beta projects move <PROJECT_ID> --organization=<ORG_ID>
+gcloud projects describe <PROJECT_ID> --format="value(parent)"    # -> organizations/<ORG_ID>
+```
+
+`move` is a **`beta`** command (gcloud installs the component on first use) and **warns
+that org policies may change what's enforced**. The move needs an org-level role
+(Project Mover / Project Creator) — on `PERMISSION_DENIED`, grant your account that role
+at the org first.
+
+**Then reconcile the org policies with the VM's needs** — the part most guides skip.
+List what the org enforces (enable the Org Policy API if prompted):
+
+```bash
+gcloud org-policies list --organization=<ORG_ID>
+```
+
+A newer org carries Google's **secure-by-default** managed policies. Read them against
+what the off-platform VM actually does:
+
+| Constraint (seen here) | Effect | Off-platform impact |
+|---|---|---|
+| `iam.disableServiceAccountKeyCreation` | no service-account JSON keys | **None** — tofu uses your **ADC** (user) credential, not an SA key |
+| `iam.disableServiceAccountKeyUpload` | no external SA keys | None |
+| `iam.automaticIamGrantsForDefaultServiceAccounts` | default Compute SA gets no auto-Editor | None — the VM doesn't call GCP APIs from inside |
+| `storage.uniformBucketLevelAccess` | GCS buckets use uniform access | None — tofu state is local, no buckets |
+| `compute.restrictProtocolForwardingCreationForTypes` | limits protocol forwarding | None — not used |
+| `compute.setNewProjectDefaultToZonalDNSOnly` | internal zonal DNS default | None — SSH is over the external IP |
+
+**The two that *would* block the VM — confirm they are NOT enforced (they weren't here):**
+
+- **`compute.vmExternalIpAccess`** — restricts external IPs. The VM **needs** a public IP
+  for SSH; if your org enforces this, add an allow-rule or exempt the project first.
+- **`compute.requireOsLogin`** — forces IAM-based **OS Login** instead of metadata SSH
+  keys. The module injects a metadata SSH key, so under enforced OS Login the backend's
+  SSH path (`vergil-tooling#1706` `session`) must switch to OS Login.
+
+Net: moving into the org pulled in the secure-by-default set, **none of which block the
+off-platform VM**, and the two that would (external IP, OS Login) were not set — clear
+to proceed. Check yours the same way before you build.
 
 ## Step 6 — Authenticate gcloud (CLI: login + select project)
 
