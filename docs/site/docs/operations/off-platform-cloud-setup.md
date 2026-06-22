@@ -102,8 +102,6 @@ gcloud auth list        # -> your account, marked ACTIVE (*)
 
 ## Step 3 — Create the GCP project (TODO)
 
-## Step 3 — Create the GCP project (TODO)
-
 ## Step 4 — Enable billing (TODO)
 
 ## Step 5 — Enable the Compute Engine API (TODO)
