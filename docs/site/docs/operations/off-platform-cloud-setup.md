@@ -129,12 +129,24 @@ automatic charges: you only start paying if you decide to activate a full,
 pay-as-you-go account or choose to prepay. Any remaining free credit is yours to
 keep."*
 
-## Step 4 — Sign-up, part 2 of 2: Payment information (TODO — web; redact card/address)
+## Step 4 — Sign-up, part 2 of 2: Payment information
 
-The second screen collects an **account type** (Individual or Business), your
-**address**, and a **payment method** (card). Google verifies the card but does **not**
-charge it during the trial. *(Capture the field layout here — never real card/address
-data.)*
+The second screen is **Payment information verification**. It has two blocks, each with
+a **Change** link, and a **Start free** button:
+
+- **Contact information** — your name and address, drawn from your **Google payments
+  profile**. If you already use Google Play, Google One, or YouTube, GCP **reuses your
+  existing payments profile** here rather than asking you to type a new one. (If you
+  have no profile yet, you fill in account type — Individual or Business — name, and
+  address.)
+- **Payment method** — a card. Google verifies it but does **not** charge it: *"this
+  trial is still free… you won't be charged unless you manually activate a full
+  pay-as-you-go account or choose to prepay."*
+
+Click **Start free** to finish.
+
+> **No screenshot here on purpose.** This screen shows your real payments-profile and
+> card details; do not capture it into shared docs.
 
 ## Step 5 — Your project: default vs. dedicated (TODO — web)
 
