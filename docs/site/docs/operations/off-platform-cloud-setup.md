@@ -148,12 +148,33 @@ Click **Start free** to finish.
 > **No screenshot here on purpose.** This screen shows your real payments-profile and
 > card details; do not capture it into shared docs.
 
-## Step 5 — Your project: default vs. dedicated (TODO — web)
+## Step 5 — Create a dedicated project
 
-Completing the sign-up activates the **trial billing account** and auto-creates a
-default project (**"My First Project"**). For the off-platform backend, prefer a
-**dedicated, clearly-named project** over the default. *(Capture creating/naming the
-project here, and note its Project ID — you need it for `gcloud` and the repo profile.)*
+Clicking **Start free** lands you back on the Console with the **free trial active** —
+a top banner shows *"$300.00 credit and N days remaining"* with an **Activate full
+account** button (the upgrade-to-paid path for later), and *"0 of $300 credits used"*.
+The sign-up auto-creates a default project called **"My First Project"** with an
+auto-generated project number and ID.
+
+**Don't build on "My First Project."** Create a **dedicated, clearly-named project** for
+the off-platform backend — it isolates the cloud resources, gives clean billing
+attribution, and lets you delete the whole project to clean up later.
+
+1. Open the **project picker** (the project name in the top bar) and choose **New
+   Project**.
+2. Give it a clear **name** (e.g. `vergil-off-platform`). GCP derives a globally-unique
+   **Project ID** from the name (it may append digits); you can edit the ID.
+3. Leave **Organization / Location** as **No organization** unless you have one.
+4. **Create**, then **select** the new project in the picker.
+
+Record the **Project ID** — you need it for `gcloud config set project <PROJECT_ID>`
+(Step 6) and the repo's off-platform profile.
+
+> **Trial billing is account-wide.** The free-trial billing account already covers any
+> project you create under it, so a new project is billed to the trial automatically —
+> no separate billing setup per project during the trial.
+
+*(Capture the New Project form + the selected dedicated project here.)*
 
 ## Step 6 — Authenticate gcloud (CLI: login + select project)
 
