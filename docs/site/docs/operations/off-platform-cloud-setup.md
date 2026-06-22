@@ -111,16 +111,39 @@ trial."** Click **Try for free** (or **Start free trial** in the top banner) to 
   quotas** — a nested-virt instance for the lab is large (~16 vCPU), and the trial's
   default vCPU quota in a region is likely too low. You will probably need to upgrade
   to a full (paid) billing account to get the quota — we hit this for real at
-  Step 9 (quota). The $300 credit still applies after upgrading.
+  Step 10 (quota). The $300 credit still applies after upgrading.
 
 Click **Try for free** and continue to the sign-up form (country, Terms of Service,
 and the payment method) — captured in Steps 3–4.
 
-## Step 3 — Create your first project (Console) (TODO — web)
+## Step 3 — Sign-up, part 1 of 2: Account information
 
-## Step 4 — Set up a billing account (Console) (TODO — web; the fiddly part)
+The free-trial sign-up is two screens. The first is **Account information** — your
+**country** plus agreement to the **Terms of Service**:
 
-## Step 5 — Authenticate gcloud (CLI: login + select project)
+![GCP free-trial sign-up step 1 of 2: Account information — a country dropdown (United States) and a Terms-of-Service agreement, with an "Agree & continue" button](img/off-platform-cloud-setup/03a-account-information.png)
+
+Pick your **country**, accept the **Google Cloud Platform + Free Trial + APIs Terms of
+Service**, and click **Agree & continue**. Note the reassurance on the right — *"No
+automatic charges: you only start paying if you decide to activate a full,
+pay-as-you-go account or choose to prepay. Any remaining free credit is yours to
+keep."*
+
+## Step 4 — Sign-up, part 2 of 2: Payment information (TODO — web; redact card/address)
+
+The second screen collects an **account type** (Individual or Business), your
+**address**, and a **payment method** (card). Google verifies the card but does **not**
+charge it during the trial. *(Capture the field layout here — never real card/address
+data.)*
+
+## Step 5 — Your project: default vs. dedicated (TODO — web)
+
+Completing the sign-up activates the **trial billing account** and auto-creates a
+default project (**"My First Project"**). For the off-platform backend, prefer a
+**dedicated, clearly-named project** over the default. *(Capture creating/naming the
+project here, and note its Project ID — you need it for `gcloud` and the repo profile.)*
+
+## Step 6 — Authenticate gcloud (CLI: login + select project)
 
 Once the account, project, and billing exist, point the CLI at them. Log in with your
 Google account (opens a browser for OAuth and stores your *user* credential):
@@ -133,19 +156,19 @@ gcloud config list                  # -> account + project set
 ```
 
 > This user login is separate from the **Application Default Credentials** OpenTofu
-> uses (Step 7). You need both: the user login to drive `gcloud`, and ADC for `tofu`.
+> uses (Step 8). You need both: the user login to drive `gcloud`, and ADC for `tofu`.
 
-## Step 6 — Enable the Compute Engine API (TODO)
+## Step 7 — Enable the Compute Engine API (TODO)
 
-## Step 7 — Application Default Credentials for OpenTofu (TODO)
+## Step 8 — Application Default Credentials for OpenTofu (TODO)
 
-## Step 8 — IAM permissions (TODO)
+## Step 9 — IAM permissions (TODO)
 
-## Step 9 — Nested-virtualization quota (TODO)
+## Step 10 — Nested-virtualization quota (TODO)
 
-## Step 10 — Confirm a nested-virt machine type + region (TODO)
+## Step 11 — Confirm a nested-virt machine type + region (TODO)
 
-## Step 11 — SSH keypair (TODO)
+## Step 12 — SSH keypair (TODO)
 
 ## Next — declare the profile and create the VM (TODO)
 
