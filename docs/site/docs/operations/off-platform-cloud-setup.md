@@ -32,10 +32,9 @@ lab.
 ---
 
 <!--
-  CAPTURE-AS-WE-GO. Each step below is filled in with the EXACT commands, console
-  paths, and screenshots that actually worked during the first real setup
-  (vergil-vm #204). Steps not yet walked through are marked TODO and must not be
-  guessed — replace them with verified content only.
+  Captured from the first real GCP setup (vergil-vm #204): the exact commands, console
+  paths, and gotchas that actually occurred. The Azure section is a deliberate TODO,
+  to be filled the same way when that path is set up — not guessed.
 -->
 
 ## Prerequisites
@@ -260,8 +259,6 @@ Record the **Project ID** — you need it for `gcloud config set project <PROJEC
 >   (gcloud installs the `beta` component on first use), and it warns that org policies
 >   may change what's enforced — see Step 5b.
 
-<!-- Capture: the New Project form + the selected dedicated project. -->
-
 ## Step 5b — (org path) move the project in and reconcile org policies
 
 Skip this step if you stayed under "No organization." If you chose your personal org,
@@ -331,7 +328,25 @@ gcloud config list                  # -> account + project set
 > never completes. Same prompt for `gcloud auth login` and
 > `gcloud auth application-default login`.
 
-## Step 7 — Enable the Compute Engine API (TODO)
+## Step 7 — Billing + enable the Compute Engine API
+
+Compute won't run without billing, and the API is off by default:
+
+```bash
+# Is billing linked? (the free trial often auto-links a new project)
+gcloud billing projects describe <PROJECT_ID>          # -> billingEnabled: true
+
+# Only if billingEnabled is false, link the trial account:
+gcloud billing accounts list                           # -> <ACCOUNT_ID>
+gcloud billing projects link <PROJECT_ID> --billing-account=<ACCOUNT_ID>
+
+# Enable Compute Engine
+gcloud services enable compute.googleapis.com
+```
+
+> **`gcloud services enable` is slow and silent.** It sits 30s–2min with no output while
+> GCP turns the service on — it is **not** hung. Add `--async` to return immediately (it
+> finishes in the background), or `--verbosity=info` for a little feedback.
 
 ## Step 8 — Application Default Credentials for OpenTofu
 
@@ -353,7 +368,18 @@ reads at apply time.
 > credential, with none of the usual propagation machinery. Keep it on the operator's
 > machine.
 
-## Step 9 — IAM permissions (TODO)
+## Step 9 — IAM permissions
+
+For a **single-operator personal sandbox** there's nothing extra to grant: you created
+the project, so you're its **Owner**, and your **ADC** (Step 8) inherits that — which
+already covers everything OpenTofu does (create instances, disks, firewall rules). The
+in-VM **GitHub App** credentials are a separate concern, injected into the VM by the
+backend (`vergil-tooling#1706`), not configured here.
+
+(If you later drive the backend from a dedicated service account instead of your user
+ADC, grant that account `roles/compute.admin` on the project — but the org policy
+`iam.disableServiceAccountKeyCreation` means you'd use impersonation / workload
+identity, not a downloaded key.)
 
 ## Step 10 — Check vCPU quota
 
@@ -377,11 +403,60 @@ not assume a free trial caps you low**: a project under an established org often
 ample default quota. If yours genuinely is too low, validate first with a smaller box
 (`n2-standard-8` still proves nested KVM), or upgrade to paid / file a quota-increase.
 
-## Step 11 — Confirm a nested-virt machine type + region (TODO)
+## Step 11 — Choose region, zone, and a nested-virt instance
 
-## Step 12 — SSH keypair (TODO)
+These become the off-platform profile values (`region` / `instance` / `volume`).
 
-## Next — declare the profile and create the VM (TODO)
+- **The instance family must support nested virtualization.** On GCP that's **N2, N2D,
+  C2, C2D, M1/M2/M3** (Intel Haswell+ / AMD with virtualization extensions) — **not** E2
+  or T2D. The off-platform example uses **`n2-standard-16`** (16 vCPU, N2). To validate
+  the backend cheaply first, **`n2-standard-8`** still proves nested KVM.
+- **Region** — `us-central1` works (it has N2 and is where we checked quota). Pick one
+  near you with N2 availability.
+- **Zone** — you don't set it in the profile: the OpenTofu **volume** module pins the
+  zone (`${region}-b` by default) and the VM follows it.
+
+Verify nested virt on your chosen machine type/zone against the current
+[GCP nested-virtualization docs](https://cloud.google.com/compute/docs/instances/nested-virtualization/overview)
+rather than a static list — the supported matrix shifts.
+
+## Step 12 — SSH keypair
+
+The VM is reached over SSH, and the OpenTofu `vm` module takes an `ssh_public_key`.
+Generate a dedicated keypair on your Mac:
+
+```bash
+ssh-keygen -t ed25519 -f ~/.ssh/vergil-off-platform -C vergil-off-platform
+cat ~/.ssh/vergil-off-platform.pub      # the module's ssh_public_key input
+```
+
+In the full flow the backend (`vergil-tooling#1706`) manages this key per `create` and
+injects it; for a manual `tofu apply` you pass the `.pub` contents as `ssh_public_key`.
+Keep the **private** key on your Mac — like the gcloud ADC credential, it does not
+propagate.
+
+## Next — declare the profile and create the VM
+
+The account is ready. The VM lifecycle is driven by the off-platform backend:
+
+1. **Declare the off-platform profile** in the consuming repo's `vergil.toml`:
+
+   ```toml
+   [vm.vergil-user]
+   backend  = "off-platform"
+   provider = "gcp"
+   region   = "us-central1"
+   instance = "n2-standard-16"   # or n2-standard-8 to validate
+   volume   = "300GiB"
+   nested   = true
+   ```
+
+2. **Create the VM** — `vrg-vm create <org>/<repo>` drives the OpenTofu modules,
+   provisions via cloud-init, and injects credentials over SSH. That dispatch lives in
+   **vergil-tooling#1706** (not yet built); until then the modules can be exercised by a
+   manual `tofu apply` with hand-composed inputs.
+3. **Confirm the payoff** — a lab guest resolves **`driver=kvm`** (nested KVM, not the
+   TCG emulation tax) — the entire reason for the off-platform backend.
 
 ---
 
