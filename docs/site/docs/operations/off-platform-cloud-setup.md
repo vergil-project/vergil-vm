@@ -25,7 +25,9 @@ lab.
 
 - A GCP project with billing enabled and the Compute Engine API on.
 - `gcloud` installed and authenticated on your Mac (Application Default Credentials).
-- IAM permissions to create instances, disks, and firewall rules.
+- IAM permissions to create instances, disks, firewall rules, and a Cloud Router + NAT.
+- A **private VM (no public IP)**: SSH *ingress* over an IAP tunnel; internet *egress*
+  via a one-time **Cloud NAT** in your region (Step 11b).
 - Confirmed nested-virtualization quota and a working machine-type + region.
 - An SSH keypair for the instance.
 
@@ -189,13 +191,14 @@ developer sandbox** (not shared team infrastructure), so the usual "use an org t
 with a team" driver doesn't apply. That leaves two defensible options:
 
 - **"No organization"** — simplest; **no org policies inherit**, so nothing at the org
-  level can block the VM (e.g. its public IP). Zero friction.
+  level can block the VM (e.g. enforced OS Login). Zero friction.
 - **Your own (personal) org** — if your account has a Cloud Identity / Workspace org
   (here `w-phillip-moore-org`), putting the project under it gives **central governance**
-  and lets you apply org-level security policy *on purpose* (e.g. SSH/external-IP
+  and lets you apply org-level security policy *on purpose* (e.g. OS Login or external-IP
   restrictions). The cost: **org policies inherit into the project** and can restrict it
-  (external IPs, OS Login, Shielded VM), so you must reconcile them with what the VM
-  needs (Step 5b).
+  (OS Login, Shielded VM, external IPs), so you must reconcile them with what the VM
+  needs (Step 5b). The private no-public-IP design already satisfies most of these —
+  an external-IP restriction *aligns* with it rather than conflicting.
 
 **This guide uses the personal org deliberately** — managing everything in one place and
 *leveraging* org-level SSH/security controls beats treating the org as a black box. If
@@ -292,19 +295,23 @@ what the off-platform VM actually does:
 | `iam.automaticIamGrantsForDefaultServiceAccounts` | default Compute SA gets no auto-Editor | None — the VM doesn't call GCP APIs from inside |
 | `storage.uniformBucketLevelAccess` | GCS buckets use uniform access | None — tofu state is local, no buckets |
 | `compute.restrictProtocolForwardingCreationForTypes` | limits protocol forwarding | None — not used |
-| `compute.setNewProjectDefaultToZonalDNSOnly` | internal zonal DNS default | None — SSH is over the external IP |
+| `compute.setNewProjectDefaultToZonalDNSOnly` | internal zonal DNS default | None — SSH is over the IAP tunnel to the **internal** IP, not external DNS |
+| `compute.vmExternalIpAccess` | restricts external IPs | **None — aligned.** The VM has no external IP (IAP ingress + Cloud NAT egress), so an external-IP restriction *matches* the design |
 
-**The two that *would* block the VM — confirm they are NOT enforced (they weren't here):**
+**The one that *would* block the VM — confirm it is NOT enforced (it wasn't here):**
 
-- **`compute.vmExternalIpAccess`** — restricts external IPs. The VM **needs** a public IP
-  for SSH; if your org enforces this, add an allow-rule or exempt the project first.
 - **`compute.requireOsLogin`** — forces IAM-based **OS Login** instead of metadata SSH
   keys. The module injects a metadata SSH key, so under enforced OS Login the backend's
   SSH path (`vergil-tooling#1706` `session`) must switch to OS Login.
 
+> The VM is **private — no public IP**. Ingress is an **IAP tunnel** to the internal IP
+> (the `vm` module opens a firewall rule for the IAP range `35.235.240.0/20` on tcp/22);
+> egress is a **Cloud NAT** (Step 11b). So org policies that restrict *external IPs* never
+> conflict — they reinforce the design. OS Login is the one real reconciliation item.
+
 Net: moving into the org pulled in the secure-by-default set, **none of which block the
-off-platform VM**, and the two that would (external IP, OS Login) were not set — clear
-to proceed. Check yours the same way before you build.
+off-platform VM** — even the external-IP restriction aligns with the private design, and
+OS Login was not enforced — clear to proceed. Check yours the same way before you build.
 
 ## Step 6 — Authenticate gcloud (CLI: login + select project)
 
@@ -419,6 +426,42 @@ These become the off-platform profile values (`region` / `instance` / `volume`).
 Verify nested virt on your chosen machine type/zone against the current
 [GCP nested-virtualization docs](https://cloud.google.com/compute/docs/instances/nested-virtualization/overview)
 rather than a static list — the supported matrix shifts.
+
+## Step 11b — Cloud NAT for egress (one-time, per region)
+
+The VM has **no public IP** (ingress is the IAP tunnel). IAP gives *inbound* SSH only —
+it provides **no outbound** path. But provisioning fetches from the public internet (the
+`uv` installer from `astral.sh`, apt packages, GitHub), so the box needs **egress**.
+Without it, cloud-init hangs ~5 min per fetch and `vrg-vm create` fails at
+`await-readiness` with *"cloud-init did not complete"*.
+
+The fix is a **Cloud NAT** — outbound-only, no inbound exposure, the canonical GCP pattern
+for "IAP ingress + internet egress." It is a **regional singleton**: one Cloud Router +
+NAT covers *every* off-platform VM in that region on the `default` network, so you create
+it **once per region**, not per VM. (That's why it lives here in setup, not in the
+per-instance OpenTofu module — see vergil-vm#226.)
+
+Create it in the region you chose in Step 11 (`us-central1` here):
+
+```bash
+gcloud compute routers create vergil-nat-router \
+  --network=default --region=us-central1 --project=<PROJECT_ID>
+
+gcloud compute routers nats create vergil-nat \
+  --router=vergil-nat-router --region=us-central1 --project=<PROJECT_ID> \
+  --auto-allocate-nat-external-ips --nat-all-subnet-ip-ranges
+```
+
+Verify it exists (egress takes ~1–2 min to propagate after creation):
+
+```bash
+gcloud compute routers nats describe vergil-nat \
+  --router=vergil-nat-router --region=us-central1 --project=<PROJECT_ID> \
+  --format='value(name)'
+```
+
+> One NAT per region is enough no matter how many repos/VMs you run there. If you build
+> in a second region, repeat this step for that region.
 
 ## Step 12 — SSH keypair
 
