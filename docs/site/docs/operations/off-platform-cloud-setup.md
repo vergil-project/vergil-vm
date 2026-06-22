@@ -80,41 +80,72 @@ gcloud auth list        # -> "No credentialed accounts." until you log in (Step 
 gcloud config list      # -> active configuration: [default], no project yet
 ```
 
-## Step 2 — Authenticate gcloud (user login)
+<!--
+  The next three steps are the WEB CONSOLE part — the first-time Google Cloud
+  sign-up, project creation, and billing. This is the most confusing part of the
+  whole setup and the reason this guide exists. GCP's onboarding UI changes over
+  time, so these are captured from what actually appeared during the #204
+  walkthrough, with screenshots. Do not guess screens — capture the real flow.
+-->
 
-Log in with your Google account. This opens a browser for the OAuth consent and
-stores your *user* credential (used to run `gcloud` commands as you):
+## Step 2 — Sign up for Google Cloud in the Console (free trial)
+
+Go to [console.cloud.google.com](https://console.cloud.google.com) signed in with your
+Google account. A brand-new account lands on the Console with a **free-trial
+onboarding** front and centre:
+
+![Google Cloud free-trial welcome screen: "Try Google Cloud with $300 in free credits", 90 days, no billing during free trial, with a "Try for free" button](img/off-platform-cloud-setup/02a-free-trial-welcome.png)
+
+What it offers: **$300 in free credits, 90 days, and "no billing during the free
+trial."** Click **Try for free** (or **Start free trial** in the top banner) to begin.
+
+**The one decision here — free trial vs. paid:**
+
+- **Take the free trial.** The $300 credit offsets the cost of the off-platform VM
+  while you validate the setup, and — importantly — the credit **carries over if you
+  later upgrade to a paid account**, so claiming it first costs you nothing.
+- **A payment method (card) is still required** to start the trial. Google uses it to
+  verify identity; you are **not** charged during the trial unless you explicitly
+  upgrade to a paid account or exceed the credit.
+- **Expect to upgrade to paid later.** Free-trial accounts come with **restricted
+  quotas** — a nested-virt instance for the lab is large (~16 vCPU), and the trial's
+  default vCPU quota in a region is likely too low. You will probably need to upgrade
+  to a full (paid) billing account to get the quota — we hit this for real at
+  Step 9 (quota). The $300 credit still applies after upgrading.
+
+Click **Try for free** and continue to the sign-up form (country, Terms of Service,
+and the payment method) — captured in Steps 3–4.
+
+## Step 3 — Create your first project (Console) (TODO — web)
+
+## Step 4 — Set up a billing account (Console) (TODO — web; the fiddly part)
+
+## Step 5 — Authenticate gcloud (CLI: login + select project)
+
+Once the account, project, and billing exist, point the CLI at them. Log in with your
+Google account (opens a browser for OAuth and stores your *user* credential):
 
 ```bash
 gcloud auth login
+gcloud auth list                    # -> your account, marked ACTIVE (*)
+gcloud config set project <PROJECT_ID>
+gcloud config list                  # -> account + project set
 ```
 
-Pick the Google account you'll use for this project and grant access. Then confirm
-the account is active:
+> This user login is separate from the **Application Default Credentials** OpenTofu
+> uses (Step 7). You need both: the user login to drive `gcloud`, and ADC for `tofu`.
 
-```bash
-gcloud auth list        # -> your account, marked ACTIVE (*)
-```
+## Step 6 — Enable the Compute Engine API (TODO)
 
-> This user login is separate from the **Application Default Credentials** that
-> OpenTofu uses (Step 6). You need both: the user login to drive `gcloud`, and ADC
-> for `tofu`.
+## Step 7 — Application Default Credentials for OpenTofu (TODO)
 
-## Step 3 — Create the GCP project (TODO)
+## Step 8 — IAM permissions (TODO)
 
-## Step 4 — Enable billing (TODO)
+## Step 9 — Nested-virtualization quota (TODO)
 
-## Step 5 — Enable the Compute Engine API (TODO)
+## Step 10 — Confirm a nested-virt machine type + region (TODO)
 
-## Step 6 — Application Default Credentials for OpenTofu (TODO)
-
-## Step 7 — IAM permissions (TODO)
-
-## Step 8 — Nested-virtualization quota (TODO)
-
-## Step 9 — Confirm a nested-virt machine type + region (TODO)
-
-## Step 10 — SSH keypair (TODO)
+## Step 11 — SSH keypair (TODO)
 
 ## Next — declare the profile and create the VM (TODO)
 
