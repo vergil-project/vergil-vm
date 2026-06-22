@@ -11,10 +11,10 @@
       
       
       
-        <link rel="prev" href="../v2.1.24/">
+        <link rel="prev" href="../">
       
       
-        <link rel="next" href="../v2.1.22/">
+        <link rel="next" href="../v2.1.28/">
       
       
         
@@ -25,7 +25,7 @@
     
     
       
-        <title>2.1.23 - Vergil VM</title>
+        <title>2.1.29 - Vergil VM</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#release-2123-2026-06-13" class="md-skip">
+        <a href="#release-2129-2026-06-22" class="md-skip">
           Skip to content
         </a>
       
@@ -116,7 +116,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              2.1.23
+              2.1.29
             
           </span>
         </div>
@@ -643,10 +643,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../v2.1.29/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.29
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -662,6 +689,37 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#bug-fixes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bug fixes
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -811,37 +869,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    2.1.23
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../v2.1.23/" class="md-nav__link">
         
   
   
@@ -857,37 +888,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#bug-fixes" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Bug fixes
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -2013,15 +2013,12 @@
 
 
 
-<h1 id="release-2123-2026-06-13">Release 2.1.23 (2026-06-13)<a class="headerlink" href="#release-2123-2026-06-13" title="Permanent link">&para;</a></h1>
+<h1 id="release-2129-2026-06-22">Release 2.1.29 (2026-06-22)<a class="headerlink" href="#release-2129-2026-06-22" title="Permanent link">&para;</a></h1>
 <h2 id="bug-fixes">Bug fixes<a class="headerlink" href="#bug-fixes" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>make heavy provisioning first-boot-only, stop wiping apt cache (#177) (#182)</strong>
-Lima re-runs every provisioning script on every boot (cloud-init per-boot runparts; the instance-id is rotated each boot to force it), and the template's install blocks had no 'already done' guard. So every reboot re-ran the full network install: apt wiped its lists then re-downloaded ~46 MB of indices, and the gh/nodesource/yq/uv installers and 'npm install -g claude-code' all re-ran. cloud-init analyze blame: scripts_per_boot took 105s on first boot and ~24s on every subsequent boot. Beyond the wasted time, each reboot re-ran network calls under set -e, carrying the same #177 fragility (any timeout -&gt; DEGRADED/failed boot) that the vagrant guard only closed for one call.</li>
+<li><strong>name the volume disk <name>-data so it can't collide with the instance boot disk (#221) (#222)</strong>
+Off-platform vrg-vm create failed at the vm apply with resourceInUseByAnotherResource: the instances initialize_params boot disk auto-takes the instance name (var.name), which equaled the volume disks name (also var.name), so GCP could not create the instance. Suffix the volume disk -data; the vm module references it by self_link, so the change is transparent. Companion vergil-tooling shrinks the name budget (_MAX_NAME 59-&gt;58) so <name>-data stays within GCPs 63-char limit, and injects GOOGLE_CLOUD_PROJECT into the tofu env.</li>
 </ul>
-<p>Gate the three network-heavy blocks (base tools, uv, per-repo profile) on first-boot completion markers: each skips when its marker exists and stamps the marker LAST, so a failed install never marks the box provisioned and re-runs next boot. Stop wiping /var/lib/apt/lists (the box is rebuilt, not updated in place, so per-boot cache hygiene buys nothing and the wipe forced the re-download). Cheap, idempotent config steps (PATH, service masking, group membership, port-forwards) still run every boot.</p>
-<p>Reboots/restarts drop from ~24s of fragile network installs to a few seconds, network-free. Bonus: this makes _st_cycle_ssh's 'the second boot re-runs no provisioning and is fast' assumption true again, so the SSH ControlMaster is established against an already-provisioned guest — the likely cause of the transient post-rebuild login failure.</p>
-<p>Adds tests/test_provision_once.sh asserting the completion markers exist and the installed tools are present.</p>
 
 
 
