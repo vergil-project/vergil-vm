@@ -23,3 +23,30 @@ jobs:
     with:
       container-suffix: base
     secrets: inherit
+
+  # Publish the OpenTofu module tree as a release asset so the off-platform
+  # backend can fetch it with a single unauthenticated GET (the cloud analog of
+  # the raw agent.yaml fetch) — no git, no clone, no checkout assumed. The
+  # reusable cd-release call only attaches files already present in its own
+  # workspace and has no build step for non-language repos, so packaging is a
+  # bespoke job here that uploads to the release cd-release just cut. The asset
+  # name uses the bare version (no "v"), matching cd-release's $VERSION; the
+  # release tag is "v$VERSION".
+  publish-modules:
+    if: github.ref == 'refs/heads/main'
+    needs: release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Package OpenTofu modules and attach to release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="$(cat VERSION)"
+          artifact="opentofu-modules-${version}.tar.gz"
+          tar -czf "$artifact" opentofu/
+          gh release upload "v${version}" "$artifact" --clobber
