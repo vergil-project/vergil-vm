@@ -1,0 +1,2845 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Lima VM definitions for isolated Vergil agent execution environments">
+      
+      
+      
+      
+        <link rel="prev" href="../troubleshooting/">
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Off-Platform Cloud Setup - Vergil VM</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#off-platform-cloud-setup-gcp" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Vergil VM" class="md-header__button md-logo" aria-label="Vergil VM" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Vergil VM
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Off-Platform Cloud Setup
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/vergil-project/vergil-vm" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    vergil-project/vergil-vm
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../changelog/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Releases
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../getting-started/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Getting Started
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../sessions/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Sessions
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Architecture
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../build-and-test/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Operations
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Vergil VM" class="md-nav__button md-logo" aria-label="Vergil VM" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Vergil VM
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/vergil-project/vergil-vm" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    vergil-project/vergil-vm
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Releases
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Releases
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../releases/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Notes
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2_2" id="__nav_2_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Release Notes
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../releases/v2.1.27/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.27
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../releases/v2.1.26/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.26
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../releases/v2.1.25/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.25
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../releases/v2.1.24/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.24
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../releases/v2.1.23/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.23
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../releases/v2.1.22/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.22
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../releases/v2.1.21/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.21
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../releases/v2.1.20/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.20
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../releases/v2.1.19/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.19
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../releases/v2.1.18/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.18
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../releases/v2.1.17/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.17
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../releases/v2.1.16/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.16
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../releases/v2.1.15/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.15
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../releases/v2.1.14/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.14
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../releases/v2.1.13/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.13
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../releases/v2.1.12/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.12
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../releases/v2.1.11/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.11
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../releases/v2.1.10/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.10
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../releases/v2.1.9/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.9
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../releases/v2.1.8/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.8
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../releases/v2.1.7/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.7
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../releases/v2.1.6/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.6
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../releases/v2.1.5/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.5
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../releases/v2.1.4/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.4
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../releases/v2.1.3/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.3
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../releases/v2.1.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sessions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sessions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../architecture/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_2" id="__nav_5_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Design Decisions
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Design Decisions
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/decisions/vm-isolation-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VM Isolation Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/decisions/credential-injection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Credential Injection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/decisions/off-platform-gcp-modules/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Off-Platform GCP Modules
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Operations
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Operations
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../build-and-test/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Build and Test
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../resource-tuning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Resource Tuning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Off-Platform Cloud Setup
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Off-Platform Cloud Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#when-you-need-this" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When you need this
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-you-will-end-up-with" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What you will end up with
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Prerequisites
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-1-install-the-google-cloud-cli-macos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 1 — Install the Google Cloud CLI (macOS)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-2-sign-up-for-google-cloud-in-the-console-free-trial" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 2 — Sign up for Google Cloud in the Console (free trial)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-3-sign-up-part-1-of-2-account-information" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 3 — Sign-up, part 1 of 2: Account information
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-4-sign-up-part-2-of-2-payment-information" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 4 — Sign-up, part 2 of 2: Payment information
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-5-create-a-dedicated-project" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 5 — Create a dedicated project
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Step 5 — Create a dedicated project">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#understand-the-identifiers-and-no-organization-before-you-name-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Understand the identifiers (and "No organization") before you name it
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-5b-org-path-move-the-project-in-and-reconcile-org-policies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 5b — (org path) move the project in and reconcile org policies
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-6-authenticate-gcloud-cli-login-select-project" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 6 — Authenticate gcloud (CLI: login + select project)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-7-billing-enable-the-compute-engine-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 7 — Billing + enable the Compute Engine API
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-8-application-default-credentials-for-opentofu" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 8 — Application Default Credentials for OpenTofu
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-9-iam-permissions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 9 — IAM permissions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-10-check-vcpu-quota" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 10 — Check vCPU quota
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-11-choose-region-zone-and-a-nested-virt-instance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 11 — Choose region, zone, and a nested-virt instance
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-12-ssh-keypair" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 12 — SSH keypair
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#next-declare-the-profile-and-create-the-vm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Next — declare the profile and create the VM
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#azure-parity-todo-when-the-azure-path-is-set-up" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Azure (parity — TODO when the Azure path is set up)
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#when-you-need-this" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When you need this
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-you-will-end-up-with" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What you will end up with
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Prerequisites
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-1-install-the-google-cloud-cli-macos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 1 — Install the Google Cloud CLI (macOS)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-2-sign-up-for-google-cloud-in-the-console-free-trial" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 2 — Sign up for Google Cloud in the Console (free trial)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-3-sign-up-part-1-of-2-account-information" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 3 — Sign-up, part 1 of 2: Account information
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-4-sign-up-part-2-of-2-payment-information" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 4 — Sign-up, part 2 of 2: Payment information
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-5-create-a-dedicated-project" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 5 — Create a dedicated project
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Step 5 — Create a dedicated project">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#understand-the-identifiers-and-no-organization-before-you-name-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Understand the identifiers (and "No organization") before you name it
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-5b-org-path-move-the-project-in-and-reconcile-org-policies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 5b — (org path) move the project in and reconcile org policies
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-6-authenticate-gcloud-cli-login-select-project" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 6 — Authenticate gcloud (CLI: login + select project)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-7-billing-enable-the-compute-engine-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 7 — Billing + enable the Compute Engine API
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-8-application-default-credentials-for-opentofu" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 8 — Application Default Credentials for OpenTofu
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-9-iam-permissions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 9 — IAM permissions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-10-check-vcpu-quota" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 10 — Check vCPU quota
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-11-choose-region-zone-and-a-nested-virt-instance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 11 — Choose region, zone, and a nested-virt instance
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-12-ssh-keypair" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 12 — SSH keypair
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#next-declare-the-profile-and-create-the-vm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Next — declare the profile and create the VM
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#azure-parity-todo-when-the-azure-path-is-set-up" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Azure (parity — TODO when the Azure path is set up)
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="off-platform-cloud-setup-gcp">Off-Platform Cloud Setup (GCP)<a class="headerlink" href="#off-platform-cloud-setup-gcp" title="Permanent link">&para;</a></h1>
+<p>A step-by-step guide to standing up the cloud-account prerequisites for the
+<strong>off-platform VM backend</strong> (vergil-vm #199): a billed cloud project, host
+credentials, permissions, and nested-virtualization quota — everything the
+OpenTofu modules need before <code>vrg-vm create</code> can stand up a real cloud VM.</p>
+<p>This guide is <strong>GCP-first</strong> (the primary target). An <strong>Azure</strong> section captures the
+parity steps when that path is set up.</p>
+<blockquote>
+<p><strong>The cloud setup is a macOS-host activity.</strong> <code>gcloud</code> and the GCP Console run on
+your Mac, and the credential you create here (<code>gcloud</code> Application Default
+Credentials) is <strong>host-local — it does not propagate into VMs</strong> the way the GitHub
+App credentials do. It is a distinct class of credential, managed only on the
+operator's Mac.</p>
+</blockquote>
+<h2 id="when-you-need-this">When you need this<a class="headerlink" href="#when-you-need-this" title="Permanent link">&para;</a></h2>
+<p>Only repos that declare the off-platform backend in their <code>vergil.toml</code>
+(<code>[vm.&lt;identity&gt;] backend = "off-platform"</code>) need a cloud project. The default local
+Lima backend needs none of this. Today the one consumer is the native-x86 MQ cluster
+lab.</p>
+<h2 id="what-you-will-end-up-with">What you will end up with<a class="headerlink" href="#what-you-will-end-up-with" title="Permanent link">&para;</a></h2>
+<ul>
+<li>A GCP project with billing enabled and the Compute Engine API on.</li>
+<li><code>gcloud</code> installed and authenticated on your Mac (Application Default Credentials).</li>
+<li>IAM permissions to create instances, disks, and firewall rules.</li>
+<li>Confirmed nested-virtualization quota and a working machine-type + region.</li>
+<li>An SSH keypair for the instance.</li>
+</ul>
+<hr />
+<!--
+  Captured from the first real GCP setup (vergil-vm #204): the exact commands, console
+  paths, and gotchas that actually occurred. The Azure section is a deliberate TODO,
+  to be filled the same way when that path is set up — not guessed.
+-->
+
+<h2 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h2>
+<ul>
+<li>A <strong>Google account</strong> that can sign in to <a href="https://console.cloud.google.com">console.cloud.google.com</a>.</li>
+<li><strong>Homebrew</strong> on your Mac (for the gcloud install below).</li>
+<li>A way to pay: GCP requires a <strong>billing account</strong> (a payment method) before you can
+  run instances. We set that up in a later step; you just need a card available.</li>
+</ul>
+<h2 id="step-1-install-the-google-cloud-cli-macos">Step 1 — Install the Google Cloud CLI (macOS)<a class="headerlink" href="#step-1-install-the-google-cloud-cli-macos" title="Permanent link">&para;</a></h2>
+<p>The Google Cloud CLI is a Homebrew <strong>cask</strong> named <code>gcloud-cli</code>. Install it with:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>brew<span class="w"> </span>install<span class="w"> </span>--cask<span class="w"> </span>gcloud-cli
+</code></pre></div>
+<blockquote>
+<p><strong>Gotcha:</strong> <code>brew install gcloud</code> does <strong>not</strong> work — there is no <code>gcloud</code>
+<em>formula</em>. Homebrew errors with <em>"No available formula with the name gcloud"</em> and
+suggests the cask: <em>"To install gcloud-cli, run: <code>brew install --cask gcloud-cli</code>"</em>.</p>
+</blockquote>
+<p>This installs the Google Cloud SDK (v573.0.0 at the time of writing; it pulls
+<code>python@3.14</code> as a dependency) and links the core binaries — <code>gcloud</code>, <code>gsutil</code>,
+<code>bq</code> — into <code>/opt/homebrew/bin</code>, which is already on your <code>PATH</code>. So <code>gcloud</code> works
+immediately; no <code>PATH</code> edit is needed for the core tool.</p>
+<p>Optionally, enable shell completion and put the SDK's <em>additional</em> components on
+<code>PATH</code> (for <code>gcloud components install …</code>) by sourcing the init scripts from your
+shell profile (zsh):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nb">echo</span><span class="w"> </span><span class="s1">&#39;source &quot;/opt/homebrew/share/google-cloud-sdk/path.zsh.inc&quot;&#39;</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>~/.zshrc
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="nb">echo</span><span class="w"> </span><span class="s1">&#39;source &quot;/opt/homebrew/share/google-cloud-sdk/completion.zsh.inc&quot;&#39;</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>~/.zshrc
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="nb">exec</span><span class="w"> </span>zsh
+</code></pre></div>
+<p>Verify the install:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>gcloud<span class="w"> </span>version<span class="w">          </span><span class="c1"># -&gt; Google Cloud SDK 573.0.0, bq, core, gsutil, ...</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>gcloud<span class="w"> </span>auth<span class="w"> </span>list<span class="w">        </span><span class="c1"># -&gt; &quot;No credentialed accounts.&quot; until you log in (Step 2)</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>gcloud<span class="w"> </span>config<span class="w"> </span>list<span class="w">      </span><span class="c1"># -&gt; active configuration: [default], no project yet</span>
+</code></pre></div>
+<!--
+  The next three steps are the WEB CONSOLE part — the first-time Google Cloud
+  sign-up, project creation, and billing. This is the most confusing part of the
+  whole setup and the reason this guide exists. GCP's onboarding UI changes over
+  time, so these are captured from what actually appeared during the #204
+  walkthrough, with screenshots. Do not guess screens — capture the real flow.
+-->
+
+<h2 id="step-2-sign-up-for-google-cloud-in-the-console-free-trial">Step 2 — Sign up for Google Cloud in the Console (free trial)<a class="headerlink" href="#step-2-sign-up-for-google-cloud-in-the-console-free-trial" title="Permanent link">&para;</a></h2>
+<p>Go to <a href="https://console.cloud.google.com">console.cloud.google.com</a> signed in with your
+Google account. A brand-new account lands on the Console with a <strong>free-trial
+onboarding</strong> front and centre:</p>
+<p><img alt="Google Cloud free-trial welcome screen: &quot;Try Google Cloud with $300 in free credits&quot;, 90 days, no billing during free trial, with a &quot;Try for free&quot; button" src="../img/off-platform-cloud-setup/02a-free-trial-welcome.png" /></p>
+<p>What it offers: <strong>$300 in free credits, 90 days, and "no billing during the free
+trial."</strong> Click <strong>Try for free</strong> (or <strong>Start free trial</strong> in the top banner) to begin.</p>
+<p><strong>The one decision here — free trial vs. paid:</strong></p>
+<ul>
+<li><strong>Take the free trial.</strong> The $300 credit offsets the cost of the off-platform VM
+  while you validate the setup, and — importantly — the credit <strong>carries over if you
+  later upgrade to a paid account</strong>, so claiming it first costs you nothing.</li>
+<li><strong>A payment method (card) is still required</strong> to start the trial. Google uses it to
+  verify identity; you are <strong>not</strong> charged during the trial unless you explicitly
+  upgrade to a paid account or exceed the credit.</li>
+<li><strong>Check the quota — don't assume you must upgrade.</strong> Free trials <em>can</em> carry
+  restricted vCPU quotas, but not always (verify at Step 10). In this walkthrough the
+  regional <code>CPUS</code>/<code>N2_CPUS</code> quota was already <strong>200</strong> — ample for a 16-vCPU box — most
+  likely because the project sits under an <strong>established org</strong>. If yours genuinely is
+  too low, you upgrade to paid or file a quota-increase; the $300 credit still applies
+  after upgrading.</li>
+</ul>
+<p>Click <strong>Try for free</strong> and continue to the sign-up form (country, Terms of Service,
+and the payment method) — captured in Steps 3–4.</p>
+<h2 id="step-3-sign-up-part-1-of-2-account-information">Step 3 — Sign-up, part 1 of 2: Account information<a class="headerlink" href="#step-3-sign-up-part-1-of-2-account-information" title="Permanent link">&para;</a></h2>
+<p>The free-trial sign-up is two screens. The first is <strong>Account information</strong> — your
+<strong>country</strong> plus agreement to the <strong>Terms of Service</strong>:</p>
+<p><img alt="GCP free-trial sign-up step 1 of 2: Account information — a country dropdown (United States) and a Terms-of-Service agreement, with an &quot;Agree &amp; continue&quot; button" src="../img/off-platform-cloud-setup/03a-account-information.png" /></p>
+<p>Pick your <strong>country</strong>, accept the <strong>Google Cloud Platform + Free Trial + APIs Terms of
+Service</strong>, and click <strong>Agree &amp; continue</strong>. Note the reassurance on the right — <em>"No
+automatic charges: you only start paying if you decide to activate a full,
+pay-as-you-go account or choose to prepay. Any remaining free credit is yours to
+keep."</em></p>
+<h2 id="step-4-sign-up-part-2-of-2-payment-information">Step 4 — Sign-up, part 2 of 2: Payment information<a class="headerlink" href="#step-4-sign-up-part-2-of-2-payment-information" title="Permanent link">&para;</a></h2>
+<p>The second screen is <strong>Payment information verification</strong>. It has two blocks, each with
+a <strong>Change</strong> link, and a <strong>Start free</strong> button:</p>
+<ul>
+<li><strong>Contact information</strong> — your name and address, drawn from your <strong>Google payments
+  profile</strong>. If you already use Google Play, Google One, or YouTube, GCP <strong>reuses your
+  existing payments profile</strong> here rather than asking you to type a new one. (If you
+  have no profile yet, you fill in account type — Individual or Business — name, and
+  address.)</li>
+<li><strong>Payment method</strong> — a card. Google verifies it but does <strong>not</strong> charge it: <em>"this
+  trial is still free… you won't be charged unless you manually activate a full
+  pay-as-you-go account or choose to prepay."</em></li>
+</ul>
+<p>Click <strong>Start free</strong> to finish.</p>
+<blockquote>
+<p><strong>No screenshot here on purpose.</strong> This screen shows your real payments-profile and
+card details; do not capture it into shared docs.</p>
+</blockquote>
+<h2 id="step-5-create-a-dedicated-project">Step 5 — Create a dedicated project<a class="headerlink" href="#step-5-create-a-dedicated-project" title="Permanent link">&para;</a></h2>
+<p>Clicking <strong>Start free</strong> lands you back on the Console with the <strong>free trial active</strong> —
+a top banner shows <em>"$300.00 credit and N days remaining"</em> with an <strong>Activate full
+account</strong> button (the upgrade-to-paid path for later), and <em>"0 of $300 credits used"</em>.
+The sign-up auto-creates a default project called <strong>"My First Project"</strong> with an
+auto-generated project number and ID.</p>
+<h3 id="understand-the-identifiers-and-no-organization-before-you-name-it">Understand the identifiers (and "No organization") before you name it<a class="headerlink" href="#understand-the-identifiers-and-no-organization-before-you-name-it" title="Permanent link">&para;</a></h3>
+<p>A GCP project has three identifiers — only one is permanent:</p>
+<ul>
+<li><strong>Project name (display name)</strong> — human-friendly, shown in the Console. <strong>Changeable</strong>
+  anytime, not unique. Cosmetic.</li>
+<li><strong>Project ID</strong> — <strong>globally unique across all of GCP</strong>, lowercase letters/digits/
+  hyphens, 6–30 chars. <strong>Immutable</strong> — you cannot rename it; "changing" it means
+  creating a new project and migrating. It is baked into <code>gcloud --project</code>, resource
+  paths (<code>projects/&lt;ID&gt;/…</code>), <strong>service-account emails</strong>
+  (<code>&lt;name&gt;@&lt;PROJECT_ID&gt;.iam.gserviceaccount.com</code>), billing reports, and URLs. <strong>This is
+  the one to choose deliberately</strong> — pick a clean, purpose-named ID that is <strong>not
+  coupled to your personal user id</strong> (the same lesson as moving from a personal GitHub
+  account to an org).</li>
+<li><strong>Project number</strong> — auto-assigned, immutable, numeric. You don't choose it.</li>
+</ul>
+<p><strong>The "No organization" line.</strong> A GCP <strong>Organization</strong> is the top-level owner of
+projects — the analog of a GitHub org. It is created from a <strong>Google Workspace or Cloud
+Identity</strong> account tied to a <strong>domain you own</strong>; a plain <code>@gmail.com</code> account has <strong>no
+organization</strong>, so personal projects sit under <strong>"No organization,"</strong> owned by your user
+account. An Organization buys: <strong>ownership decoupled from one personal account</strong>,
+centralized IAM + org policies, <strong>folders</strong> for hierarchy, and centralized billing — the
+same reasons you graduate from personal GitHub repos to an org. The cost is setup: a
+domain + Cloud Identity (there is a free tier) and domain verification. You <strong>can</strong> move
+a project into an organization later (the <strong>Project ID stays fixed</strong> through the move),
+so the safe order is: <strong>choose the ID well now; decide the org consciously</strong> (set it up
+now for the clean structure, or stay under "No organization" and migrate later).</p>
+<p><strong>Org vs. "No organization" — a real choice.</strong> These off-platform VMs are a <strong>personal
+developer sandbox</strong> (not shared team infrastructure), so the usual "use an org to share
+with a team" driver doesn't apply. That leaves two defensible options:</p>
+<ul>
+<li><strong>"No organization"</strong> — simplest; <strong>no org policies inherit</strong>, so nothing at the org
+  level can block the VM (e.g. its public IP). Zero friction.</li>
+<li><strong>Your own (personal) org</strong> — if your account has a Cloud Identity / Workspace org
+  (here <code>w-phillip-moore-org</code>), putting the project under it gives <strong>central governance</strong>
+  and lets you apply org-level security policy <em>on purpose</em> (e.g. SSH/external-IP
+  restrictions). The cost: <strong>org policies inherit into the project</strong> and can restrict it
+  (external IPs, OS Login, Shielded VM), so you must reconcile them with what the VM
+  needs (Step 5b).</li>
+</ul>
+<p><strong>This guide uses the personal org deliberately</strong> — managing everything in one place and
+<em>leveraging</em> org-level SSH/security controls beats treating the org as a black box. If
+you have no org (a plain <code>@gmail.com</code> with no Cloud Identity), stay under "No
+organization" — it works the same for the VM.</p>
+<p><strong>Naming, decided:</strong></p>
+<ul>
+<li><strong>Display name</strong> — cosmetic and editable; use something friendly, e.g.
+  <code>Vergil Project Personal Sandbox</code>.</li>
+<li><strong>Project ID</strong> — instead of accepting GCP's random suggestion (e.g.
+  <code>articulate-fort-500213-e2</code>), choose a <strong>coherent self-namespace</strong> so all your personal
+  Vergil projects share a prefix: <code>vergil-project-&lt;n&gt;-a1</code>, <code>-a2</code>, … (using the GitHub org
+  name <code>vergil-project</code> as the prefix). The 6-digit number in GCP's auto-suggestions is
+  <strong>not</strong> a stable account id — it drifts across refreshes — so don't read meaning into
+  it; just pick a clean prefix you control. The ID is <strong>immutable</strong>, the display name is
+  not.</li>
+</ul>
+<p><strong>Don't build on "My First Project."</strong> Create the <strong>dedicated project</strong> with the name/ID
+above — it isolates the cloud resources, gives clean billing attribution, and lets you
+delete the whole project to clean up later.</p>
+<ol>
+<li>Open the <strong>project picker</strong> (the project name in the top bar) and choose <strong>New
+   Project</strong>.</li>
+<li>Set the <strong>name</strong> (e.g. <code>Vergil Project Personal Sandbox</code>). GCP shows an
+   auto-generated <strong>Project ID</strong> beneath it — to use <em>your</em> ID you must click the small
+   <strong>EDIT</strong> link next to it and type it (e.g. <code>vergil-project-500213-a1</code>). <strong>Skip EDIT
+   (or hit Return early) and you get the random ID</strong>, with your text only as the display
+   name — the most common trip-up on this screen.</li>
+<li><strong>Organization / Location</strong>: pick your org, or <strong>No organization</strong>, per the choice
+   above.</li>
+<li><strong>Create</strong>, then <strong>select</strong> the new project in the picker.</li>
+</ol>
+<p><strong>Cleaner alternative — create it from the CLI</strong> (after Step 6 auth). This sets the ID
+explicitly and skips the fiddly form entirely:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>gcloud<span class="w"> </span>projects<span class="w"> </span>create<span class="w"> </span>vergil-project-500213-a1<span class="w"> </span>--name<span class="o">=</span><span class="s2">&quot;Vergil Project Personal Sandbox&quot;</span>
+</code></pre></div>
+<p>Record the <strong>Project ID</strong> — you need it for <code>gcloud config set project &lt;PROJECT_ID&gt;</code>
+(Step 6) and the repo's off-platform profile.</p>
+<blockquote>
+<p><strong>Trial billing is account-wide.</strong> The free-trial billing account already covers any
+project you create under it, so a new project is billed to the trial automatically —
+no separate billing setup per project during the trial.</p>
+<p><strong>Gotchas on this screen (we hit all of these).</strong></p>
+<ul>
+<li><strong>The Console is not the source of truth — the CLI is.</strong> A just-created project can
+  be missing from the picker, and a project you just moved can keep showing under its
+  <em>old</em> parent for a while (the resource hierarchy caches/propagates, then catches
+  up). Trust <code>gcloud projects list</code> and
+  <code>gcloud projects describe &lt;id&gt; --format="value(parent)"</code>, not the Console.</li>
+<li><strong>A custom Project ID needs the EDIT link</strong> (step 2): skip it and you get a random
+  ID, with your text only as the display name.</li>
+<li><strong>Accidental creation / "pending deletion."</strong> Hitting <strong>Return</strong> can create a stray
+  project. Deleting one <strong>soft-deletes</strong> it (recoverable ~30 days under "Resources
+  pending deletion"); harmless — <code>gcloud projects delete &lt;id&gt;</code> and carry on.</li>
+<li><strong>Moving a project into an org is a <code>beta</code> command:</strong> <code>gcloud beta projects move</code>
+  (gcloud installs the <code>beta</code> component on first use), and it warns that org policies
+  may change what's enforced — see Step 5b.</li>
+</ul>
+</blockquote>
+<h2 id="step-5b-org-path-move-the-project-in-and-reconcile-org-policies">Step 5b — (org path) move the project in and reconcile org policies<a class="headerlink" href="#step-5b-org-path-move-the-project-in-and-reconcile-org-policies" title="Permanent link">&para;</a></h2>
+<p>Skip this step if you stayed under "No organization." If you chose your personal org,
+move the project into it — the <strong>Project ID survives</strong>; only the parent changes:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>gcloud<span class="w"> </span>organizations<span class="w"> </span>list<span class="w">                                         </span><span class="c1"># find &lt;ORG_ID&gt; + display name</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>gcloud<span class="w"> </span>beta<span class="w"> </span>projects<span class="w"> </span>move<span class="w"> </span>&lt;PROJECT_ID&gt;<span class="w"> </span>--organization<span class="o">=</span>&lt;ORG_ID&gt;
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>gcloud<span class="w"> </span>projects<span class="w"> </span>describe<span class="w"> </span>&lt;PROJECT_ID&gt;<span class="w"> </span>--format<span class="o">=</span><span class="s2">&quot;value(parent)&quot;</span><span class="w">    </span><span class="c1"># -&gt; organizations/&lt;ORG_ID&gt;</span>
+</code></pre></div>
+<p><code>move</code> is a <strong><code>beta</code></strong> command (gcloud installs the component on first use) and <strong>warns
+that org policies may change what's enforced</strong>. The move needs an org-level role
+(Project Mover / Project Creator) — on <code>PERMISSION_DENIED</code>, grant your account that role
+at the org first.</p>
+<p><strong>Then reconcile the org policies with the VM's needs</strong> — the part most guides skip.
+List what the org enforces (enable the Org Policy API if prompted):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>gcloud<span class="w"> </span>org-policies<span class="w"> </span>list<span class="w"> </span>--organization<span class="o">=</span>&lt;ORG_ID&gt;
+</code></pre></div>
+<p>A newer org carries Google's <strong>secure-by-default</strong> managed policies. Read them against
+what the off-platform VM actually does:</p>
+<table>
+<thead>
+<tr>
+<th>Constraint (seen here)</th>
+<th>Effect</th>
+<th>Off-platform impact</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>iam.disableServiceAccountKeyCreation</code></td>
+<td>no service-account JSON keys</td>
+<td><strong>None</strong> — tofu uses your <strong>ADC</strong> (user) credential, not an SA key</td>
+</tr>
+<tr>
+<td><code>iam.disableServiceAccountKeyUpload</code></td>
+<td>no external SA keys</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>iam.automaticIamGrantsForDefaultServiceAccounts</code></td>
+<td>default Compute SA gets no auto-Editor</td>
+<td>None — the VM doesn't call GCP APIs from inside</td>
+</tr>
+<tr>
+<td><code>storage.uniformBucketLevelAccess</code></td>
+<td>GCS buckets use uniform access</td>
+<td>None — tofu state is local, no buckets</td>
+</tr>
+<tr>
+<td><code>compute.restrictProtocolForwardingCreationForTypes</code></td>
+<td>limits protocol forwarding</td>
+<td>None — not used</td>
+</tr>
+<tr>
+<td><code>compute.setNewProjectDefaultToZonalDNSOnly</code></td>
+<td>internal zonal DNS default</td>
+<td>None — SSH is over the external IP</td>
+</tr>
+</tbody>
+</table>
+<p><strong>The two that <em>would</em> block the VM — confirm they are NOT enforced (they weren't here):</strong></p>
+<ul>
+<li><strong><code>compute.vmExternalIpAccess</code></strong> — restricts external IPs. The VM <strong>needs</strong> a public IP
+  for SSH; if your org enforces this, add an allow-rule or exempt the project first.</li>
+<li><strong><code>compute.requireOsLogin</code></strong> — forces IAM-based <strong>OS Login</strong> instead of metadata SSH
+  keys. The module injects a metadata SSH key, so under enforced OS Login the backend's
+  SSH path (<code>vergil-tooling#1706</code> <code>session</code>) must switch to OS Login.</li>
+</ul>
+<p>Net: moving into the org pulled in the secure-by-default set, <strong>none of which block the
+off-platform VM</strong>, and the two that would (external IP, OS Login) were not set — clear
+to proceed. Check yours the same way before you build.</p>
+<h2 id="step-6-authenticate-gcloud-cli-login-select-project">Step 6 — Authenticate gcloud (CLI: login + select project)<a class="headerlink" href="#step-6-authenticate-gcloud-cli-login-select-project" title="Permanent link">&para;</a></h2>
+<p>Once the account, project, and billing exist, point the CLI at them. Log in with your
+Google account (opens a browser for OAuth and stores your <em>user</em> credential):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>gcloud<span class="w"> </span>auth<span class="w"> </span>login
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>gcloud<span class="w"> </span>auth<span class="w"> </span>list<span class="w">                    </span><span class="c1"># -&gt; your account, marked ACTIVE (*)</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>gcloud<span class="w"> </span>config<span class="w"> </span><span class="nb">set</span><span class="w"> </span>project<span class="w"> </span>&lt;PROJECT_ID&gt;
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>gcloud<span class="w"> </span>config<span class="w"> </span>list<span class="w">                  </span><span class="c1"># -&gt; account + project set</span>
+</code></pre></div>
+<blockquote>
+<p>This user login is separate from the <strong>Application Default Credentials</strong> OpenTofu
+uses (Step 8). You need both: the user login to drive <code>gcloud</code>, and ADC for <code>tofu</code>.</p>
+<p><strong>macOS prompts for Local Network access.</strong> The first time a <code>gcloud auth …</code> command
+opens a browser, macOS pops an alert asking to allow <strong>Python</strong> to discover
+applications/devices on the network. The OAuth flow runs a short-lived <code>localhost</code>
+listener to catch the browser redirect, so you must click <strong>Allow</strong> or the hand-off
+never completes. Same prompt for <code>gcloud auth login</code> and
+<code>gcloud auth application-default login</code>.</p>
+</blockquote>
+<h2 id="step-7-billing-enable-the-compute-engine-api">Step 7 — Billing + enable the Compute Engine API<a class="headerlink" href="#step-7-billing-enable-the-compute-engine-api" title="Permanent link">&para;</a></h2>
+<p>Compute won't run without billing, and the API is off by default:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="c1"># Is billing linked? (the free trial often auto-links a new project)</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>gcloud<span class="w"> </span>billing<span class="w"> </span>projects<span class="w"> </span>describe<span class="w"> </span>&lt;PROJECT_ID&gt;<span class="w">          </span><span class="c1"># -&gt; billingEnabled: true</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="c1"># Only if billingEnabled is false, link the trial account:</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>gcloud<span class="w"> </span>billing<span class="w"> </span>accounts<span class="w"> </span>list<span class="w">                           </span><span class="c1"># -&gt; &lt;ACCOUNT_ID&gt;</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>gcloud<span class="w"> </span>billing<span class="w"> </span>projects<span class="w"> </span>link<span class="w"> </span>&lt;PROJECT_ID&gt;<span class="w"> </span>--billing-account<span class="o">=</span>&lt;ACCOUNT_ID&gt;
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="c1"># Enable Compute Engine</span>
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>gcloud<span class="w"> </span>services<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>compute.googleapis.com
+</code></pre></div>
+<blockquote>
+<p><strong><code>gcloud services enable</code> is slow and silent.</strong> It sits 30s–2min with no output while
+GCP turns the service on — it is <strong>not</strong> hung. Add <code>--async</code> to return immediately (it
+finishes in the background), or <code>--verbosity=info</code> for a little feedback.</p>
+</blockquote>
+<h2 id="step-8-application-default-credentials-for-opentofu">Step 8 — Application Default Credentials for OpenTofu<a class="headerlink" href="#step-8-application-default-credentials-for-opentofu" title="Permanent link">&para;</a></h2>
+<p>OpenTofu authenticates to GCP via <strong>Application Default Credentials (ADC)</strong>, which are
+separate from your <code>gcloud</code> user login. Create them (browser login again — same macOS
+Local Network prompt as Step 6):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>gcloud<span class="w"> </span>auth<span class="w"> </span>application-default<span class="w"> </span>login
+</code></pre></div>
+<p>It writes <code>~/.config/gcloud/application_default_credentials.json</code> and notes that your
+project was added as the <strong>ADC quota project</strong>. That JSON file is the credential <code>tofu</code>
+reads at apply time.</p>
+<blockquote>
+<p><strong>This is the host-local credential the off-platform design calls out.</strong> Unlike the
+GitHub App credentials (which are injected into the VM), the gcloud ADC credential
+lives <strong>only on your Mac</strong> and does <strong>not</strong> propagate anywhere — a distinct class of
+credential, with none of the usual propagation machinery. Keep it on the operator's
+machine.</p>
+</blockquote>
+<h2 id="step-9-iam-permissions">Step 9 — IAM permissions<a class="headerlink" href="#step-9-iam-permissions" title="Permanent link">&para;</a></h2>
+<p>For a <strong>single-operator personal sandbox</strong> there's nothing extra to grant: you created
+the project, so you're its <strong>Owner</strong>, and your <strong>ADC</strong> (Step 8) inherits that — which
+already covers everything OpenTofu does (create instances, disks, firewall rules). The
+in-VM <strong>GitHub App</strong> credentials are a separate concern, injected into the VM by the
+backend (<code>vergil-tooling#1706</code>), not configured here.</p>
+<p>(If you later drive the backend from a dedicated service account instead of your user
+ADC, grant that account <code>roles/compute.admin</code> on the project — but the org policy
+<code>iam.disableServiceAccountKeyCreation</code> means you'd use impersonation / workload
+identity, not a downloaded key.)</p>
+<h2 id="step-10-check-vcpu-quota">Step 10 — Check vCPU quota<a class="headerlink" href="#step-10-check-vcpu-quota" title="Permanent link">&para;</a></h2>
+<p>A nested-virt instance is large (the off-platform example is <code>n2-standard-16</code> = 16
+vCPU, <strong>N2</strong> family — N2 supports nested virtualization). Confirm the region has the
+quota. <code>describe</code> does <strong>not</strong> accept <code>--filter</code> (that's a <code>list</code> flag), so flatten and
+grep:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>gcloud<span class="w"> </span>compute<span class="w"> </span>regions<span class="w"> </span>describe<span class="w"> </span>us-central1<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span>--flatten<span class="o">=</span><span class="s2">&quot;quotas&quot;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">  </span>--format<span class="o">=</span><span class="s2">&quot;value(quotas.metric,quotas.limit,quotas.usage)&quot;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">  </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-E<span class="w"> </span><span class="s1">&#39;^(CPUS|N2_CPUS)&#39;</span>
+</code></pre></div>
+<ul>
+<li><strong><code>CPUS</code></strong> — total vCPUs in the region; <strong><code>N2_CPUS</code></strong> — N2-family vCPUs.</li>
+<li>You need each limit <strong>≥</strong> your instance size (16 for <code>n2-standard-16</code>).</li>
+</ul>
+<p>In this walkthrough both returned <strong><code>200.0</code></strong> (usage <code>0.0</code>) — no increase needed. <strong>Do
+not assume a free trial caps you low</strong>: a project under an established org often has
+ample default quota. If yours genuinely is too low, validate first with a smaller box
+(<code>n2-standard-8</code> still proves nested KVM), or upgrade to paid / file a quota-increase.</p>
+<h2 id="step-11-choose-region-zone-and-a-nested-virt-instance">Step 11 — Choose region, zone, and a nested-virt instance<a class="headerlink" href="#step-11-choose-region-zone-and-a-nested-virt-instance" title="Permanent link">&para;</a></h2>
+<p>These become the off-platform profile values (<code>region</code> / <code>instance</code> / <code>volume</code>).</p>
+<ul>
+<li><strong>The instance family must support nested virtualization.</strong> On GCP that's <strong>N2, N2D,
+  C2, C2D, M1/M2/M3</strong> (Intel Haswell+ / AMD with virtualization extensions) — <strong>not</strong> E2
+  or T2D. The off-platform example uses <strong><code>n2-standard-16</code></strong> (16 vCPU, N2). To validate
+  the backend cheaply first, <strong><code>n2-standard-8</code></strong> still proves nested KVM.</li>
+<li><strong>Region</strong> — <code>us-central1</code> works (it has N2 and is where we checked quota). Pick one
+  near you with N2 availability.</li>
+<li><strong>Zone</strong> — you don't set it in the profile: the OpenTofu <strong>volume</strong> module pins the
+  zone (<code>${region}-b</code> by default) and the VM follows it.</li>
+</ul>
+<p>Verify nested virt on your chosen machine type/zone against the current
+<a href="https://cloud.google.com/compute/docs/instances/nested-virtualization/overview">GCP nested-virtualization docs</a>
+rather than a static list — the supported matrix shifts.</p>
+<h2 id="step-12-ssh-keypair">Step 12 — SSH keypair<a class="headerlink" href="#step-12-ssh-keypair" title="Permanent link">&para;</a></h2>
+<p>The VM is reached over SSH, and the OpenTofu <code>vm</code> module takes an <code>ssh_public_key</code>.
+Generate a dedicated keypair on your Mac:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>ssh-keygen<span class="w"> </span>-t<span class="w"> </span>ed25519<span class="w"> </span>-f<span class="w"> </span>~/.ssh/vergil-off-platform<span class="w"> </span>-C<span class="w"> </span>vergil-off-platform
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>cat<span class="w"> </span>~/.ssh/vergil-off-platform.pub<span class="w">      </span><span class="c1"># the module&#39;s ssh_public_key input</span>
+</code></pre></div>
+<p>In the full flow the backend (<code>vergil-tooling#1706</code>) manages this key per <code>create</code> and
+injects it; for a manual <code>tofu apply</code> you pass the <code>.pub</code> contents as <code>ssh_public_key</code>.
+Keep the <strong>private</strong> key on your Mac — like the gcloud ADC credential, it does not
+propagate.</p>
+<h2 id="next-declare-the-profile-and-create-the-vm">Next — declare the profile and create the VM<a class="headerlink" href="#next-declare-the-profile-and-create-the-vm" title="Permanent link">&para;</a></h2>
+<p>The account is ready. The VM lifecycle is driven by the off-platform backend:</p>
+<ol>
+<li><strong>Declare the off-platform profile</strong> in the consuming repo's <code>vergil.toml</code>:</li>
+</ol>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="k">[vm.vergil-user]</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="n">backend</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;off-platform&quot;</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="n">provider</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;gcp&quot;</span>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="n">region</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;us-central1&quot;</span>
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="n">instance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;n2-standard-16&quot;</span><span class="w">   </span><span class="c1"># or n2-standard-8 to validate</span>
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="n">volume</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;300GiB&quot;</span>
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a><span class="n">nested</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
+</code></pre></div>
+<ol>
+<li><strong>Create the VM</strong> — <code>vrg-vm create &lt;org&gt;/&lt;repo&gt;</code> drives the OpenTofu modules,
+   provisions via cloud-init, and injects credentials over SSH. That dispatch lives in
+   <strong>vergil-tooling#1706</strong> (not yet built); until then the modules can be exercised by a
+   manual <code>tofu apply</code> with hand-composed inputs.</li>
+<li><strong>Confirm the payoff</strong> — a lab guest resolves <strong><code>driver=kvm</code></strong> (nested KVM, not the
+   TCG emulation tax) — the entire reason for the off-platform backend.</li>
+</ol>
+<hr />
+<h2 id="azure-parity-todo-when-the-azure-path-is-set-up">Azure (parity — TODO when the Azure path is set up)<a class="headerlink" href="#azure-parity-todo-when-the-azure-path-is-set-up" title="Permanent link">&para;</a></h2>
+<p>The same shape: a subscription with billing, <code>az login</code>, a nested-virtualization-capable
+SKU, region, and quota.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.indexes", "navigation.top", "content.code.copy", "search.highlight", "search.suggest"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

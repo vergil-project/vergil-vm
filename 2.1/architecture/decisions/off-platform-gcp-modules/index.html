@@ -569,6 +569,8 @@
       
         
       
+        
+      
     
     
     
@@ -621,6 +623,34 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../releases/v2.1.27/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.27
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
               
             
               
@@ -1758,6 +1788,8 @@
       
         
       
+        
+      
     
     
     
@@ -1874,6 +1906,34 @@
     
   
     Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../operations/off-platform-cloud-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Off-Platform Cloud Setup
   
 
     
@@ -2020,8 +2080,11 @@ companion and is <strong>out of scope here</strong>.</p>
 <li><strong>The volume owns its zone.</strong> A GCP disk is zonal, so the <code>volume</code> module records the
   zone it landed in (<code>coalesce(zone, "${region}-b")</code>) and outputs it; the <code>vm</code> module
   consumes that zone, so a rebuilt instance always lands where its disk lives.
-  <code>prevent_destroy</code> on the disk backstops the "destroy the VM, keep the volume"
-  contract.</li>
+  The "destroy the VM, keep the volume" contract holds structurally: routine
+  teardown runs <code>tofu destroy</code> on the VM state only, never the volume state, and
+  the dedicated <code>destroy-volume</code> verb is confirmation-gated. (An earlier
+  <code>prevent_destroy</code> guard on the disk was removed — a literal can't be
+  conditionalized, so it also blocked that legitimate verb.)</li>
 <li><strong>The boot disk is ephemeral and fixed-size</strong> (<code>boot_disk_gib</code>, default 30); only the
   persistent <code>volume</code> size is author-facing. (<code>disk</code> is a Lima knob, not a cloud one.)</li>
 </ul>
@@ -2042,9 +2105,22 @@ and mounts the persistent volume at <code>/vergil</code> before provisioning, an
 password SSH.</p>
 <h2 id="security">Security<a class="headerlink" href="#security" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>SSH ingress is locked to the create-initiator's origin address(es)</strong>
-  (<code>ssh_source_ranges</code>), re-applied each create; the module's variable validation
-  <strong>rejects an empty list and <code>0.0.0.0/0</code></strong>. Password auth is off (<code>ssh_pwauth: false</code>).</li>
+<li><strong>No public attack surface.</strong> The instance has <strong>no public IP</strong> (<code>access_config</code> is
+  dropped), so there is no internet-facing sshd. Access is via <strong>GCP Identity-Aware
+  Proxy (IAP) TCP tunneling</strong>: the SSH firewall allows ingress only from Google's fixed
+  IAP range <code>35.235.240.0/20</code> — a module constant, not an operator address, so nothing
+  refreshes when the operator roams. IAP supersedes the original operator-IP allow-list,
+  which was unsound behind NAT (a host cannot self-detect its public IP without a
+  third-party echo — an unacceptable dependency in a create-blocking, security-critical
+  path).</li>
+<li><strong>No Vergil-managed SSH keypair.</strong> Auth is the operator's existing GCP IAM —
+  <code>roles/iap.tunnelResourceAccessor</code> gates the tunnel — and <code>gcloud compute ssh
+  --tunnel-through-iap</code> provisions ephemeral keys itself, so the module carries no
+  <code>ssh_public_key</code>. Password auth is off (<code>ssh_pwauth: false</code>).</li>
+<li><strong>Precondition (operator account setup, see #204):</strong> the IAP API enabled and
+  <code>roles/iap.tunnelResourceAccessor</code> granted on the project. Azure's future module
+  mirrors this access model via Azure Bastion (separate follow-up); the
+  provider-agnostic module interface stays connection-method-blind.</li>
 <li>The GitHub App private key (injected by #1706) lands on the <strong>ephemeral boot disk</strong>,
   never the persistent volume — teardown destroys it.</li>
 </ul>
