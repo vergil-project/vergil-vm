@@ -156,6 +156,34 @@ account** button (the upgrade-to-paid path for later), and *"0 of $300 credits u
 The sign-up auto-creates a default project called **"My First Project"** with an
 auto-generated project number and ID.
 
+### Understand the identifiers (and "No organization") before you name it
+
+A GCP project has three identifiers — only one is permanent:
+
+- **Project name (display name)** — human-friendly, shown in the Console. **Changeable**
+  anytime, not unique. Cosmetic.
+- **Project ID** — **globally unique across all of GCP**, lowercase letters/digits/
+  hyphens, 6–30 chars. **Immutable** — you cannot rename it; "changing" it means
+  creating a new project and migrating. It is baked into `gcloud --project`, resource
+  paths (`projects/<ID>/…`), **service-account emails**
+  (`<name>@<PROJECT_ID>.iam.gserviceaccount.com`), billing reports, and URLs. **This is
+  the one to choose deliberately** — pick a clean, purpose-named ID that is **not
+  coupled to your personal user id** (the same lesson as moving from a personal GitHub
+  account to an org).
+- **Project number** — auto-assigned, immutable, numeric. You don't choose it.
+
+**The "No organization" line.** A GCP **Organization** is the top-level owner of
+projects — the analog of a GitHub org. It is created from a **Google Workspace or Cloud
+Identity** account tied to a **domain you own**; a plain `@gmail.com` account has **no
+organization**, so personal projects sit under **"No organization,"** owned by your user
+account. An Organization buys: **ownership decoupled from one personal account**,
+centralized IAM + org policies, **folders** for hierarchy, and centralized billing — the
+same reasons you graduate from personal GitHub repos to an org. The cost is setup: a
+domain + Cloud Identity (there is a free tier) and domain verification. You **can** move
+a project into an organization later (the **Project ID stays fixed** through the move),
+so the safe order is: **choose the ID well now; decide the org consciously** (set it up
+now for the clean structure, or stay under "No organization" and migrate later).
+
 **Don't build on "My First Project."** Create a **dedicated, clearly-named project** for
 the off-platform backend — it isolates the cloud resources, gives clean billing
 attribution, and lets you delete the whole project to clean up later.
