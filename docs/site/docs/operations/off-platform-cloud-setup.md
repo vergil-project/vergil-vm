@@ -222,7 +222,7 @@ Record the **Project ID** — you need it for `gcloud config set project <PROJEC
 > **Trial billing is account-wide.** The free-trial billing account already covers any
 > project you create under it, so a new project is billed to the trial automatically —
 > no separate billing setup per project during the trial.
-
+>
 > **Gotcha — accidental creation and "pending deletion."** Pressing **Return** in the
 > New Project form can submit it before you've set the name/ID, creating a stray
 > project. The project **picker** is an unreliable view of what exists — for the
