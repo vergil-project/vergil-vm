@@ -11,10 +11,10 @@
       
       
       
-        <link rel="prev" href="../v2.1.17/">
+        <link rel="prev" href="../">
       
       
-        <link rel="next" href="../v2.1.15/">
+        <link rel="next" href="../v2.1.26/">
       
       
         
@@ -25,7 +25,7 @@
     
     
       
-        <title>2.1.16 - Vergil VM</title>
+        <title>2.1.27 - Vergil VM</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#release-2116-2026-06-07" class="md-skip">
+        <a href="#release-2127-2026-06-22" class="md-skip">
           Skip to content
         </a>
       
@@ -116,7 +116,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              2.1.16
+              2.1.27
             
           </span>
         </div>
@@ -639,10 +639,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../v2.1.27/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.27
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -658,6 +685,48 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Documentation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Features
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -947,37 +1016,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    2.1.16
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../v2.1.16/" class="md-nav__link">
         
   
   
@@ -993,37 +1035,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#bug-fixes" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Bug fixes
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1926,10 +1937,21 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#bug-fixes" class="md-nav__link">
+  <a href="#documentation" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Bug fixes
+        Documentation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Features
       
     </span>
   </a>
@@ -1953,16 +1975,82 @@
 
 
 
-<h1 id="release-2116-2026-06-07">Release 2.1.16 (2026-06-07)<a class="headerlink" href="#release-2116-2026-06-07" title="Permanent link">&para;</a></h1>
-<h2 id="bug-fixes">Bug fixes<a class="headerlink" href="#bug-fixes" title="Permanent link">&para;</a></h2>
+<h1 id="release-2127-2026-06-22">Release 2.1.27 (2026-06-22)<a class="headerlink" href="#release-2127-2026-06-22" title="Permanent link">&para;</a></h1>
+<h2 id="documentation">Documentation<a class="headerlink" href="#documentation" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>grant actions: read to the security job (#144)</strong>
-ci-security.yml@v2.1.3 requests actions: read from its caller
-(codeql-action/upload-sarif needs it on private repositories). GitHub
-validates the request against the calling job's permissions at startup,
-so the security job must grant it before v2.1 is re-promoted to v2.1.3.
-The grant is backward-compatible with v2.1.2.</li>
+<li><strong>GCP cloud-account setup guide (#204) (#210)</strong></li>
+<li>docs(off-platform): start GCP cloud-setup guide: install + authenticate gcloud (#204)</li>
 </ul>
+<p>Begin the off-platform cloud-account setup guide (deliverable of #204), captured step-by-step during the real first setup. Step 1 (install gcloud via the gcloud-cli cask, with the brew install gcloud gotcha) is confirmed; Step 2 (gcloud auth login) documented. Remaining steps are TODO placeholders to be filled only with verified content. Added to the Operations nav.</p>
+<ul>
+<li>
+<p>docs(off-platform): remove duplicate Step 3 heading in cloud-setup guide (#204)</p>
+</li>
+<li>
+<p>docs(off-platform): capture GCP free-trial onboarding screen + free-vs-paid guidance (#204)</p>
+</li>
+<li>
+<p>docs(off-platform): capture free-trial sign-up step 1 (account info); resequence web flow (#204)</p>
+</li>
+<li>
+<p>docs(off-platform): capture free-trial sign-up step 2 (payment verification, no screenshot) (#204)</p>
+</li>
+<li>
+<p>docs(off-platform): capture free-trial landing + dedicated-project guidance (#204)</p>
+</li>
+<li>
+<p>docs(off-platform): use HTML comments for capture-here notes (markdownlint MD036) (#204)</p>
+</li>
+<li>
+<p>docs(off-platform): explain project name/ID/number and organization significance (#204)</p>
+</li>
+<li>
+<p>docs(off-platform): settle personal/no-org decision, ID naming convention, and accidental-creation gotcha (#204)</p>
+</li>
+<li>
+<p>docs(off-platform): join adjacent blockquotes (markdownlint MD028) (#204)</p>
+</li>
+<li>
+<p>docs(off-platform): capture org decision, project move, console-vs-cli, and org-policy reconciliation (#204)</p>
+</li>
+<li>
+<p>docs(off-platform): capture ADC (host-local credential) and macOS Local Network auth prompt (#204)</p>
+</li>
+<li>
+<p>docs(off-platform): capture vCPU quota check (200, ample under org); correct the 'expect to upgrade' prediction (#204)</p>
+</li>
+<li>
+<p>docs(off-platform): complete GCP setup guide: billing+API, IAM, region/instance, SSH key, next steps (#204)</p>
+</li>
+</ul>
+<h2 id="features">Features<a class="headerlink" href="#features" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>default interactive shells to a separate .venv-host uv env (#206)</strong>
+Agent development runs inside the container (vrg-container-run), which builds and owns the project's default .venv. A uv/virtualenv hard-codes the absolute paths of whatever created it, so that container-built .venv is not reusable from an interactive host shell — humans and agents doing interactive/worktree work outside the container clobbered .venv and hit constant path conflicts.</li>
+</ul>
+<p>Export UV_PROJECT_ENVIRONMENT=.venv-host from the base VM's interactive shell startup (~/.zshrc), so every Vergil-built VM points interactive uv at its own host-side environment while the container keeps using .venv. The split is clean in both directions: ~/.zshrc is interactive-only (not ~/.zshenv, which would leak onto non-interactive host paths), and vrg-container-run forwards only repo-allowlisted env prefixes, so the variable never reaches the container. UV_CACHE_DIR is intentionally left unset — uv's cache is content-addressed and the container's cache is isolated, so there is no collision to split.</p>
+<p>Lives in global VM provisioning, so it applies to all VMs with no per-repo vergil.toml changes. Regenerates the Lima template and GCP cloud-init that embed the provision scripts; adds a test_base.sh assertion for the .zshrc mechanism (and that it is absent from .zshenv).</p>
+<ul>
+<li>
+<p><strong>IAP-based access for the GCP vm module (#207) (#211)</strong>
+Replace the public-IP + operator-IP-allow-list SSH model with GCP Identity-Aware Proxy (IAP) TCP tunneling. The old model was unsound behind NAT: a host cannot self-detect its public IP without a third-party echo — an unacceptable dependency in a security-critical, create-blocking path.</p>
+</li>
+<li>
+<p>Drop access_config from the instance (no ephemeral public IP).</p>
+</li>
+<li>Set the SSH firewall source_ranges to Google's fixed IAP range 35.235.240.0/20 (a module constant, not an operator address).</li>
+<li>Retire ssh_public_key and ssh_source_ranges; gcloud --tunnel-through-iap provisions ephemeral keys, so the module manages no keypair. interface.json contract change.</li>
+<li>Rework the host output to the instance name (IAP addresses the box by instance name + zone; the consumer already holds the zone).</li>
+<li>
+<p>Document the IAP model and the operator-account precondition (IAP API enabled, roles/iap.tunnelResourceAccessor granted; #204).</p>
+</li>
+<li>
+<p><strong>publish opentofu modules as release asset, drop prevent_destroy (#212)</strong>
+Off-platform vrg-vm fetches the OpenTofu modules with a single unauthenticated GET of a release asset (the cloud analog of the raw agent.yaml fetch). Add a bespoke publish-modules job to cd.yml: after cd-release cuts the release, it tars the opentofu/ subtree into opentofu-modules-$VERSION.tar.gz and uploads it to the v$VERSION release. A reusable-workflow uses: job can't carry its own steps and cd-release has no build step for non-language repos, so packaging is a local job rather than a release-artifacts param.</p>
+</li>
+</ul>
+<p>Remove prevent_destroy from google_compute_disk.data: a literal can't be conditionalized, so it blocks the legitimate destroy-volume verb. The two-state separation (routine destroy targets vm state only) plus the confirmation-gated destroy-volume verb are the real guard. Update the ADR to match.</p>
+<p>Prerequisites for vergil-tooling#1706 off-platform VM dispatch. Ref #208</p>
 
 
 
