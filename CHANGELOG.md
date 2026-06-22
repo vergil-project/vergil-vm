@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.1.27] - 2026-06-22
+
+### Documentation
+
+- GCP cloud-account setup guide (#204) (#210)
+
+### Features
+
+- default interactive shells to a separate .venv-host uv env (#206)
+- IAP-based access for the GCP vm module (#207) (#211)
+- publish opentofu modules as release asset, drop prevent_destroy (#212)
+
 ## [2.1.26] - 2026-06-20
 
 ### Features
