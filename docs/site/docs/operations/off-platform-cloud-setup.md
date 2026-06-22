@@ -174,7 +174,7 @@ Record the **Project ID** — you need it for `gcloud config set project <PROJEC
 > project you create under it, so a new project is billed to the trial automatically —
 > no separate billing setup per project during the trial.
 
-*(Capture the New Project form + the selected dedicated project here.)*
+<!-- Capture: the New Project form + the selected dedicated project. -->
 
 ## Step 6 — Authenticate gcloud (CLI: login + select project)
 
