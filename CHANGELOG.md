@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.1.28] - 2026-06-22
+
+### Chores
+
+- drop publish-modules job; off-platform fetches the v-tag archive now (#216) (#217)
+
 ## [2.1.27] - 2026-06-22
 
 ### Documentation
