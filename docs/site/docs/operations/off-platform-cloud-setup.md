@@ -107,11 +107,12 @@ trial."** Click **Try for free** (or **Start free trial** in the top banner) to 
 - **A payment method (card) is still required** to start the trial. Google uses it to
   verify identity; you are **not** charged during the trial unless you explicitly
   upgrade to a paid account or exceed the credit.
-- **Expect to upgrade to paid later.** Free-trial accounts come with **restricted
-  quotas** — a nested-virt instance for the lab is large (~16 vCPU), and the trial's
-  default vCPU quota in a region is likely too low. You will probably need to upgrade
-  to a full (paid) billing account to get the quota — we hit this for real at
-  Step 10 (quota). The $300 credit still applies after upgrading.
+- **Check the quota — don't assume you must upgrade.** Free trials *can* carry
+  restricted vCPU quotas, but not always (verify at Step 10). In this walkthrough the
+  regional `CPUS`/`N2_CPUS` quota was already **200** — ample for a 16-vCPU box — most
+  likely because the project sits under an **established org**. If yours genuinely is
+  too low, you upgrade to paid or file a quota-increase; the $300 credit still applies
+  after upgrading.
 
 Click **Try for free** and continue to the sign-up form (country, Terms of Service,
 and the payment method) — captured in Steps 3–4.
@@ -354,7 +355,27 @@ reads at apply time.
 
 ## Step 9 — IAM permissions (TODO)
 
-## Step 10 — Nested-virtualization quota (TODO)
+## Step 10 — Check vCPU quota
+
+A nested-virt instance is large (the off-platform example is `n2-standard-16` = 16
+vCPU, **N2** family — N2 supports nested virtualization). Confirm the region has the
+quota. `describe` does **not** accept `--filter` (that's a `list` flag), so flatten and
+grep:
+
+```bash
+gcloud compute regions describe us-central1 \
+  --flatten="quotas" \
+  --format="value(quotas.metric,quotas.limit,quotas.usage)" \
+  | grep -E '^(CPUS|N2_CPUS)'
+```
+
+- **`CPUS`** — total vCPUs in the region; **`N2_CPUS`** — N2-family vCPUs.
+- You need each limit **≥** your instance size (16 for `n2-standard-16`).
+
+In this walkthrough both returned **`200.0`** (usage `0.0`) — no increase needed. **Do
+not assume a free trial caps you low**: a project under an established org often has
+ample default quota. If yours genuinely is too low, validate first with a smaller box
+(`n2-standard-8` still proves nested KVM), or upgrade to paid / file a quota-increase.
 
 ## Step 11 — Confirm a nested-virt machine type + region (TODO)
 
