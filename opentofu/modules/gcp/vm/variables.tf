@@ -1,4 +1,16 @@
-variable "name" { type = string }
+variable "name" {
+  type = string
+
+  validation {
+    condition     = can(regex("^[a-z]([-a-z0-9]*[a-z0-9])?$", var.name))
+    error_message = "name must be RFC1035: a lowercase letter first, then lowercase alphanumerics or hyphens, no trailing hyphen."
+  }
+
+  validation {
+    condition     = length(var.name) <= 58
+    error_message = "name must be <= 58 chars so the derived <name>-data disk stays within GCP's 63-char limit."
+  }
+}
 variable "zone" { type = string }
 variable "instance_type" { type = string }
 variable "volume_id" { type = string } # the volume module's self_link
