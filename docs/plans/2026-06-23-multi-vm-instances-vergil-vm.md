@@ -14,7 +14,7 @@
 
 ## Out of scope (vergil-tooling — separate repo, separate plan)
 
-Do **not** attempt these here; they live in the `vergil-tooling` companion (issue to be filed, mirrors #1412/#1706):
+Do **not** attempt these here; they live in the `vergil-tooling` companion ([vergil-tooling #1831](https://github.com/vergil-project/vergil-tooling/issues/1831), mirrors #1412/#1706):
 
 - Parsing the `[vm.<identity>.instances.<name>]` namespace; tier 1–5 composition; per-identity scoping; `--name` across every verb.
 - Four-part handle/slug naming, reversible `split('--')`, repo-name `--` rejection, instance-name validation.

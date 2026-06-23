@@ -13,8 +13,9 @@ profiles model (#99) and the off-platform backend (#199); supersedes neither.
 and tests) and `vergil-tooling` (the `vrg-vm` CLI: profile parsing, composition,
 fingerprint, handle naming, `--name` selection across every verb, recorded-state
 lifecycle dispatch, and the `list` surface). The document lives in `vergil-vm`
-because issue #242 is filed here. A companion `vergil-tooling` issue carries the
-tooling work (to be filed, mirroring [#1412](https://github.com/vergil-project/vergil-tooling/issues/1412)
+because issue #242 is filed here. The tooling work is carried by the companion
+**[vergil-tooling #1831](https://github.com/vergil-project/vergil-tooling/issues/1831)**
+(mirroring [#1412](https://github.com/vergil-project/vergil-tooling/issues/1412)
 for #99 and [#1706](https://github.com/vergil-project/vergil-tooling/issues/1706)
 for #199); this spec is authoritative for the `vergil-vm`-owned contract and
 specifies the tooling side at the interface level.
@@ -514,7 +515,7 @@ entries cover the seams, now at instance granularity.
   left the paid cloud e2e unbuilt), so standing one up is its own follow-up, not part
   of this change.
 
-**`vergil-tooling` (companion issue, to be filed):**
+**`vergil-tooling` ([#1831](https://github.com/vergil-project/vergil-tooling/issues/1831)):**
 
 - Parse the `[vm.<identity>.instances.<name>]` namespace (per-identity by design —
   no all-identity `[vm.instances.<name>]` tier); validate names (`[a-z0-9-]+`, no
@@ -544,8 +545,7 @@ entries cover the seams, now at instance granularity.
   key, tofu state, and persistent volume this makes per-instance), #131
   (nested-virt knob), #170 (port forwards), #111 (O(instances) `list`
   enumeration / orphan surfacing).
-- **Companion (shared tooling):** vergil-tooling issue to be filed (mirrors #1412 /
-  #1706).
+- **Companion (shared tooling):** vergil-tooling #1831 (mirrors #1412 / #1706).
 - **Security register:** vergil-tooling #1369.
 
 ## Pushback resolutions (2026-06-23)
