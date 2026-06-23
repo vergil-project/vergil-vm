@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.1.33] - 2026-06-23
+
+### Bug fixes
+
+- fail-fast + per-script logging in the cloud provision runcmd; trap the vagrant gem-install (#246)
+
+### Features
+
+- multiple VM instances per repo — design + vergil-vm name guard (#242) (#245)
+
 ## [2.1.32] - 2026-06-23
 
 ### Bug fixes
