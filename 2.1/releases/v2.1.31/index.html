@@ -11,10 +11,10 @@
       
       
       
-        <link rel="prev" href="../v2.1.23/">
+        <link rel="prev" href="../">
       
       
-        <link rel="next" href="../v2.1.21/">
+        <link rel="next" href="../v2.1.30/">
       
       
         
@@ -25,7 +25,7 @@
     
     
       
-        <title>2.1.22 - Vergil VM</title>
+        <title>2.1.31 - Vergil VM</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#release-2122-2026-06-13" class="md-skip">
+        <a href="#release-2131-2026-06-23" class="md-skip">
           Skip to content
         </a>
       
@@ -116,7 +116,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              2.1.22
+              2.1.31
             
           </span>
         </div>
@@ -647,10 +647,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../v2.1.31/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.31
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -666,6 +693,37 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#bug-fixes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bug fixes
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -899,37 +957,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    2.1.22
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../v2.1.22/" class="md-nav__link">
         
   
   
@@ -945,37 +976,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#bug-fixes" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Bug fixes
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -2073,14 +2073,25 @@
 
 
 
-<h1 id="release-2122-2026-06-13">Release 2.1.22 (2026-06-13)<a class="headerlink" href="#release-2122-2026-06-13" title="Permanent link">&para;</a></h1>
+<h1 id="release-2131-2026-06-23">Release 2.1.31 (2026-06-23)<a class="headerlink" href="#release-2131-2026-06-23" title="Permanent link">&para;</a></h1>
 <h2 id="bug-fixes">Bug fixes<a class="headerlink" href="#bug-fixes" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>make vagrant plugin install idempotent and non-fatal (#177) (#178)</strong>
-vagrant plugin install contacts gems.hashicorp.com on every invocation, even when the plugin is already present. The plugin step is a cloud-init per-boot runpart under set -e, so the unconditional install re-hit the gem source on the cycle-ssh reboot; a transient timeout there flipped cloud-init to status: error and failed the whole rebuild.</li>
+<li><strong>provision rootless containerd on the cloud backend (Lima's containerd:user analog) (#233)</strong>
+35-buildkit.sh assumes the rootless containerd <em>user</em> service already exists —
+true on Lima (its 'containerd: {user: true}' config installs the nerdctl-full
+bundle and starts the service), but the off-platform cloud box has no Lima, so
+the service never came up: the buildkit step spun on its 300s
+'until systemctl --user is-active containerd' wait, then aborted cloud-init.</li>
 </ul>
-<p>Guard the install with a local 'vagrant plugin list' check so the steady state (plugin already installed) makes zero network calls — the cycle-ssh reboot no longer touches the network. A genuine first install now retries 3x with backoff and is verified afterward: a still-absent plugin aborts loudly via provision-error, but a transient blip refreshing an already-present plugin is a no-op.</p>
-<p>Covers the two vergil-vm gates in #177; the cycle-ssh resilience and triage-message gates live in vergil-tooling.</p>
+<p>Add a cloud-only setup-containerd.sh to the GCP cloud-init (the same seam as the
+cloud-only mount-volume.sh), run before the provision scripts. It installs the
+pinned nerdctl-full bundle (checksum-verified) + rootless prerequisites (uidmap,
+dbus-user-session, fuse-overlayfs), enables linger for the VM user, and runs
+'containerd-rootless-setuptool.sh install' as that user — so 35-buildkit finds
+the service active. Defensive no-op if the bundle is already present; never runs
+on Lima. The logind fix (#74) is invoked once before it, preserving the
+'logind first' ordering before linger/user-systemd is touched.</p>
+<p>Lima is untouched (it still provisions containerd via containerd:user:true).</p>
 
 
 
