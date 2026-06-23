@@ -502,11 +502,19 @@ write_files:
       if [ -n "$PLUGINS" ]; then
         if ! command -v vagrant >/dev/null 2>&1; then
           if ! command -v gem >/dev/null 2>&1; then
-            printf 'ERROR: vagrant_plugins declared but ruby/gem is unavailable — declare ruby-dev (plus gcc, make, pkg-config) in the repo vergil.toml [vm] packages\n' \
+            printf 'ERROR: vagrant_plugins declared but ruby/gem is unavailable — declare ruby-dev (plus build-essential, pkg-config) in the repo vergil.toml [vm] packages\n' \
               | tee /etc/vergil/provision-error >&2
             exit 1
           fi
-          gem install vagrant
+          # The vagrant gem compiles native extensions, so a complete C toolchain must be
+          # present. Trap the failure and name it (#244) — a bare `gem install` left no
+          # provision-error, so a missing build dep buried itself in raw gem output. The
+          # usual culprit on a minimal base is no libc6-dev (declare build-essential).
+          if ! gem install vagrant; then
+            printf 'ERROR: "gem install vagrant" failed to build its native extensions — declare build-essential (gcc/g++/make/libc6-dev) in the repo vergil.toml [vm] packages; the minimal cloud base ships no libc6-dev, so a "stdio.h: No such file" compile error here means the C toolchain is incomplete\n' \
+              | tee /etc/vergil/provision-error >&2
+            exit 1
+          fi
         fi
         for _p in $PLUGINS; do
           # Idempotency guard (#177): `vagrant plugin install` contacts
@@ -757,17 +765,7 @@ runcmd:
   # Rootless containerd (cloud analog of Lima's containerd:user) BEFORE the provision
   # scripts, so 35-buildkit.sh finds the user service already running.
   - [ bash, /opt/vergil/setup-containerd.sh ]
-  - bash /opt/vergil/provision/00-logind-fix.sh
-  - bash /opt/vergil/provision/10-base.sh
-  - bash /opt/vergil/provision/15-environment.sh
-  - bash /opt/vergil/provision/20-minimize.sh
-  - bash -c '. /etc/vergil/provision.env && sudo -iu "$VERGIL_USER" bash /opt/vergil/provision/30-toolchain.sh'
-  - bash -c '. /etc/vergil/provision.env && sudo -iu "$VERGIL_USER" bash /opt/vergil/provision/35-buildkit.sh'
-  - bash /opt/vergil/provision/40-profile.sh
-  - bash /opt/vergil/provision/50-libvirt-groups.sh
-  - bash /opt/vergil/provision/60-time.sh
-  - bash /opt/vergil/provision/70-nested-virt.sh
-  - bash /opt/vergil/provision/80-port-forwards.sh
+  - bash -c 'set -e; echo "=== provision 00-logind-fix.sh (root) START ===" >&2; bash /opt/vergil/provision/00-logind-fix.sh; echo "=== provision 00-logind-fix.sh DONE ===" >&2; echo "=== provision 10-base.sh (root) START ===" >&2; bash /opt/vergil/provision/10-base.sh; echo "=== provision 10-base.sh DONE ===" >&2; echo "=== provision 15-environment.sh (root) START ===" >&2; bash /opt/vergil/provision/15-environment.sh; echo "=== provision 15-environment.sh DONE ===" >&2; echo "=== provision 20-minimize.sh (root) START ===" >&2; bash /opt/vergil/provision/20-minimize.sh; echo "=== provision 20-minimize.sh DONE ===" >&2; echo "=== provision 30-toolchain.sh (user) START ===" >&2; ( . /etc/vergil/provision.env && sudo -iu "$VERGIL_USER" bash /opt/vergil/provision/30-toolchain.sh ); echo "=== provision 30-toolchain.sh DONE ===" >&2; echo "=== provision 35-buildkit.sh (user) START ===" >&2; ( . /etc/vergil/provision.env && sudo -iu "$VERGIL_USER" bash /opt/vergil/provision/35-buildkit.sh ); echo "=== provision 35-buildkit.sh DONE ===" >&2; echo "=== provision 40-profile.sh (root) START ===" >&2; bash /opt/vergil/provision/40-profile.sh; echo "=== provision 40-profile.sh DONE ===" >&2; echo "=== provision 50-libvirt-groups.sh (root) START ===" >&2; bash /opt/vergil/provision/50-libvirt-groups.sh; echo "=== provision 50-libvirt-groups.sh DONE ===" >&2; echo "=== provision 60-time.sh (root) START ===" >&2; bash /opt/vergil/provision/60-time.sh; echo "=== provision 60-time.sh DONE ===" >&2; echo "=== provision 70-nested-virt.sh (root) START ===" >&2; bash /opt/vergil/provision/70-nested-virt.sh; echo "=== provision 70-nested-virt.sh DONE ===" >&2; echo "=== provision 80-port-forwards.sh (root) START ===" >&2; bash /opt/vergil/provision/80-port-forwards.sh; echo "=== provision 80-port-forwards.sh DONE ===" >&2'
   # Readiness is NOT gated here. The #1706 `create` orchestration polls
   # `cloud-init status --wait` over SSH and checks /etc/vergil/vm-spec.fingerprint
   # (written by 40-profile.sh), failing the create loudly if provisioning errored.
