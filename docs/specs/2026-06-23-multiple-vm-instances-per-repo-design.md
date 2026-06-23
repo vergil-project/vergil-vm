@@ -53,8 +53,9 @@ Resiliency Lab):
   setup — Native HA RHEL, RDQM RHEL, Native HA Ubuntu, Pacemaker Ubuntu — each
   managed, sized, and versioned independently, rather than crammed into one large
   always-on box that pays the whole cost at once.
-- **Named-for-a-person/client.** A lab built with a special config (e.g. SSH /
-  remote access) so a named collaborator can experiment in it.
+- **Named-for-a-person/client.** A dedicated, independently-disposable lab box for
+  a named collaborator to experiment in (their access is an out-of-band IAM grant —
+  see "Security boundaries" — not a config knob).
 
 Right now you must pick one VM per `(identity, repo)`; bringing up a second
 replaces the first.
@@ -133,6 +134,16 @@ contain `--`** (a single dash inside a name is fine; a double dash would break t
 delimiter). The constraint is validated at parse time with a loud error
 (no-silent-failures); an invalid name never produces a malformed slug.
 
+**Segment `--`-freedom is a hard precondition of reversibility.** The decoding
+assumes no segment contains `--`. Identities are a closed vergil-prefixed set, and
+GitHub org/user logins cannot contain consecutive hyphens — both are safe. GitHub
+**repo** names, however, *can* contain `--` (`my--repo` is valid), which would make
+the split ambiguous (inherited from #99, now with a fourth segment widening it). So
+a repo whose name contains `--` is **rejected at parse time with a clear error**,
+turning a latent silent mis-parse into a loud, documented constraint rather than a
+malformed handle. (A delimiter-free structured encoding would lift the constraint
+but is a #99-wide change out of scope here.)
+
 ### Config: the `instances` namespace (source-controlled)
 
 A named instance is declared in the consuming repo's `vergil.toml` under an
@@ -197,6 +208,18 @@ off-platform required-key rule (#199: `off-platform` requires
 `provider`/`region`/`instance`/`volume`, hard-error if any missing) applies
 per named instance.
 
+**Named instances are per-identity by design.** Unlike `[vm]` (which applies to
+every identity), a named instance is declared under a specific role overlay
+(`[vm.<identity>.instances.<name>]`) and belongs to that identity alone. To give
+both `vergil-user` and `vergil-audit` a `cloud-x86` instance, the author declares
+the overlay under each — there is **no** all-identity `[vm.instances.<name>]` tier.
+This is deliberate (YAGNI): the heavy named labs are a `vergil-user` concern, and an
+audit identity rarely needs its own copy, so the symmetric all-identity tier would
+add a composition layer and a cross-identity inheritance rule for a case we do not
+have. The tier is non-breaking to add later if a real need appears. `--name X`
+against an identity that declares no instance `X` is a **loud error** listing that
+identity's available named instances (no silent fallback to the default).
+
 ## Resolution and selection
 
 ### Addressing
@@ -246,14 +269,22 @@ Three mechanisms together, not one:
 
 2. **Lifecycle verbs resolve from recorded state, not the live profile.** This is
    the robustness guarantee that closes the edge even if someone *does* edit a
-   named instance's `backend` in place:
+   named instance's `backend`/`provider` in place:
    - `create` / `rebuild` / `session`-preflight resolve from the **composed
      profile + fingerprint** — you are asserting intent.
-   - `destroy` / `stop` / `start` resolve from **recorded state** — the existing
-     Lima instance for the slug, or the tofu state directory (which records its
-     provider) — you are acting on reality. A profile edit can never aim `destroy`
-     at a box that was never built; it tears down what actually exists for that
-     handle.
+   - `destroy` / `stop` / `start` **enumerate and reconcile *all* recorded state
+     for the slug** — the Lima instance named `<slug>`, and every
+     `~/.config/vergil/tofu/<slug>/<provider>/` state directory — and act on
+     reality, not the profile. Because the slug encodes neither backend nor
+     provider, an in-place `backend`/`provider` edit can leave more than one built
+     box under a single handle (a Lima box *and* a `gcp` box, or `gcp` *and*
+     `azure` state side by side). A bare `destroy --name X` therefore tears down
+     **every** recorded backend/provider for that handle — after printing the full
+     list it will remove, for confirmation — and `stop`/`start` act on each running
+     recorded box. A profile edit can thus never aim `destroy` at a box that was
+     never built, nor leave a sibling-backend box behind: nothing built under a
+     handle survives a `destroy` of that handle. The multiplicity is always
+     visible — `list` shows one row per recorded `(slug, provider)` (see below).
 
 3. **`list` surfaces the leftover.** Any built instance whose composed spec no
    longer backs it (the repo dropped the stanza, or its backend was edited away)
@@ -292,7 +323,10 @@ stays 1:1 instance→volume, there is still **no multi-attach** — #199's
 no-concurrent-attach property is preserved unchanged. The bootstrap-vs-reattach
 logic, the fixed-path mount, the format-only-if-blank guard, and the guarded
 `destroy-volume` verb (now `destroy-volume --name <name>`) all behave per #199, per
-instance.
+instance. The volume disk is named `<slug>-data` (per vergil-vm #221, so it cannot
+collide with the ephemeral boot disk); with `prevent_destroy` no longer set on the
+modules (#212), the guarded explicit `destroy-volume` verb is the only path that
+removes a volume.
 
 ## `vrg-vm list`
 
@@ -304,15 +338,29 @@ IDENTITY     SCOPE                  INSTANCE   BACKEND  STATUS   CPUS  MEM    DI
 vergil-user  lmf/mq-cluster-tooling —          local    Running  12    64GiB  300GiB  1       0       ok
 vergil-user  lmf/mq-cluster-tooling cloud-x86  gcp      Running  16    64GiB  —       2       1       ok
 vergil-user  lmf/mq-cluster-tooling rdqm-rhel  gcp      Stopped  8     32GiB  —       —       —       NEEDS-REBUILD
+vergil-user  lmf/mq-cluster-tooling native-ha  gcp      no-vm    —     —      200GiB  —       —       ok
 vergil-user  lmf/mq-cluster-tooling old-azure  azure    Running  8     32GiB  —       0       0       orphaned
 ```
 
 The CPUS/MEM/DISK, AGENTS/HUMANS (process-tree classification, #99), BACKEND
 (#199), and SPEC (`ok` / `NEEDS-REBUILD` / `orphaned` / `under`) semantics are
-unchanged — they are now reported per instance. Enumeration remains O(instances)
+unchanged — they are now reported per instance.
+
+**Persistent volumes are never hidden.** Because named instances make the volume
+1:1 per instance, the one-per-setup workflow multiplies the standing storage cost
+that survives every `destroy`. So `list` enumerates from **volume state as well as
+VM/instance state**: a handle whose `volume.tfstate` exists but whose VM has been
+destroyed shows a `STATUS = no-vm` row (the `native-ha` row above) with its
+**persistent volume size in the DISK column** — so every paid volume is visible even
+with its VM down. This adds no reaper and no billing math (both still rejected as
+over-machinery, per #199) — it simply refuses to let a paid volume go invisible.
+`destroy-volume --name X` is the path to remove one. Enumeration remains O(instances)
 (Lima `<identity>--*` instances + tofu state dirs), not O(checked-out repos), per
-#99/#111. `list` degrades visibly without cloud creds (#199:
-`unknown (no <provider> creds)`), per instance.
+#99/#111. A handle that carries more than one recorded backend/provider (from an
+in-place edit) shows **one row per recorded `(slug, provider)`**, so the
+multiplicity is never hidden; the stale sibling reads `orphaned` against the current
+composed spec and is removable with `destroy --name X`. `list` degrades visibly
+without cloud creds (#199: `unknown (no <provider> creds)`), per instance.
 
 ## Backward compatibility and migration
 
@@ -328,14 +376,31 @@ No migration of existing VMs or `identities.toml`/`vergil.toml` config is requir
 
 ## Security boundaries
 
-The named-for-a-person/client use case can configure broader access (e.g. extra SSH
-ingress) on a specific instance. This rides the existing seams rather than adding a
-new class: the #99 repo-code-runs-as-root-in-a-credentialed-VM boundary and the
-#199 credentialed-VM-on-a-public-IP boundary both still apply, **per instance** —
-each instance composes its own profile and provisions independently, so a permissive
-config on one instance does not widen another. The off-platform SSH allow-list stays
-derived from the create-initiator's origin (#199), per instance; `0.0.0.0/0` remains
-forbidden. No new register entry is required; the existing
+The #99 repo-code-runs-as-root-in-a-credentialed-VM boundary applies **per
+instance** — each instance composes its own profile and provisions independently,
+so a permissive config on one instance does not widen another.
+
+The off-platform access model is **IAP + private VM** (vergil-vm #207/#211, #228),
+not the public-IP + origin-allow-list model #199 originally sketched: the cloud VM
+has **no public IP**, SSH ingress is over a GCP Identity-Aware Proxy TCP tunnel
+(firewall source is Google's fixed IAP range, a module constant — not an operator
+address), and internet egress is via a regional Cloud NAT singleton. The module
+manages no keypair; `gcloud --tunnel-through-iap` provisions ephemeral keys, and the
+box is addressed by **instance name + zone**. This model is per instance and
+unchanged by named instances — each instance is its own IAP target.
+
+**Named-for-a-person/client access is an IAM grant, not a config knob.** Because
+access is IAP-mediated, letting a collaborator into a specific instance means
+granting them `roles/iap.tunnelResourceAccessor` (and OS Login) on the operator's
+GCP project — a deliberate, out-of-band IAM action scoped to the operator's cloud
+account, **not** a `vergil.toml` ingress setting. What the named-instance model
+contributes is the dedicated, independently-disposable box for that collaborator to
+work in; the access grant itself is not in this spec's schema and no third-party
+ingress knob is built here. The dual-arch and one-per-setup cases justify named
+instances on their own; the client case is an additional benefit, with this access
+caveat stated explicitly.
+
+No new register entry is required; the existing
 [vergil-tooling #1369](https://github.com/vergil-project/vergil-tooling/issues/1369)
 entries cover the seams, now at instance granularity.
 
@@ -345,14 +410,20 @@ entries cover the seams, now at instance granularity.
   and `vergil-instance` label contract; the interface-symmetry test (#199) still
   passes; the Lima regression suite proves the default/unnamed path is unchanged.
 - **Composition / handle.** Assert four-part slug round-trips through
-  `split('--')`; assert an invalid name (`--`, illegal chars) is rejected loudly;
-  assert a named instance composes tiers 1–5 and the default composes 1–4; assert a
-  repo with an empty `instances` namespace behaves identically to today.
-- **Lifecycle / Problem 1.** Assert `destroy` targets recorded state, not the live
-  profile: build a local instance, edit its overlay `backend` to off-platform,
-  `destroy --name <name>` removes the **local** box (no orphan); assert the
-  leftover from a dropped stanza shows `orphaned` in `list` and `destroy --name`
-  removes it.
+  `split('--')`; assert an invalid name (`--`, illegal chars) **and a repo name
+  containing `--`** are rejected loudly at parse time; assert a named instance
+  composes tiers 1–5 and the default composes 1–4; assert a repo with an empty
+  `instances` namespace behaves identically to today; assert `--name X` against an
+  identity that declares no instance `X` errors with the available names.
+- **Lifecycle / Problem 1.** Assert `destroy` enumerates and reconciles all recorded
+  state, not the live profile: build a local instance, edit its overlay `backend`
+  to off-platform, `destroy --name <name>` removes the **local** box (no orphan);
+  build under `gcp`, edit `provider` to `azure` and rebuild, assert `destroy --name
+  <name>` tears down **both** the `gcp` and `azure` recorded states (no
+  sibling-backend orphan); assert the leftover from a dropped stanza shows
+  `orphaned` in `list` and `destroy --name` removes it.
+- **Volume visibility.** Assert a handle whose VM is destroyed but whose volume
+  state remains shows a `no-vm` row in `list` carrying the volume size.
 - **Gated real e2e (opt-in, costs money).** Extend `tests/e2e-off-platform.sh`
   (#199) to stand up two named instances for one repo, assert independent volumes
   and lifecycles, and keep the mandatory `trap … EXIT` teardown per instance.
@@ -367,14 +438,20 @@ entries cover the seams, now at instance granularity.
    own volume, state, and fingerprint.
 3. A bare verb (no `--name`) resolves to the default instance exactly as today; a
    repo that names nothing is behaviorally identical to pre-change.
-4. Editing a built instance's `backend` in place and running `destroy --name X`
-   tears down the **originally built** box — never orphaning it — and a dropped
-   stanza surfaces as `orphaned` in `list`, removable by `destroy --name X`.
-5. An invalid instance name (containing `--` or illegal characters) is rejected at
-   parse time with a clear error; no malformed slug is produced.
+4. Editing a built instance's `backend`/`provider` in place and running `destroy
+   --name X` tears down **every recorded backend/provider** built under that handle
+   — never orphaning a sibling — and a dropped stanza surfaces as `orphaned` in
+   `list`, removable by `destroy --name X`.
+5. An invalid instance name (containing `--` or illegal characters) **or a repo
+   name containing `--`** is rejected at parse time with a clear error; no malformed
+   slug is produced.
 6. `vrg-vm list` shows the INSTANCE column with correct per-instance
-   STATUS/footprint/AGENTS/HUMANS/BACKEND/SPEC; enumeration stays O(instances).
-7. The full existing `tests/` suite is green — the Lima default path is unchanged.
+   STATUS/footprint/AGENTS/HUMANS/BACKEND/SPEC; a handle with a surviving volume but
+   a destroyed VM shows a `no-vm` row carrying the volume size; enumeration stays
+   O(instances).
+7. `--name X` against an identity that declares no instance `X` errors loudly with
+   that identity's available named instances — no silent fallback to the default.
+8. The full existing `tests/` suite is green — the Lima default path is unchanged.
 
 ## Implementation touch-points
 
@@ -391,19 +468,26 @@ entries cover the seams, now at instance granularity.
 
 **`vergil-tooling` (companion issue, to be filed):**
 
-- Parse the `[vm.<identity>.instances.<name>]` namespace; validate names
-  (`[a-z0-9-]+`, no `--`) loudly; compose tiers 1–5 (+6) per instance; reserve the
-  per-name host-override slot.
+- Parse the `[vm.<identity>.instances.<name>]` namespace (per-identity by design —
+  no all-identity `[vm.instances.<name>]` tier); validate names (`[a-z0-9-]+`, no
+  `--`) and reject a repo name containing `--`, both loudly; compose tiers 1–5 (+6)
+  per instance; reserve the per-name host-override slot. `--name X` against an
+  identity with no instance `X` errors with the available names.
 - Four-part handle/slug naming and reversible `split('--')`; fold the handle into
   state paths and the `vergil-instance` label; fingerprint per instance (name is
   handle, not fingerprint content).
 - `--name` across `create`/`session`/`rebuild`/`destroy`/`stop`/`start`/`update`/
   `destroy-volume`; default-instance resolution with no error path.
-- **Recorded-state lifecycle dispatch**: `destroy`/`stop`/`start` resolve from the
-  existing Lima instance or tofu state (provider recorded there), not the live
-  profile; `create`/`rebuild`/`session`-preflight resolve from the composed profile.
-- `vrg-vm list` INSTANCE column; per-instance orphan classification; O(instances)
-  enumeration including four-segment slugs.
+- **Recorded-state lifecycle dispatch**: `destroy`/`stop`/`start` **enumerate and
+  reconcile all recorded state for the slug** — the Lima instance and every
+  `<slug>/<provider>/` tofu state dir — and act on it (bare `destroy --name X`
+  removes every recorded backend/provider after a confirmation listing), not on the
+  live profile; `create`/`rebuild`/`session`-preflight resolve from the composed
+  profile.
+- `vrg-vm list` INSTANCE column; per-instance orphan classification; enumeration
+  from **VM/instance state and volume state** (a surviving volume with no VM shows a
+  `no-vm` row with its size); one row per recorded `(slug, provider)`; O(instances),
+  including four-segment slugs.
 
 ## Related
 
@@ -415,3 +499,36 @@ entries cover the seams, now at instance granularity.
 - **Companion (shared tooling):** vergil-tooling issue to be filed (mirrors #1412 /
   #1706).
 - **Security register:** vergil-tooling #1369.
+
+## Pushback resolutions (2026-06-23)
+
+A structured pushback review (paad:pushback) ran against the first draft. One
+source-control conflict and four findings, all folded into the body above:
+
+**Source-control conflict**
+
+- **Stale off-platform security model.** The draft inherited #199's public-IP +
+  origin-allow-list SSH model, which was superseded by **IAP + private VM** (vergil-vm
+  #207/#211) and **Cloud NAT egress** (#228). Rewrote "Security boundaries" to the
+  IAP/private-VM/Cloud-NAT model, and reframed the named-for-a-person/client use case
+  as an **IAM grant** (`roles/iap.tunnelResourceAccessor` + OS Login), not a
+  `vergil.toml` ingress knob. Folded in the `<slug>-data` volume disk name (#221) and
+  the dropped `prevent_destroy` (#212).
+
+**Findings**
+
+1. **Recorded-state dispatch underspecified for an in-place provider switch**
+   (serious) — lifecycle verbs now **enumerate and reconcile all recorded state for a
+   slug** (Lima instance + every `<slug>/<provider>/` tofu state); a bare `destroy
+   --name X` removes every recorded backend/provider after a confirmation listing.
+   Closes the provider-level re-orphan the slug's backend-blindness allowed.
+2. **Volume proliferation had no cost visibility** (moderate-serious) — `list` now
+   enumerates from volume state too; a surviving volume with a destroyed VM shows a
+   `no-vm` row carrying its size. No reaper, no billing math — just no hidden paid
+   volume.
+3. **Named-instance identity scoping was ambiguous** (minor-moderate) — made explicit:
+   **per-identity by design**, no all-identity `[vm.instances.<name>]` tier; `--name X`
+   against an identity lacking instance `X` errors with the available names.
+4. **`split('--')` fragility vs `--` in repo names** (minor) — added a hard
+   precondition: a repo name containing `--` is rejected at parse time, turning a
+   latent silent mis-parse into a loud, documented constraint.
