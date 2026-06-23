@@ -313,6 +313,41 @@ posture for a lost `volume.tfstate`) stays deterministic per instance. Lima
 instances are enumerated by the same `<identity>--*` prefix scan; the fourth
 segment rides along, and four-segment slugs classify as named instances.
 
+`vergil-instance` is a **label value inside the existing opaque `labels` map**, not
+a new module variable — `opentofu/interface.json` and the module variable/output
+contract are unchanged, so the GCP modules need no interface change for named
+instances.
+
+### Cloud resource names are hashed (the 63-char limit)
+
+GCP instance/disk/firewall names are capped at **63 chars** (RFC1035), and the
+derived `<name>-data` disk and `<name>-ssh` firewall add 5 and 4. The four-segment
+slug for the motivating repo
+(`vergil-user--logical-minds-foundry--mq-cluster-tooling--cloud-x86`, 65 chars)
+already exceeds the instance-name limit on its own — the fourth segment exhausts the
+naming budget #199 was squeaking under. So the **readable slug and the cloud
+resource name are split**:
+
+- **Readable four-segment slug** — used for the tofu **state path**
+  (`~/.config/vergil/tofu/<slug>/<provider>/`, a filesystem path with no 63-char
+  limit), the **Lima instance name** (no cloud limit), and as the **source of the
+  identity labels**.
+- **Hashed cloud resource name** — the dispatcher passes the GCP modules a
+  deterministic short `name` of the form **`vrg-<first 12 hex of sha256(slug)>`**
+  (≤ 16 chars, RFC1035-valid: leading letter, lowercase alnum + hyphen). It is
+  deterministic (same slug → same name, so `create` is idempotent and re-import is
+  stable) and collision-free at fleet-of-one scale.
+- **Identity lives in labels, not the name.** `vergil-identity` / `vergil-repo` /
+  `vergil-instance` carry the human-readable identity; `vrg-vm list` and
+  `tofu import` read the labels, never the resource name. The cloud-console name is
+  an opaque hash by design.
+
+The dispatcher (vergil-tooling) owns the hash derivation and passes the hashed
+`name` + identity `labels`. The **GCP modules add a defense-in-depth `validation`**
+on `var.name` (RFC1035 charset and length ≤ 58, so the longest derived `<name>-data`
+stays ≤ 63), failing `tofu plan` loudly if a malformed or over-long name ever
+arrives — no silent truncation, no opaque GCP-API error deep in apply.
+
 ### Persistent volume is 1:1 with the instance
 
 Each named instance owns its **own** persistent volume, keyed by the four-part slug
@@ -406,9 +441,10 @@ entries cover the seams, now at instance granularity.
 
 ## Testing
 
-- **Offline (CI-safe).** `tofu validate`/`plan` assert the per-instance state-path
-  and `vergil-instance` label contract; the interface-symmetry test (#199) still
-  passes; the Lima regression suite proves the default/unnamed path is unchanged.
+- **Offline (CI-safe).** A host-side check asserts both GCP modules carry the
+  `var.name` length/charset `validation`; `check-opentofu-validate.sh` (fmt + validate)
+  and `check-opentofu-contract.sh` (interface unchanged) stay green; the Lima
+  regression suite proves the default/unnamed path is unchanged.
 - **Composition / handle.** Assert four-part slug round-trips through
   `split('--')`; assert an invalid name (`--`, illegal chars) **and a repo name
   containing `--`** are rejected loudly at parse time; assert a named instance
@@ -424,9 +460,10 @@ entries cover the seams, now at instance granularity.
   `orphaned` in `list` and `destroy --name` removes it.
 - **Volume visibility.** Assert a handle whose VM is destroyed but whose volume
   state remains shows a `no-vm` row in `list` carrying the volume size.
-- **Gated real e2e (opt-in, costs money).** Extend `tests/e2e-off-platform.sh`
-  (#199) to stand up two named instances for one repo, assert independent volumes
-  and lifecycles, and keep the mandatory `trap … EXIT` teardown per instance.
+- **Gated real e2e (opt-in, costs money) — deferred.** A two-named-instance cloud
+  e2e (independent volumes/lifecycles, mandatory `trap … EXIT` teardown) would be
+  ideal, but `tests/e2e-off-platform.sh` does not yet exist (#199 left the paid cloud
+  e2e unbuilt). Standing it up is a separate follow-up, not part of this change.
 
 ## Acceptance criteria
 
@@ -451,20 +488,31 @@ entries cover the seams, now at instance granularity.
    O(instances).
 7. `--name X` against an identity that declares no instance `X` errors loudly with
    that identity's available named instances — no silent fallback to the default.
-8. The full existing `tests/` suite is green — the Lima default path is unchanged.
+8. Cloud resource names are the deterministic `vrg-<hash>` form (≤ 63), identity
+   lives in the `vergil-identity`/`vergil-repo`/`vergil-instance` labels, and the GCP
+   modules' `var.name` validation rejects a malformed or over-length name at
+   `tofu plan` rather than failing in apply.
+9. The full existing `tests/` suite is green — the Lima default path is unchanged.
 
 ## Implementation touch-points
 
 **`vergil-vm` (this repo):**
 
-- `opentofu/modules/{gcp,azure}/{volume,vm}` — add the `vergil-instance` label to
-  the resource label set; ensure nothing assumes a repo-keyed (vs instance-keyed)
-  volume; per-instance state-path is a tooling concern but the label contract is
-  module-owned.
-- `tests/` — offline assertions for the `vergil-instance` label + per-instance
-  state separation; extend `e2e-off-platform.sh` for two co-existing named
-  instances with the mandatory teardown trap; the existing Lima suite as the
-  default-path regression guardrail.
+- `opentofu/modules/gcp/{volume,vm}` — the modules are already instance-agnostic
+  (`name` and `labels` are opaque pass-throughs; the disk is `${var.name}-data`, the
+  firewall `${var.name}-ssh`), so named instances need **no interface change**. The
+  one change is a defense-in-depth **`validation` on `var.name`** in both modules
+  (RFC1035 charset; length ≤ 58 so `<name>-data` ≤ 63), matching the hashed-naming
+  budget. `interface.json` is unchanged; `vergil-instance` is a label *value* the
+  dispatcher composes. (Azure modules do not yet exist — #199 phase 3 — and inherit
+  the same `name` contract when built.)
+- `tests/` — a host-side check asserting both GCP modules carry the `var.name`
+  length/charset validation; `check-opentofu-validate.sh` / `check-opentofu-contract.sh`
+  stay green (no interface drift); a decisions-doc update recording the split
+  readable-slug-vs-hashed-name + label-identity contract. A gated real two-instance
+  cloud e2e is **deferred**: `tests/e2e-off-platform.sh` does not yet exist (#199
+  left the paid cloud e2e unbuilt), so standing one up is its own follow-up, not part
+  of this change.
 
 **`vergil-tooling` (companion issue, to be filed):**
 
@@ -532,3 +580,18 @@ source-control conflict and four findings, all folded into the body above:
 4. **`split('--')` fragility vs `--` in repo names** (minor) — added a hard
    precondition: a repo name containing `--` is rejected at parse time, turning a
    latent silent mis-parse into a loud, documented constraint.
+
+## Amendment (2026-06-23): cloud resource naming under the 63-char limit
+
+Grounding the implementation plan against the real GCP modules surfaced that the
+four-segment slug for the motivating repo is 65 chars (70 with `-data`), exceeding
+GCP's 63-char (RFC1035) resource-name limit that #199 was already squeaking under.
+Resolved by **splitting the readable slug from the cloud resource name**: the slug
+stays the state-path / Lima-instance / label-source key, while GCP resources take a
+deterministic hashed `vrg-<first 12 hex of sha256(slug)>` name, with identity carried
+in labels (which `list` and re-import already read). The GCP modules add a
+defense-in-depth `var.name` validation (RFC1035 + length ≤ 58). See "Cloud resource
+names are hashed (the 63-char limit)". This also clarified the true vergil-vm scope:
+the modules are otherwise instance-agnostic, so this repo's work is the validation
+guard + tests + a decisions-doc note, and the substantive parsing/lifecycle/`list`
+work is all vergil-tooling.
