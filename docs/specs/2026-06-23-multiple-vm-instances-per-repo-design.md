@@ -489,10 +489,13 @@ entries cover the seams, now at instance granularity.
    O(instances).
 7. `--name X` against an identity that declares no instance `X` errors loudly with
    that identity's available named instances — no silent fallback to the default.
-8. Cloud resource names are the deterministic `vrg-<hash>` form (≤ 63), identity
-   lives in the `vergil-identity`/`vergil-repo`/`vergil-instance` labels, and the GCP
-   modules' `var.name` validation rejects a malformed or over-length name at
-   `tofu plan` rather than failing in apply.
+8. Cloud resource names and the length guard:
+   - **(vergil-tooling #1831)** the dispatcher derives the deterministic `vrg-<hash>`
+     name (≤ 63) and composes the `vergil-identity`/`vergil-repo`/`vergil-instance`
+     labels that carry identity (`list` and `tofu import` read the labels, not the
+     name).
+   - **(vergil-vm)** the GCP modules' `var.name` validation rejects a malformed or
+     over-length name at `tofu plan` rather than failing deep in apply.
 9. The full existing `tests/` suite is green — the Lima default path is unchanged.
 
 ## Implementation touch-points
