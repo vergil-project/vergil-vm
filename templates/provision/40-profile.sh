@@ -66,11 +66,19 @@ PLUGINS="$VAGRANT_PLUGINS"
 if [ -n "$PLUGINS" ]; then
   if ! command -v vagrant >/dev/null 2>&1; then
     if ! command -v gem >/dev/null 2>&1; then
-      printf 'ERROR: vagrant_plugins declared but ruby/gem is unavailable — declare ruby-dev (plus gcc, make, pkg-config) in the repo vergil.toml [vm] packages\n' \
+      printf 'ERROR: vagrant_plugins declared but ruby/gem is unavailable — declare ruby-dev (plus build-essential, pkg-config) in the repo vergil.toml [vm] packages\n' \
         | tee /etc/vergil/provision-error >&2
       exit 1
     fi
-    gem install vagrant
+    # The vagrant gem compiles native extensions, so a complete C toolchain must be
+    # present. Trap the failure and name it (#244) — a bare `gem install` left no
+    # provision-error, so a missing build dep buried itself in raw gem output. The
+    # usual culprit on a minimal base is no libc6-dev (declare build-essential).
+    if ! gem install vagrant; then
+      printf 'ERROR: "gem install vagrant" failed to build its native extensions — declare build-essential (gcc/g++/make/libc6-dev) in the repo vergil.toml [vm] packages; the minimal cloud base ships no libc6-dev, so a "stdio.h: No such file" compile error here means the C toolchain is incomplete\n' \
+        | tee /etc/vergil/provision-error >&2
+      exit 1
+    fi
   fi
   for _p in $PLUGINS; do
     # Idempotency guard (#177): `vagrant plugin install` contacts

@@ -34,16 +34,29 @@ emit_files() {
 }
 
 emit_runcmd() {
+  # ONE fail-fast runcmd entry (#244): `set -e` so the FIRST failing provision script
+  # aborts the whole run -> cloud-init status: error -> await-readiness fails loudly,
+  # instead of cloud-init silently continuing past a failure and reporting a
+  # half-provisioned VM as ready. Each script is bracketed with START/DONE markers
+  # (#243) so the failing one is obvious in cloud-init-output.log — DONE prints only on
+  # success, so the last START with no matching DONE pinpoints the failure. User-context
+  # scripts run in a subshell (not a nested `bash -c '…'`) to keep the outer entry
+  # single-quoted with no embedded single quotes.
   local s b ctx
+  printf "  - bash -c 'set -e"
   for s in "${PROV}"/*.sh; do
     b="$(basename "$s")"
     ctx="$(context_of "$s")"
+    printf '; echo "=== provision %s (%s) START ===" >&2' "$b" "$ctx"
     if [ "$ctx" = "user" ]; then
-      printf "  - bash -c '. /etc/vergil/provision.env && sudo -iu \"\$VERGIL_USER\" bash /opt/vergil/provision/%s'\n" "$b"
+      # shellcheck disable=SC2016  # $VERGIL_USER must stay literal — expanded on the VM, not here
+      printf '; ( . /etc/vergil/provision.env && sudo -iu "$VERGIL_USER" bash /opt/vergil/provision/%s )' "$b"
     else
-      printf '  - bash /opt/vergil/provision/%s\n' "$b"
+      printf '; bash /opt/vergil/provision/%s' "$b"
     fi
+    printf '; echo "=== provision %s DONE ===" >&2' "$b"
   done
+  printf "'\n"
 }
 
 render() {
