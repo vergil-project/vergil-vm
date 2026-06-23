@@ -11,10 +11,10 @@
       
       
       
-        <link rel="prev" href="../v2.1.20/">
+        <link rel="prev" href="../">
       
       
-        <link rel="next" href="../v2.1.18/">
+        <link rel="next" href="../v2.1.31/">
       
       
         
@@ -25,7 +25,7 @@
     
     
       
-        <title>2.1.19 - Vergil VM</title>
+        <title>2.1.32 - Vergil VM</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#release-2119-2026-06-10" class="md-skip">
+        <a href="#release-2132-2026-06-23" class="md-skip">
           Skip to content
         </a>
       
@@ -116,7 +116,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              2.1.19
+              2.1.32
             
           </span>
         </div>
@@ -649,10 +649,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../v2.1.32/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.32
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -668,6 +695,37 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#bug-fixes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bug fixes
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1013,37 +1071,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    2.1.19
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../v2.1.19/" class="md-nav__link">
         
   
   
@@ -1059,37 +1090,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#bug-fixes" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Bug fixes
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -2103,12 +2103,20 @@
 
 
 
-<h1 id="release-2119-2026-06-10">Release 2.1.19 (2026-06-10)<a class="headerlink" href="#release-2119-2026-06-10" title="Permanent link">&para;</a></h1>
+<h1 id="release-2132-2026-06-23">Release 2.1.32 (2026-06-23)<a class="headerlink" href="#release-2132-2026-06-23" title="Permanent link">&para;</a></h1>
 <h2 id="bug-fixes">Bug fixes<a class="headerlink" href="#bug-fixes" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>bump ci-docs reusable workflow from v2.0 to v2.1 (#159)</strong>
-The docs job in ci.yml was the lone straggler still pinned to vergil-actions ci-docs.yml@v2.0 while every other reusable workflow call (ci-quality, ci-security, ci-version-bump, cd-docs, cd-release) is on v2.1. Bump it for consistency. The v2.1 ci-docs.yml has no required inputs (mkdocs-config and container-prefix both default), so the existing no-with: call remains valid. Verified with vrg-validate (actionlint).</li>
+<li><strong>hand the persistent volume to the VM user after mount (#238)</strong>
+mount-volume.sh mkfs'd and mounted /vergil as root, so its root dir was
+root:root. But everything written to the volume runs as the VM user — the
+bootstrap_volume clone into /vergil/projects/<org>/<repo>, the mkdir of
+/vergil/claude, and link_cloud_claude_dirs' symlinks — so the checkout failed
+with 'could not create leading directories ... Permission denied' (exit 128).</li>
 </ul>
+<p>chown the mount point to VERGIL_USER right after mounting. Non-recursive (new
+content the user creates inherits user ownership) and idempotent across
+reattaches. The volume is the laptop-analog user data; on Lima the equivalent
+dirs are already user-owned.</p>
 
 
 
