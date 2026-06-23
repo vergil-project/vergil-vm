@@ -34,6 +34,13 @@ write_files:
       grep -q "[[:space:]]${MNT}[[:space:]]" /etc/fstab \
         || echo "LABEL=${LABEL} ${MNT} ext4 defaults,nofail 0 2" >> /etc/fstab
       mount "$MNT" || mount -a
+      # The volume holds the user's projects + ~/.claude history (laptop-analog data),
+      # written by the VM user — the bootstrap clone, mkdir /vergil/claude, and
+      # link_cloud_claude_dirs all run as that user. A freshly mkfs'd ext4 root is
+      # root-owned, so hand the mount point over. Non-recursive (new content the user
+      # creates inherits user ownership) and idempotent across reattaches. (#237)
+      . /etc/vergil/provision.env   # VERGIL_USER
+      chown "$VERGIL_USER":"$VERGIL_USER" "$MNT"
   # Rootless containerd — the off-platform analog of Lima's `containerd: {user: true}`,
   # which installs the nerdctl-full bundle and starts the rootless user service. The
   # shared provision script 35-buildkit.sh ASSUMES that service already exists (it waits
