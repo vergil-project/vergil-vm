@@ -1856,6 +1856,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#named-instances-and-resource-naming-242" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Named instances and resource naming (#242)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#one-provisioning-truth" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2153,6 +2164,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#named-instances-and-resource-naming-242" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Named instances and resource naming (#242)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#one-provisioning-truth" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2244,6 +2266,23 @@ companion and is <strong>out of scope here</strong>.</p>
 (Phase 3) must satisfy the same file unchanged — that is what proves the abstraction is
 not GCP-shaped. Provider-native specifics (GCP's
 <code>enable_nested_virtualization</code>) stay inside the module.</p>
+<h2 id="named-instances-and-resource-naming-242">Named instances and resource naming (#242)<a class="headerlink" href="#named-instances-and-resource-naming-242" title="Permanent link">&para;</a></h2>
+<p>One <code>(identity, org/repo)</code> can own several named instances (vergil-vm #242), each its
+own VM + volume. The instance handle is the four-segment slug
+<code>&lt;identity&gt;--&lt;org&gt;--&lt;repo&gt;--&lt;name&gt;</code>, used for the tofu <strong>state path</strong>, the <strong>Lima</strong>
+instance name, and as the <strong>source of the identity labels</strong>.</p>
+<p>GCP resource names cannot be the slug: instance/disk/firewall names are capped at <strong>63
+chars</strong> (RFC1035), the derived <code>&lt;name&gt;-data</code> / <code>&lt;name&gt;-ssh</code> add 5 / 4, and a realistic
+four-segment slug already overflows. So the dispatcher (#1831) passes the modules a
+<strong>deterministic hashed name</strong> — <code>vrg-&lt;first 12 hex of sha256(slug)&gt;</code> (≤ 16 chars,
+RFC1035-valid) — and carries the human identity in the <code>vergil-identity</code> /
+<code>vergil-repo</code> / <code>vergil-instance</code> <strong>labels</strong>. <code>vrg-vm list</code> and <code>tofu import</code> read the
+labels; the cloud-console name is an opaque hash by design. <code>vergil-instance</code> is a
+label <em>value</em> in the existing <code>labels</code> map — <code>interface.json</code> is unchanged.</p>
+<p>The modules <strong>fail loudly on a bad name</strong>: <code>var.name</code> in both <code>volume</code> and <code>vm</code>
+carries a <code>validation</code> enforcing the RFC1035 charset and length ≤ 58 (so <code>&lt;name&gt;-data</code>
+stays ≤ 63), so a malformed or over-length name is rejected at <code>tofu plan</code>, not deep
+in apply. <code>tests/check-opentofu-name-validation.sh</code> guards the validation's presence.</p>
 <h2 id="one-provisioning-truth">One provisioning truth<a class="headerlink" href="#one-provisioning-truth" title="Permanent link">&para;</a></h2>
 <p>The instance's cloud-init is <strong>generated</strong> by <code>scripts/build-cloud-init.sh</code> from a
 skeleton plus the <strong>same</strong> <code>templates/provision/*.sh</code> the Lima backend uses (see the
