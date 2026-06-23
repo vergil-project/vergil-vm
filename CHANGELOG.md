@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.1.32] - 2026-06-23
+
+### Bug fixes
+
+- hand the persistent volume to the VM user after mount (#238)
+
 ## [2.1.31] - 2026-06-23
 
 ### Bug fixes
