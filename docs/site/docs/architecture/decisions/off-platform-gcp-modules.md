@@ -35,6 +35,27 @@ Every provider's `volume`/`vm` modules expose exactly the variable/output names 
 not GCP-shaped. Provider-native specifics (GCP's
 `enable_nested_virtualization`) stay inside the module.
 
+## Named instances and resource naming (#242)
+
+One `(identity, org/repo)` can own several named instances (vergil-vm #242), each its
+own VM + volume. The instance handle is the four-segment slug
+`<identity>--<org>--<repo>--<name>`, used for the tofu **state path**, the **Lima**
+instance name, and as the **source of the identity labels**.
+
+GCP resource names cannot be the slug: instance/disk/firewall names are capped at **63
+chars** (RFC1035), the derived `<name>-data` / `<name>-ssh` add 5 / 4, and a realistic
+four-segment slug already overflows. So the dispatcher (#1831) passes the modules a
+**deterministic hashed name** — `vrg-<first 12 hex of sha256(slug)>` (≤ 16 chars,
+RFC1035-valid) — and carries the human identity in the `vergil-identity` /
+`vergil-repo` / `vergil-instance` **labels**. `vrg-vm list` and `tofu import` read the
+labels; the cloud-console name is an opaque hash by design. `vergil-instance` is a
+label *value* in the existing `labels` map — `interface.json` is unchanged.
+
+The modules **fail loudly on a bad name**: `var.name` in both `volume` and `vm`
+carries a `validation` enforcing the RFC1035 charset and length ≤ 58 (so `<name>-data`
+stays ≤ 63), so a malformed or over-length name is rejected at `tofu plan`, not deep
+in apply. `tests/check-opentofu-name-validation.sh` guards the validation's presence.
+
 ## One provisioning truth
 
 The instance's cloud-init is **generated** by `scripts/build-cloud-init.sh` from a
