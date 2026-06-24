@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# scripts/bin/validate-custom — repo-specific validation, auto-discovered by vrg-validate
+# (vergil_tooling.bin.vrg_validate._find_custom_validator looks for exactly this path).
+# Runs the host-side OpenTofu check-*.sh assertions, and — when tofu is available
+# (vergil-docker#352) — `tofu fmt`/`validate` for every provider module. fail-defer:
+# run everything, report all failures, exit nonzero if any failed.
+set -uo pipefail
+HERE="$(cd "$(dirname "$0")" && pwd)"
+ROOT="$(cd "${HERE}/../.." && pwd)"
+fail=0
+
+run() { echo "→ $*"; "$@" || fail=1; }
+
+# 1) Grep-based opentofu checks — no tofu needed, always run.
+for chk in check-opentofu-contract check-opentofu-name-validation \
+           check-cloud-init-generation check-azure-volume-id-parse; do
+  s="${ROOT}/tests/${chk}.sh"
+  if [ -f "$s" ]; then
+    run bash "$s"
+  else
+    echo "ERROR: check script not found: $s" >&2
+    fail=1
+  fi
+done
+
+# 2) tofu fmt + validate per module — only when tofu is installed. A missing tofu is
+# NOT a silent pass: it is an explicit, loud SKIP so the gap (vergil-docker#352) stays
+# visible until the rebuilt image lands, at which point this activates automatically.
+if command -v tofu >/dev/null 2>&1; then
+  for mdir in "${ROOT}"/opentofu/modules/*/volume "${ROOT}"/opentofu/modules/*/vm; do
+    [ -d "$mdir" ] || continue
+    echo "→ tofu fmt/validate ${mdir#"${ROOT}/"}"
+    ( cd "$mdir" \
+      && tofu fmt -check \
+      && tofu init -backend=false -input=false >/dev/null \
+      && tofu validate ) || fail=1
+  done
+else
+  echo "SKIP: tofu not installed (vergil-docker#352) — HCL fmt/validate not run in-sandbox" >&2
+fi
+
+exit "$fail"
