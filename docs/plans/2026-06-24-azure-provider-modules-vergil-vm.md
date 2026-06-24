@@ -798,7 +798,7 @@ vrg-commit --type feat --scope off-platform \
 Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ```
 
-> **Post-#352 re-validation (do before finishing):** once the rebuilt image has tofu, re-run `vrg-container-run -- vrg-validate`; the tofu branch activates and validates all GCP + Azure modules. Expect a possible `tofu fmt` normalization pass on first run (the HCL was authored by hand) — apply it and commit.
+> **Post-#352 re-validation (do once tofu is in the image):** re-run `vrg-container-run -- vrg-validate`; the tofu branch activates and validates all GCP + Azure modules. Three follow-ups to apply and commit then: (1) a likely `tofu fmt` normalization pass on the hand-authored HCL; (2) **generate the missing `opentofu/modules/azure/vm/.terraform.lock.hcl`** (azurerm 4.78.0, matching `azure/volume`) — it could not be created in-sandbox without tofu, leaving azure/vm the only module without a pinned lock; (3) confirm `tofu validate` passes for both azure modules against the real cloud-init.
 
 ---
 
