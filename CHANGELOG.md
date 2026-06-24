@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.1.37] - 2026-06-24
+
+### Chores
+
+- machine-validate Azure modules + pin provider locks (#265) (#266)
+
 ## [2.1.36] - 2026-06-24
 
 ### Features
