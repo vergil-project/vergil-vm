@@ -11,10 +11,10 @@
       
       
       
-        <link rel="prev" href="../v2.1.25/">
+        <link rel="prev" href="../">
       
       
-        <link rel="next" href="../v2.1.23/">
+        <link rel="next" href="../v2.1.36/">
       
       
         
@@ -25,7 +25,7 @@
     
     
       
-        <title>2.1.24 - Vergil VM</title>
+        <title>2.1.37 - Vergil VM</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#release-2124-2026-06-15" class="md-skip">
+        <a href="#release-2137-2026-06-24" class="md-skip">
           Skip to content
         </a>
       
@@ -116,7 +116,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              2.1.24
+              2.1.37
             
           </span>
         </div>
@@ -659,10 +659,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../v2.1.37/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.37
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -678,6 +705,37 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#chores" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chores
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1023,37 +1081,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    2.1.24
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../v2.1.24/" class="md-nav__link">
         
   
   
@@ -1069,37 +1100,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#features" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Features
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -2226,10 +2226,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#features" class="md-nav__link">
+  <a href="#chores" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Features
+        Chores
       
     </span>
   </a>
@@ -2253,15 +2253,13 @@
 
 
 
-<h1 id="release-2124-2026-06-15">Release 2.1.24 (2026-06-15)<a class="headerlink" href="#release-2124-2026-06-15" title="Permanent link">&para;</a></h1>
-<h2 id="features">Features<a class="headerlink" href="#features" title="Permanent link">&para;</a></h2>
+<h1 id="release-2137-2026-06-24">Release 2.1.37 (2026-06-24)<a class="headerlink" href="#release-2137-2026-06-24" title="Permanent link">&para;</a></h1>
+<h2 id="chores">Chores<a class="headerlink" href="#chores" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>chrony + makestep, serve NTP to nested guests (#187) (#188)</strong></li>
-<li>feat(time): chrony + makestep, serve NTP to nested guests (#187)</li>
+<li><strong>machine-validate Azure modules + pin provider locks (#265) (#266)</strong></li>
+<li>style(off-platform): tofu fmt azure/vm/outputs.tf (#265)</li>
 </ul>
-<p>Run chrony with makestep 1.0 -1 on every Vergil VM so a laptop-suspend clock jump steps back into sync on the next poll, instead of timesyncd's slow slew that never catches a large offset (it sat on a ~65-min skew while reporting synced). timesyncd is masked so the two never duel.</p>
-<p>VMs that declare the libvirt stack (the same signal the group block uses) additionally serve NTP to their nested guests: chrony allows the RFC1918 ranges host-only networks draw from, with a local stratum 10 fallback so the fleet stays internally consistent offline. Gated, not default-on, so a base VM never opens the NTP server port (#78).</p>
-<p>Entirely template-side: the serving config is generic, so no per-VM rendering in vergil-tooling is needed. Adds tests/test_time.sh (base path) and a serve=true assertion to e2e-nested-virt.sh; design in docs/specs.</p>
+<p>First tofu-fmt pass on the azure/vm module now that tofu is in the sandbox image (#352). Whitespace-only normalization of the aligned output braces.</p>
 
 
 
