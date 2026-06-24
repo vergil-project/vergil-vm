@@ -5,7 +5,8 @@
   },
   "vm": {
     "variables": ["name", "zone", "instance_type", "nested", "volume_id",
-                  "boot_disk_gib", "ssh_user", "provision_env", "labels"],
+                  "boot_disk_gib", "ssh_user", "provision_env", "labels",
+                  "ssh_public_key"],
     "outputs": ["host", "ssh_user"]
   }
 }

@@ -37,3 +37,11 @@ variable "labels" {
   type    = map(string)
   default = {}
 }
+
+# Declared only to satisfy the provider-agnostic interface contract (#250). GCP
+# reaches the box over IAP, which injects ephemeral SSH keys at connect time, so
+# the GCP module manages no keypair and ignores this value. Azure consumes it.
+variable "ssh_public_key" {
+  type    = string
+  default = ""
+}
