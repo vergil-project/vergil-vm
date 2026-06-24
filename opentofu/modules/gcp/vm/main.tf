@@ -28,6 +28,24 @@ resource "google_compute_firewall" "ssh" {
   target_tags   = [var.name]
 }
 
+# Ingress: the externally-browsable ports — Grafana :3000 today (the relay vergil-vm
+# provisions on the box's 0.0.0.0:3000 → the obs guest). Per-QM listener + mqweb ports
+# are a deliberate follow-on (mq-resiliency-lab #345); add them here when they land.
+# Wide open by design: these boxes are ephemeral with no real data and Grafana is
+# anonymous/shareable, so the value (hand someone an IP) outweighs the exposure — if it
+# breaks, rebuild. SSH is deliberately NOT here; it stays IAP-only above. (#260)
+resource "google_compute_firewall" "browse" {
+  name    = "${var.name}-browse"
+  network = "default"
+
+  allow {
+    protocol = "tcp"
+    ports    = ["3000"]
+  }
+  source_ranges = ["0.0.0.0/0"]
+  target_tags   = [var.name]
+}
+
 resource "google_compute_instance" "vm" {
   name         = var.name
   machine_type = var.instance_type
@@ -58,11 +76,14 @@ resource "google_compute_instance" "vm" {
     enable_nested_virtualization = var.nested
   }
 
-  # Internal IP only — no access_config, so no ephemeral public IP. SSH reaches the
-  # box through the IAP tunnel (gcloud compute ssh --tunnel-through-iap), which
-  # provisions ephemeral keys itself; the module manages no SSH keypair.
+  # Ephemeral public IP (access_config) so the box's browse ports (Grafana :3000 today;
+  # per-QM listener + mqweb ports to follow) are reachable from a remote browser — the
+  # point of running off-platform: show dashboards by IP, drive MQ Web/Explorer against
+  # each QM, run multiple stacks. SSH still rides the IAP tunnel (gcloud compute ssh
+  # --tunnel-through-iap); the module manages no SSH keypair. (#260)
   network_interface {
     network = "default"
+    access_config {}
   }
 
   metadata = {
