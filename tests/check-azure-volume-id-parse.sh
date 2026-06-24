@@ -11,6 +11,9 @@ fail() { echo "FAIL: $1" >&2; exit 1; }
 vars="${ROOT}/opentofu/modules/azure/vm/variables.tf"
 main="${ROOT}/opentofu/modules/azure/vm/main.tf"
 
+[ -f "$vars" ] || fail "azure/vm/variables.tf missing"
+[ -f "$main" ] || fail "azure/vm/main.tf missing"
+
 grep -qF 'Microsoft.Compute/disks/' "$vars" \
   || fail "volume_id variable missing the Azure disk resource-ID validation regex"
 grep -qE 'resource_group[[:space:]]*=[[:space:]]*local\.id_parts\[4\]' "$main" \

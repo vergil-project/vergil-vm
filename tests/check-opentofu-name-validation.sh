@@ -10,7 +10,9 @@ ROOT="$(cd "${HERE}/.." && pwd)"
 fail() { echo "FAIL: $1" >&2; exit 1; }
 
 shopt -s nullglob
-for pdir in "${ROOT}"/opentofu/modules/*/; do
+pdirs=( "${ROOT}"/opentofu/modules/*/ )
+[ "${#pdirs[@]}" -gt 0 ] || fail "no provider dirs found under opentofu/modules/"
+for pdir in "${pdirs[@]}"; do
   provider="$(basename "$pdir")"
   for kind in volume vm; do
     f="${pdir}${kind}/variables.tf"
