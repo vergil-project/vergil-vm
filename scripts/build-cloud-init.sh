@@ -1,5 +1,5 @@
 #!/bin/bash
-# scripts/build-cloud-init.sh — Assemble opentofu/modules/gcp/vm/cloud-init.yaml from
+# scripts/build-cloud-init.sh — Assemble each provider's cloud-init.yaml from its own
 # cloud-init.yaml.skel + templates/provision/*.sh. Expands:
 #   @@PROVISION_FILES@@  -> a write_files entry per script (to /opt/vergil/provision/)
 #   @@PROVISION_RUNCMD@@ -> an ordered runcmd line per script, context-mapped
@@ -12,9 +12,10 @@
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-SKEL="${ROOT}/opentofu/modules/gcp/vm/cloud-init.yaml.skel"
-OUT="${ROOT}/opentofu/modules/gcp/vm/cloud-init.yaml"
 PROV="${ROOT}/templates/provision"
+# Build every provider that ships a vm cloud-init skeleton. Adding a provider dir with a
+# skeleton is automatically picked up — no per-provider list to maintain.
+SKELS=("${ROOT}"/opentofu/modules/*/vm/cloud-init.yaml.skel)
 
 context_of() { # context_of <script> -> root|user
   sed -n '2p' "$1" | grep -oE 'context=(root|user)' | cut -d= -f2
@@ -60,24 +61,33 @@ emit_runcmd() {
 }
 
 render() {
+  local skel="$1"
   while IFS= read -r line || [ -n "$line" ]; do
     case "$line" in
       *"@@PROVISION_FILES@@"*) emit_files ;;
       *"@@PROVISION_RUNCMD@@"*) emit_runcmd ;;
       *) printf '%s\n' "$line" ;;
     esac
-  done < "$SKEL"
+  done < "$skel"
 }
 
 if [ "${1:-}" = "--check" ]; then
-  tmp="$(mktemp)"
-  trap 'rm -f "$tmp"' EXIT
-  render > "$tmp"
-  if ! diff -u "$OUT" "$tmp"; then
-    echo "build-cloud-init: cloud-init.yaml is stale (run scripts/build-cloud-init.sh and commit)" >&2
-    exit 1
-  fi
+  stale=0
+  for skel in "${SKELS[@]}"; do
+    out="${skel%.skel}"
+    tmp="$(mktemp)"
+    render "$skel" > "$tmp"
+    if ! diff -u "$out" "$tmp"; then
+      echo "build-cloud-init: ${out#"${ROOT}"/} is stale (run scripts/build-cloud-init.sh and commit)" >&2
+      stale=1
+    fi
+    rm -f "$tmp"
+  done
+  exit "$stale"
 else
-  render > "$OUT"
-  echo "Wrote ${OUT}"
+  for skel in "${SKELS[@]}"; do
+    out="${skel%.skel}"
+    render "$skel" > "$out"
+    echo "Wrote ${out}"
+  done
 fi
