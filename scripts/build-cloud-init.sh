@@ -72,16 +72,16 @@ render() {
 }
 
 if [ "${1:-}" = "--check" ]; then
+  tmp="$(mktemp)"
+  trap 'rm -f "$tmp"' EXIT
   stale=0
   for skel in "${SKELS[@]}"; do
     out="${skel%.skel}"
-    tmp="$(mktemp)"
     render "$skel" > "$tmp"
     if ! diff -u "$out" "$tmp"; then
       echo "build-cloud-init: ${out#"${ROOT}"/} is stale (run scripts/build-cloud-init.sh and commit)" >&2
       stale=1
     fi
-    rm -f "$tmp"
   done
   exit "$stale"
 else
