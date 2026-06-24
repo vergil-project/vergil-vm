@@ -83,6 +83,17 @@ write_files:
       # XDG_RUNTIME_DIR must exist before the rootless setuptool will run.
       for _ in $(seq 1 30); do [ -d "/run/user/${uid}" ] && break; sleep 1; done
 
+      # Ubuntu 24.04 defaults kernel.apparmor_restrict_unprivileged_userns=1, which
+      # blocks the unprivileged user namespaces RootlessKit needs. Without this the
+      # install below fails ("fork/exec /proc/self/exe: permission denied") and the
+      # downstream 35-buildkit.sh times out waiting for the user service. Relax it
+      # persistently (/etc/sysctl.d survives the reboots the lingering user service
+      # relies on) and apply it now. (#251)
+      install -d /etc/sysctl.d
+      echo 'kernel.apparmor_restrict_unprivileged_userns = 0' \
+        > /etc/sysctl.d/99-vergil-rootless-userns.conf
+      sysctl --system
+
       # Install + start the rootless containerd user service AS the user, so the
       # downstream 35-buildkit.sh finds `systemctl --user is-active containerd` true.
       sudo -iu "$VERGIL_USER" env XDG_RUNTIME_DIR="/run/user/${uid}" \
