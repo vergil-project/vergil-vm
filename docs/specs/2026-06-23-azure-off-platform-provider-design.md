@@ -4,10 +4,21 @@
 - [vergil-vm #250 — Add Azure as a second off-platform cloud provider (clone of the GCP modules)](https://github.com/vergil-project/vergil-vm/issues/250)
 - Companion vergil-tooling issue (consumer side) — to be filed (analog of vergil-tooling #1706).
 
+**Depends on / coordinates with:**
+[vergil-vm #242 — multiple VM instances per repo](https://github.com/vergil-project/vergil-vm/issues/242)
+(tooling companion #1831). #242 is an in-flight, same-week design that replaces the
+1:1 `(identity, org, repo) → one VM` rule with **several named instances per repo**,
+each with its own state, lifecycle, and volume. When #1831 lands,
+`cloud_resource_name` gains an instance dimension and `var.name` becomes the
+**per-instance handle**. This spec is written against that model: every Azure resource
+set is keyed off `var.name` as a per-*instance* identifier, not per-repo. See
+"Resource keying & the #242 dependency" below.
+
 **Date:** 2026-06-23
 
-**Status:** Design (from brainstorming, 2026-06-23). Extends the off-platform VM
-backend (#199); adds a second provider without restructuring it.
+**Status:** Design (from brainstorming, 2026-06-23; pushback review 2026-06-24).
+Extends the off-platform VM backend (#199); adds a second provider without
+restructuring it. Coordinates with the named-instances work (#242).
 
 **Spans two repositories.** Like the GCP off-platform work (#199), this feature
 touches both `vergil-vm` (the OpenTofu modules, the cloud-init/provisioning deltas,
@@ -87,12 +98,31 @@ receives `volume_id`; it parses the subscription and resource group out of it an
 the Azure analog of GCP passing the disk `self_link` — the existing interface carries
 everything Azure needs, and `interface.json` is unchanged byte-for-byte.
 
+### Resource keying & the #242 dependency
+
+Every Azure resource set in this design is keyed off `var.name`, and **`var.name` is
+the per-instance handle** (#242), not a per-repo identifier. So the resource group,
+VNet/subnet/NSG, managed disk, and VM are **one set per named instance**: bring up a
+second named instance in the same repo and it gets its own RG (`<name>-rg`), its own
+networking, its own disk, and its own VM — fully self-contained, with no shared
+lifecycle. This matches #242's "distinct state, distinct volumes" intent and keeps the
+carrier trick clean (the RG stays 1:1 with the disk, so parsing the RG out of
+`volume_id` is unambiguous). On Azure this is cheap — VNets and resource groups carry
+no standing cost; only the VM and disk do.
+
+**Dependency.** This design assumes the tooling passes the #242 per-instance handle as
+the Azure module `name`. Until #1831 lands, `cloud_resource_name(identity, org, repo)`
+is still per-repo; the Azure modules work unchanged under either, but the *isolation
+guarantee above is only fully realized once the per-instance handle exists.* Nothing in
+the Azure module contract needs to change when #1831 lands — only the value passed in.
+
 ---
 
 ## Component: `azure/volume` module (long-lived state)
 
-Owns the **per-repo resource group and all long-lived scaffolding**. Created once;
-the gated `destroy-volume` verb is the only routine path that tears it down.
+Owns the **per-instance resource group and all long-lived scaffolding** (one set per
+named instance — see "Resource keying & the #242 dependency"). Created once; the gated
+`destroy-volume` verb is the only routine path that tears it down.
 
 Resources:
 - `azurerm_resource_group` — name derived from `var.name` (e.g. `<name>-rg`).
@@ -195,8 +225,21 @@ opts into Azure with `provider = "azure"`, `instance = "Standard_D16s_v5"`,
 ### Provider parameterization (the cheap part)
 
 - Replace the four hardcoded `"gcp"` literals in the module-path construction with
-  `spec.provider`, so paths resolve to `modules_root / spec.provider / {"vm","volume"}`.
+  `spec.provider`, so paths resolve to `<modules_root>/spec.provider/{"vm","volume"}`.
 - State directory is already keyed by `(state_key, provider)` — no change.
+
+### Build & release packaging
+
+The modules are no longer consumed from a local checkout — the off-platform path fetches
+them from a **version-tagged release archive** (#212 published modules as a release
+asset; #216 switched the consumer to fetch the v-tag archive; #0c3c1e9 dropped the
+publish-modules job). Two requirements follow:
+
+- The `modules/azure/` tree **must be included in the published release asset**.
+- The packaging/build step must glob `modules/**` generically, so a new provider is
+  picked up automatically rather than by an explicit per-provider list. Verify this —
+  the modules validate locally but would 404 at fetch time for real users if the
+  archive omits `azure/`, a failure that only appears off the developer's machine.
 
 ### Transport: `SshTransport` (new, selected on provider)
 
@@ -225,21 +268,72 @@ and a public IP, though NSG-locked to a single address at any moment.
 
 ### Capacity & zone fallback (the part that addresses the actual pain)
 
-- Azure signals "no capacity" with different strings than GCP: `SkuNotAvailable`,
-  `ZonalAllocationFailed`, `OverconstrainedAllocationRequest`. Add an Azure variant of
-  the capacity-error detector.
-- Generalize the existing zone-fallback retry: on an allocation failure, walk the
-  region's availability zones (1/2/3) before surfacing the error. This is the Azure
-  equivalent of GCP zone-walking and is the mechanism that makes a second provider
-  actually help with capacity.
+The zone-fallback **scaffolding already exists and is reused** —
+`apply_vm_with_zone_fallback` (`vm_cloud.py:753`) already sweeps a region's zones on a
+capacity stockout (#1816). What it does *not* yet have is an Azure path; three pieces
+inside it are hard-GCP and each needs an explicit Azure implementation (not a one-line
+"generalize"):
+
+1. **Zone enumeration.** `region_zones()` (`vm_cloud.py:731`) shells to
+   `gcloud compute zones list --filter=name~^{region}-`, and there is suffix-stripping
+   logic (`vm_cloud.py:842`) for GCP's `${region}-b` zone names. Azure availability
+   zones are bare integers (`1`/`2`/`3`) discovered via `az vm list-skus` / the zones
+   API, and not every region has them — the Azure path must handle the regional
+   (zoneless) case as well.
+2. **Capacity-error matching.** `is_zone_capacity_error()` matches a GCP-specific
+   `_ZONE_CAPACITY_RE` (`vm_cloud.py:719`). Azure signals stockout with different
+   strings — `SkuNotAvailable`, `ZonalAllocationFailed`,
+   `OverconstrainedAllocationRequest` — which need an Azure detector.
+3. **Zone-pinned volume recreation.** The fallback recreates the *empty* volume pinned
+   to each candidate zone; Azure's managed-disk AZ pinning and the per-instance
+   RG-scoped resources interact differently and must be handled in the Azure path.
+
+This is the mechanism that makes a second provider actually help with capacity, so it
+is first-milestone scope, not a follow-up.
+
+### Read & enumerate surface (every verb that reaches the provider read-only)
+
+The lifecycle verbs are not the only ones that touch the cloud — a class of read/enumerate
+verbs shell to `gcloud` directly and each needs an Azure equivalent. These are everyday
+verbs (`status`, `list`), and they are exactly the surface an operator uses to *find* a
+VM when GCP capacity has just failed them, so they are first-milestone scope:
+
+- `OffPlatformBackend.status()` → `gcloud compute instances describe` (`vm_cloud.py:951`)
+  ⟶ `az vm show` / `az vm get-instance-view`.
+- `region_zones()` → `gcloud compute zones list` (`vm_cloud.py:738`) ⟶ Azure zones API
+  (shared with the zone-fallback work above).
+- `vrg-vm volumes` (#1798) — surfaces persistent volumes from local tofu state; the
+  state read is provider-neutral but any provider-side confirmation must branch.
+- `list` / session-listing (#1806) and `update --all` — enumerate off-platform VMs.
+
+**No silent non-GCP degradation.** The current `if provider != "gcp"` guard (which
+*skips* the zone-status query for non-GCP providers) must become a real Azure branch,
+not a skip. A provider you cannot `status`/`list` is a provider you cannot operate;
+degraded-but-silent is treated as a defect, not an acceptable default.
+
+### Lifecycle paths that must reach parity
+
+Two behaviors already hardened on GCP are wired to the IAP transport / GCP resource set
+and must be replicated for Azure, or they regress silently:
+
+- **In-place update of a running box (#1815).** `vrg-vm update` pushes changes over the
+  transport instead of destroy/recreate, preserving running state. The `SshTransport`
+  must carry this path — not just `session` and the apply path — or an Azure `update`
+  silently degrades to a full rebuild.
+- **Failed-apply orphan rollback (#1807).** On GCP a failed VM apply left an orphan
+  firewall that 409'd every retry, so the tooling rolls it back. The Azure ephemeral set
+  has the same hazard: a half-created VM can leave an **orphan public IP, NIC, or a stale
+  NSG source rule**. The Azure path must roll these back on a failed apply so retries
+  don't wedge on a conflict.
 
 ### Provider-strategy seam (targeted refactor)
 
 The branch points above (transport selection, preflight, capacity regex, zone
-enumeration, module path) are the natural seams. Rather than grow `if provider == ...`
-ladders through `vm_cloud.py`, extract a small provider-strategy object scoped to
-exactly the spots Azure touches. This is the only refactor in scope; it is not a
-general rework of the cloud path.
+enumeration, module path, the read/enumerate queries, in-place update, orphan rollback)
+are the natural seams. Rather than grow `if provider == ...` ladders through
+`vm_cloud.py`, extract a small provider-strategy object scoped to exactly the spots
+Azure touches. This is the only refactor in scope; it is not a general rework of the
+cloud path.
 
 ---
 
@@ -263,11 +357,15 @@ All under `vrg-container-run -- vrg-validate`, the only validation entrypoint.
 ## Scope & milestones
 
 **In scope:**
-- `opentofu/modules/azure/{vm,volume}` satisfying `interface.json`.
+- `opentofu/modules/azure/{vm,volume}` satisfying `interface.json`, keyed per-instance
+  (#242).
 - Azure cloud-init / provisioning deltas (disk path, SSH key).
-- vergil-tooling: provider parameterization, `SshTransport` with NSG refresh, Azure
-  preflight/credentials, Azure capacity detection + zone fallback, the provider-strategy
-  seam. (Tracked in the companion vergil-tooling issue.)
+- The Azure module tree shipped in the published release asset (`modules/**` packaging).
+- vergil-tooling (companion issue): provider parameterization, `SshTransport` with NSG
+  refresh, Azure preflight/credentials, Azure capacity detection + zone fallback (the
+  three GCP-coupled pieces), the **read & enumerate surface** (`status`/`list`/zone
+  enumeration with no silent non-GCP degradation), **lifecycle parity** (in-place update
+  #1815, orphan rollback #1807), and the provider-strategy seam.
 
 **Out of scope (named so the plan stays focused):**
 - Cloud-account setup runbook — tracked in #204 (already covers GCP + Azure).
