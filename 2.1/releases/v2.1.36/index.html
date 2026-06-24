@@ -11,10 +11,10 @@
       
       
       
-        <link rel="prev" href="../v2.1.18/">
+        <link rel="prev" href="../">
       
       
-        <link rel="next" href="../v2.1.16/">
+        <link rel="next" href="../v2.1.35/">
       
       
         
@@ -25,7 +25,7 @@
     
     
       
-        <title>2.1.17 - Vergil VM</title>
+        <title>2.1.36 - Vergil VM</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#release-2117-2026-06-08" class="md-skip">
+        <a href="#release-2136-2026-06-24" class="md-skip">
           Skip to content
         </a>
       
@@ -116,7 +116,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              2.1.17
+              2.1.36
             
           </span>
         </div>
@@ -657,10 +657,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../v2.1.36/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.36
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -676,6 +703,37 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Features
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1189,37 +1247,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    2.1.17
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../v2.1.17/" class="md-nav__link">
         
   
   
@@ -1235,37 +1266,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#bug-fixes" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Bug fixes
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -2196,10 +2196,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#bug-fixes" class="md-nav__link">
+  <a href="#features" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Bug fixes
+        Features
       
     </span>
   </a>
@@ -2223,12 +2223,14 @@
 
 
 
-<h1 id="release-2117-2026-06-08">Release 2.1.17 (2026-06-08)<a class="headerlink" href="#release-2117-2026-06-08" title="Permanent link">&para;</a></h1>
-<h2 id="bug-fixes">Bug fixes<a class="headerlink" href="#bug-fixes" title="Permanent link">&para;</a></h2>
+<h1 id="release-2136-2026-06-24">Release 2.1.36 (2026-06-24)<a class="headerlink" href="#release-2136-2026-06-24" title="Permanent link">&para;</a></h1>
+<h2 id="features">Features<a class="headerlink" href="#features" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>export VRG_IDENTITY_MODE from ~/.zshenv, not ~/.bashrc (#149)</strong>
-The identity-mode env var was only exported from ~/.bashrc, which this VM's zsh shell never sources — so VRG_IDENTITY_MODE was absent in live zsh sessions even when the identity is correctly resolved. Bake a guarded export into ~/.zshenv (the zsh hook sourced for every invocation) at image-build time; the file-presence guard keeps it inert until the per-VM mode file is injected. Assert the on-disk mechanism in test_base.sh.</li>
+<li><strong>give off-platform VMs an external IP + open Grafana port 3000 for remote browser access (#261)</strong>
+Off-platform boxes were internal-IP-only (SSH via IAP) — a local-era assumption. The point of running in the cloud is to point a browser at the box's ports from anywhere (Grafana dashboards now, MQ Web/Explorer later), show them to people by IP, and run multiple stacks. A private box can't do that.</li>
 </ul>
+<p>In the GCP vm module: add access_config {} to the instance's network_interface (ephemeral external IP), and a google_compute_firewall 'browse' allowing tcp:3000 (the Grafana relay on the box's 0.0.0.0:3000 -&gt; obs guest) from 0.0.0.0/0, target_tags [var.name].</p>
+<p>Scope (operator-confirmed): source wide open (ephemeral boxes, no real data, Grafana is anonymous/shareable — rebuild if broken); SSH stays IAP-only (not opened); applies to all off-platform boxes (per-repo gating deferred); port 3000 only for now — per-QM listener + mqweb ports are the follow-on (mq-resiliency-lab #345), to be added to this firewall then.</p>
 
 
 
