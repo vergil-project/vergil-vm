@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.1.36] - 2026-06-24
+
+### Features
+
+- give off-platform VMs an external IP + open Grafana port 3000 for remote browser access (#261)
+
 ## [2.1.35] - 2026-06-24
 
 ### Features
