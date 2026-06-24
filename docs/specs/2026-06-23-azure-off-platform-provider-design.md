@@ -133,11 +133,12 @@ carrier trick clean (the RG stays 1:1 with the disk, so parsing the RG out of
 `volume_id` is unambiguous). On Azure this is cheap — VNets and resource groups carry
 no standing cost; only the VM and disk do.
 
-**Dependency.** This design assumes the tooling passes the #242 per-instance handle as
-the Azure module `name`. Until #1831 lands, `cloud_resource_name(identity, org, repo)`
-is still per-repo; the Azure modules work unchanged under either, but the *isolation
-guarantee above is only fully realized once the per-instance handle exists.* Nothing in
-the Azure module contract needs to change when #1831 lands — only the value passed in.
+**Dependency (satisfied).** #1831 has **landed**: `cloud_resource_name(slug)` now takes a
+per-instance slug, and `OffPlatformBackend` keys `self.name`/`self.state_key` off that
+slug (`self.instance_name` → `self.slug` → `self.name`). So the per-instance handle the
+Azure modules need already exists — the tooling passes it as the module `name`, and the
+isolation guarantee above is fully realized today. Nothing in the Azure module contract
+depends on the slug's internal shape — only that `name` is a per-instance identifier.
 
 ---
 
@@ -280,9 +281,22 @@ injection, provisioning, session) is reused untouched**.
   `az network nsg rule update` to set the inbound-22 source to exactly that `/32`. This
   runs at every `session`/lifecycle op, so a moved operator is always reconciled —
   neutralizing the roaming problem IAP was protecting against.
+- **Operator-IP discovery is configurable and fail-closed.** The current public IP is
+  obtained from a public echo endpoint that **defaults to a named service but is
+  overridable** (env/config), so the dependency is not hard-wired. If discovery fails
+  (endpoint unreachable, empty/garbage response), the transport **aborts the operation
+  loudly** — it MUST NEVER fall back to a wide-open rule (`0.0.0.0/0`) or skip the
+  refresh, which would silently destroy the single-address security posture.
+- **Host-key trust.** Unlike IAP (where `gcloud` manages the tunnel and known-hosts),
+  plain `ssh` must set a host-key policy: trust-on-first-contact (`accept-new`) into a
+  vergil-managed `known_hosts`. Because a **rebuild** keeps the host's name/IP but
+  regenerates its host key, the rebuild/destroy path MUST prune the stale `known_hosts`
+  entry so the recreated box reconnects cleanly instead of hard-failing on a host-key
+  mismatch.
 
-Honest costs of this choice (vs GCP IAP): a tooling-managed SSH keypair (GCP had none)
-and a public IP, though NSG-locked to a single address at any moment.
+Honest costs of this choice (vs GCP IAP): a tooling-managed SSH keypair (GCP had none),
+a public IP (NSG-locked to a single address at any moment), and a runtime dependency on
+an operator-IP echo endpoint (configurable, fail-closed).
 
 ### Credentials & preflight (Azure branch of the GCP-specific ~40%)
 
@@ -366,17 +380,23 @@ cloud path.
 ## Testing
 
 Mirror the existing test style (e.g. `tests/check-cloud-init-generation.sh`,
-`tests/check-opentofu-name-validation.sh`). No `apply` in CI — no billed resources.
+`tests/check-opentofu-name-validation.sh`). **Neither `tofu plan` nor `apply` runs in
+CI** — the `azurerm` provider requires a real subscription/credentials even to `plan`
+(it configures an API client and the `vm` module reads live `data` sources), so a `plan`
+cannot run offline and CI must not hold cloud credentials. CI verification is therefore:
 
-- `tofu validate` + `tofu plan` against the Azure modules with fixture vars.
+- `tofu init -backend=false` + **`tofu validate`** + `tofu fmt -check` against the Azure
+  modules (offline, no credentials).
 - Name-validation test extended for Azure's naming rules where they differ from RFC1035
   (resource-group, managed-disk, and public-IP constraints).
 - Cloud-init generation test covering the Azure data-disk LUN path and the `custom_data`
   base64 wrapping.
-- A unit test asserting the `volume_id` → (subscription, resource group) parse is
-  correct.
+- A host-side check asserting the `volume_id` → (subscription, resource group) parse and
+  the Azure disk resource-ID validation are present.
 
-All under `vrg-container-run -- vrg-validate`, the only validation entrypoint.
+All under `vrg-container-run -- vrg-validate`, the only validation entrypoint. A real
+`tofu plan`/`apply` happens only in the **credentialed first-milestone stand-up** (see
+Scope & milestones), never in CI.
 
 ---
 

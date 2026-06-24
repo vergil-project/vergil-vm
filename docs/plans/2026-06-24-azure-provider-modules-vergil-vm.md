@@ -762,6 +762,59 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 
 ---
 
+### Task 7: First-milestone acceptance (MANUAL — credentialed, NOT CI)
+
+Every prior task stops at offline validation. This task is the only one that proves the
+modules actually work, against a real Azure subscription. It is **manual and
+out-of-CI** (it creates billed resources and needs `az login`); run it once the
+vergil-tooling consumer plan has also landed and a real off-platform Azure profile
+exists for the MQ-cluster repo. It owns the spec's "First milestone" acceptance.
+
+**Files:** none (operational verification).
+
+**Interfaces:**
+- Consumes: the released Azure modules + the vergil-tooling Azure backend (companion plan).
+
+- [ ] **Step 1: Preconditions**
+
+Confirm: `az login` done; an Azure subscription with quota for `Standard_D16s_v5` (16
+vCPU nested-virt-capable) in the target region; the MQ-cluster repo's off-platform
+profile set to `provider = "azure"`, `instance = "Standard_D16s_v5"`, `region = <region>`.
+
+- [ ] **Step 2: Stand up a real instance**
+
+Run the off-platform create for the repo (`vrg-vm create` with the Azure profile).
+Expected: volume state applies (RG + VNet/subnet/NSG + disk), then VM state applies
+(public IP + NIC + VM), and `cloud-init status --wait` over the `SshTransport` returns
+`status: done` (not `error`).
+
+- [ ] **Step 3: Prove nested KVM (no TCG tax)**
+
+Over the session, run: `ls -l /dev/kvm && systemd-detect-virt`
+Expected: `/dev/kvm` exists (the `70-nested-virt.sh` check passed → Standard security
+type, not Trusted Launch), confirming nested KVM rather than TCG software emulation.
+
+- [ ] **Step 4: Prove the persistent volume + provisioning**
+
+Expected: `/vergil` is mounted from `/dev/disk/azure/scsi1/lun0` (the LUN device path);
+`/etc/vergil/vm-spec.fingerprint` exists (40-profile.sh ran); a session launches.
+
+- [ ] **Step 5: Exercise the capacity/zone fallback (companion-plan behavior)**
+
+Force a zone stockout (request the SKU in a zone known to be constrained, or temporarily
+restrict zones) and confirm the tooling walks to another availability zone and lands,
+rather than failing — the capacity-resilience story that motivated Azure.
+
+- [ ] **Step 6: Tear down and record**
+
+Run `vrg-vm destroy` (VM state only; volume survives), confirm no orphan public IP / NIC
+/ NSG rule remains, then `destroy-volume` to remove the RG. Capture the working
+region + SKU + zone combination into the #204 setup guide.
+
+> No commit — this task is operational acceptance, not a code change.
+
+---
+
 ## Self-Review (vergil-vm plan)
 
 **Spec coverage:**
