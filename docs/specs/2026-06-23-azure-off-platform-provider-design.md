@@ -59,22 +59,24 @@ restructure the existing one.
 
 ```text
 opentofu/
-  interface.json                      ← UNCHANGED. Azure modules satisfy the same contract.
+  interface.json                      ← +1 vm variable (ssh_public_key); otherwise same
   modules/
-    gcp/{vm,volume}/                   ← untouched
+    gcp/{vm,volume}/                   ← vm gains an ignored ssh_public_key var (1 line)
     azure/
       vm/      {main,variables,outputs,versions}.tf, cloud-init.yaml(.skel)
       volume/  {main,variables,outputs,versions}.tf
 ```
 
-The contract both providers satisfy (current `interface.json`):
+The contract both providers satisfy (`interface.json` after the one addition — see
+"One honest interface addition" below; `ssh_public_key` is the only new key):
 
 ```json
 {
   "volume": { "variables": ["name","region","zone","size_gib","labels"],
               "outputs":   ["volume_id","zone"] },
   "vm":     { "variables": ["name","zone","instance_type","nested","volume_id",
-                            "boot_disk_gib","ssh_user","provision_env","labels"],
+                            "boot_disk_gib","ssh_user","provision_env","labels",
+                            "ssh_public_key"],
               "outputs":   ["host","ssh_user"] }
 }
 ```
@@ -95,8 +97,29 @@ qualified path:
 The `volume` module returns this resource ID as `volume_id`. The `vm` module already
 receives `volume_id`; it parses the subscription and resource group out of it and
 `data`-sources the conventionally-named VNet, subnet, and NSG within that RG. This is
-the Azure analog of GCP passing the disk `self_link` — the existing interface carries
-everything Azure needs, and `interface.json` is unchanged byte-for-byte.
+the Azure analog of GCP passing the disk `self_link` — the resource-group dimension
+needs no new interface key.
+
+### One honest interface addition: `ssh_public_key`
+
+The carrier trick covers the resource group because the RG is *derivable* from the disk
+ID (no new information). The SSH key is different: an `azurerm_linux_virtual_machine`
+**requires an SSH public key at create time**, and that key is genuinely new information
+with no existing channel to carry it. GCP needed none — IAP injects ephemeral keys — so
+the original interface has no slot, and `tests/check-opentofu-contract.sh` enforces the
+variable/output sets **exactly** (no extras) across *all* providers. Rather than smuggle
+the key through `labels` or `provision_env`, we make one honest addition:
+
+- `interface.json` gains **one** vm variable: `ssh_public_key`.
+- Both providers declare it. **Azure** consumes it (`admin_ssh_key`). **GCP** declares it
+  with `default = ""` and ignores it — a one-line, behavior-neutral change to the GCP vm
+  module, required only so the strict contract test stays green for both providers.
+- The tooling generates and persists the keypair, passes the **public** key in via this
+  variable, and keeps the **private** key local for the `SshTransport`. No private key
+  ever enters tofu state or module outputs.
+
+This is the only interface change. Everything else (the RG, networking) rides the
+existing keys.
 
 ### Resource keying & the #242 dependency
 
@@ -165,7 +188,8 @@ Resources:
     Trusted Launch is incompatible with nested virtualization; this is a silent-failure
     trap and is enforced + commented loudly, mirroring GCP's `enable_nested_virtualization`
     comment.
-  - `admin_username = var.ssh_user`; `admin_ssh_key` = the tooling-managed public key.
+  - `admin_username = var.ssh_user`; `admin_ssh_key.public_key = var.ssh_public_key`
+    (the tooling-generated public key passed in via the new interface variable).
   - `custom_data` = base64 of the rendered cloud-init (same `@@PROVISION_ENV@@` splice
     mechanism as GCP — `replace()`, not `templatefile()`, because the inlined provision
     scripts contain shell `${...}`).
@@ -207,8 +231,10 @@ deltas:
 
 2. **SSH keypair.** GCP IAP injected ephemeral keys, so the GCP module managed none.
    Azure requires a real admin keypair at create time: the tooling generates and
-   persists one per identity and passes the public key into the module. Correspondingly
-   `host` is a routable public IP, not an instance name.
+   persists one per instance, passes the **public** key into the module via the new
+   `ssh_public_key` interface variable (see "One honest interface addition"), and keeps
+   the **private** key local for the `SshTransport`. Correspondingly `host` is a routable
+   public IP, not an instance name.
 
 Everything else in the existing cloud-init carries over unchanged.
 
@@ -357,8 +383,13 @@ All under `vrg-container-run -- vrg-validate`, the only validation entrypoint.
 ## Scope & milestones
 
 **In scope:**
+- One `interface.json` addition: the vm `ssh_public_key` variable (see "One honest
+  interface addition").
 - `opentofu/modules/azure/{vm,volume}` satisfying `interface.json`, keyed per-instance
   (#242).
+- A one-line, behavior-neutral addition to the **GCP** vm module: declare the new
+  `ssh_public_key` variable with `default = ""` and ignore it, so the strict contract
+  test stays green for both providers. (This is the only GCP touch — not a rework.)
 - Azure cloud-init / provisioning deltas (disk path, SSH key).
 - The Azure module tree shipped in the published release asset (`modules/**` packaging).
 - vergil-tooling (companion issue): provider parameterization, `SshTransport` with NSG
