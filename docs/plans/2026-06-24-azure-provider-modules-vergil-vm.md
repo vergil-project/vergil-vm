@@ -14,7 +14,7 @@
 - **Git:** use `vrg-git` (not `git`) and `vrg-commit` (not `git commit`). `vrg-commit --type <t> --scope <s> --message <m> [--body <b>]`. End commit bodies with `Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>`.
 - **Worktree:** all edits flow through this worktree (`.worktrees/issue-250-azure-provider`, branch `feature/250-azure-provider`); the main worktree is read-only.
 - **Interface contract:** `tests/check-opentofu-contract.sh` enforces that each provider's `volume`/`vm` module declares *exactly* the variable/output names in `opentofu/interface.json` — no extras, no omissions, across all providers. Every module task must keep this green.
-- **No `tofu apply`/`plan` in CI:** module verification is `tofu init` + `tofu validate` + `tofu fmt -check` (offline, no cloud credentials) plus the host-side `check-*.sh` text inspections. A real `apply` happens only in the first-milestone manual stand-up.
+- **Validation environment (IMPORTANT — corrected mid-execution):** `tofu` is a macOS-**host** tool and is **NOT present in the sandbox dev container**, so `tofu fmt`/`tofu validate` cannot run in-sandbox today. Adding tofu to the base image is tracked by **vergil-docker#352**; until the rebuilt image lands, in-sandbox verification is the grep-based `check-*.sh` + `vrg-container-run -- vrg-validate` (lint). The plan's per-module `tofu validate` steps run via the new `scripts/bin/validate-custom` (Task 6) **once tofu is in the image** — re-run before finishing. Never `tofu apply`/`plan` in CI/sandbox (those need cloud credentials and run only in the first-milestone manual stand-up). Do NOT self-install tofu in a subagent — it produces unverifiable results; defer to #352.
 - **Name rule (reused from GCP):** the `name` variable is RFC1035 (`^[a-z]([-a-z0-9]*[a-z0-9])?$`) and `length(var.name) <= 58`. This is a safe subset of Azure's allowed charset/length for every derived resource name (`<name>-rg`, `-vnet`, `-subnet`, `-nsg`, `-data`, `-pip`, `-nic`).
 - **Security type:** the Azure VM MUST NOT be Trusted Launch (incompatible with nested virtualization). Leave `secure_boot_enabled`/`vtpm_enabled` unset/false so the VM is Standard security type.
 - **`var.name` is the #242 per-instance handle.** Resource sets are one-per-named-instance.
@@ -607,13 +607,14 @@ Expected: `PASS: gcp vm cloud-init.yaml is up to date with provision scripts` �
 Run: `vrg-git status --short opentofu/modules/gcp/vm/cloud-init.yaml`
 Expected: no output (GCP cloud-init unchanged — the generalization is behavior-preserving for GCP).
 
-- [ ] **Step 6: Re-validate the azure/vm module against the real cloud-init**
+- [ ] **Step 6: Confirm the azure/vm `@@PROVISION_ENV@@` anchor is at 6-space indent**
 
-Run:
-```bash
-vrg-container-run -- bash -c 'cd opentofu/modules/azure/vm && tofu validate'
-```
-Expected: `Success! The configuration is valid.`
+The vm module splices `provision_env` with a 6-space indent (`replace(..., "\n", "\n      ")`), so the generated `azure/vm/cloud-init.yaml` must carry `@@PROVISION_ENV@@` under `content: |` at the matching 6-space indent (the GCP skeleton clone already does — verify the clone preserved it).
+
+Run: `grep -n "@@PROVISION_ENV@@" opentofu/modules/azure/vm/cloud-init.yaml`
+Expected: the line is indented 6 spaces (`      @@PROVISION_ENV@@`), matching `opentofu/modules/gcp/vm/cloud-init.yaml`.
+
+(`tofu validate` of the module against the real cloud-init is **deferred** to `scripts/bin/validate-custom` once tofu is in the sandbox image — vergil-docker#352. Do NOT run bare `tofu` here.)
 
 - [ ] **Step 7: Commit**
 
@@ -719,46 +720,85 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 
 ---
 
-### Task 6: Wire the new checks into `vrg-validate` and confirm release packaging
+### Task 6: Add `scripts/bin/validate-custom` (wire opentofu checks + tofu into vrg-validate) and confirm packaging
 
-The new `check-azure-volume-id-parse.sh` must run under the single validation entrypoint, and we must confirm the Azure module ships to consumers.
+**Discovered during execution:** `vrg-validate` does NOT currently run the opentofu `check-*.sh` at all. Its custom-validator hook (`vergil_tooling.bin.vrg_validate._find_custom_validator`) looks for `scripts/bin/validate-custom`, and **vergil-vm has no such file** — so the contract test, name check, cloud-init freshness, and the new parse check are not part of the sanctioned gate. This task creates that custom validator so all of them run under `vrg-validate`, and adds `tofu fmt`/`validate` per module guarded on tofu's presence (active automatically once **vergil-docker#352** lands tofu in the sandbox image).
 
 **Files:**
-- Modify: the host-side check runner invoked by `vrg-validate` (locate in Step 1) — only if it does not already glob `tests/check-*.sh`.
+- Create: `scripts/bin/validate-custom` (executable; auto-discovered by `vrg-validate`).
 
 **Interfaces:**
-- Consumes: every `tests/check-*.sh` from earlier tasks.
+- Consumes: every `tests/check-*.sh` from earlier tasks; `opentofu/modules/*/{volume,vm}`.
 
-- [ ] **Step 1: Find how host-side checks are discovered by vrg-validate**
+- [ ] **Step 1: Write `scripts/bin/validate-custom`**
 
-Run: `grep -rn "check-" scripts/build.sh scripts/*.sh .github/ 2>/dev/null | grep -iE "check-|for .*check|glob"`
-Expected: reveals whether checks are run via a `tests/check-*.sh` glob (new file auto-included — no edit) or an explicit list (must append `check-azure-volume-id-parse.sh`).
+```bash
+#!/usr/bin/env bash
+# scripts/bin/validate-custom — repo-specific validation, auto-discovered by vrg-validate
+# (vergil_tooling.bin.vrg_validate._find_custom_validator looks for exactly this path).
+# Runs the host-side OpenTofu check-*.sh assertions, and — when tofu is available
+# (vergil-docker#352) — `tofu fmt`/`validate` for every provider module. fail-defer:
+# run everything, report all failures, exit nonzero if any failed.
+set -uo pipefail
+HERE="$(cd "$(dirname "$0")" && pwd)"
+ROOT="$(cd "${HERE}/../.." && pwd)"
+fail=0
 
-- [ ] **Step 2: If an explicit list, add the new check; if a glob, no edit**
+run() { echo "→ $*"; "$@" || fail=1; }
 
-If the runner enumerates checks explicitly, add `tests/check-azure-volume-id-parse.sh` alongside the others, preserving the existing style. If it globs `tests/check-*.sh`, make no change.
+# 1) Grep-based opentofu checks — no tofu needed, always run.
+for chk in check-opentofu-contract check-opentofu-name-validation \
+           check-cloud-init-generation check-azure-volume-id-parse; do
+  s="${ROOT}/tests/${chk}.sh"
+  [ -f "$s" ] && run bash "$s"
+done
 
-- [ ] **Step 3: Confirm the module release archive includes `azure/`**
+# 2) tofu fmt + validate per module — only when tofu is installed. A missing tofu is
+# NOT a silent pass: it is an explicit, loud SKIP so the gap (vergil-docker#352) stays
+# visible until the rebuilt image lands, at which point this activates automatically.
+if command -v tofu >/dev/null 2>&1; then
+  for mdir in "${ROOT}"/opentofu/modules/*/volume "${ROOT}"/opentofu/modules/*/vm; do
+    [ -d "$mdir" ] || continue
+    echo "→ tofu fmt/validate ${mdir#"${ROOT}"/}"
+    ( cd "$mdir" \
+      && tofu fmt -check \
+      && tofu init -backend=false -input=false >/dev/null \
+      && tofu validate ) || fail=1
+  done
+else
+  echo "SKIP: tofu not installed (vergil-docker#352) — HCL fmt/validate not run in-sandbox" >&2
+fi
+
+exit "$fail"
+```
+
+- [ ] **Step 2: Make it executable**
+
+Run: `chmod +x scripts/bin/validate-custom`
+
+- [ ] **Step 3: Run the full sanctioned validation — the custom validator is now discovered**
+
+Run: `vrg-container-run -- vrg-validate`
+Expected: the lint stages pass AND a `custom` stage runs `scripts/bin/validate-custom`, which runs the four opentofu `check-*.sh` (all PASS) and prints the `SKIP: tofu not installed` line (until #352 lands). `vrg-validate` exits 0.
+
+- [ ] **Step 4: Confirm the module release archive includes `azure/`**
 
 The off-platform consumer fetches the **v-tag source archive** (the whole repo at the tag — #212 published modules as an asset, #216 switched to the tag archive, #0c3c1e9 dropped the bespoke publish job). Confirm no per-provider allowlist filters the modules:
 
 Run: `grep -rn "modules" .github/workflows/ scripts/ 2>/dev/null | grep -iE "gcp|provider|exclude|allowlist|tar|archive"`
-Expected: no GCP-only filter. Any committed `opentofu/modules/azure/` is therefore in the tag archive automatically. If a filter *is* found, change it to glob `opentofu/modules/**`. Record the finding in the commit message either way (no-op vs. fix).
+Expected: no GCP-only filter — any committed `opentofu/modules/azure/` is in the tag archive automatically. If a filter *is* found, change it to glob `opentofu/modules/**`. Record the finding in the commit message.
 
-- [ ] **Step 4: Run the full validation suite**
-
-Run: `vrg-container-run -- vrg-validate`
-Expected: all checks PASS, including `check-opentofu-contract.sh`, `check-opentofu-name-validation.sh`, `check-cloud-init-generation.sh`, and `check-azure-volume-id-parse.sh`.
-
-- [ ] **Step 5: Commit (only if Step 2 or Step 3 changed a file)**
+- [ ] **Step 5: Commit**
 
 ```bash
-vrg-commit --type chore --scope off-platform \
-  --message "run azure checks in vrg-validate; confirm azure ships in the tag archive (#250)" \
-  --body "<state the finding: glob already covers the new check / added it explicitly; module archive is the full v-tag source so azure/ is included / fixed a provider filter>.
+vrg-commit --type feat --scope off-platform \
+  --message "run opentofu checks (+ tofu when present) under vrg-validate via validate-custom (#250)" \
+  --body "vrg-validate had no scripts/bin/validate-custom, so the opentofu check-*.sh were not part of the sanctioned gate. Add it: runs the contract/name/cloud-init/parse checks always, and tofu fmt/validate per module when tofu is installed (vergil-docker#352) — a loud SKIP until then. Confirmed azure/ ships in the v-tag source archive (no provider filter).
 
 Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ```
+
+> **Post-#352 re-validation (do before finishing):** once the rebuilt image has tofu, re-run `vrg-container-run -- vrg-validate`; the tofu branch activates and validates all GCP + Azure modules. Expect a possible `tofu fmt` normalization pass on first run (the HCL was authored by hand) — apply it and commit.
 
 ---
 
