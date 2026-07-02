@@ -30,4 +30,4 @@ See the [documentation](https://vergil-project.github.io/vergil-vm/).
 
 ## License
 
-GPL-3.0 — see [LICENSE](LICENSE).
+MIT — see [LICENSE](LICENSE).
