@@ -5,7 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [2.1.38] - 2026-07-04
+## [2.1.39] - 2026-07-24
+
+### Bug fixes
+
+- drop secrets: inherit from cd.yml (no publish, needs no secrets) (#286)
+- grant actions:read so CD starts with cd-release@v2.1 (#285)
+- stop provisioning UV_PROJECT_ENVIRONMENT=.venv-host on agent VMs (#287)
+
+## [2.1.38] - 2026-07-02
 
 ### CI
 
