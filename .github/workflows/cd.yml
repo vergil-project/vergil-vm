@@ -22,4 +22,3 @@ jobs:
     uses: vergil-project/vergil-actions/.github/workflows/cd-release.yml@v2.1
     with:
       container-suffix: base
-    secrets: inherit
