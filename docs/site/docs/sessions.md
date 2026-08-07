@@ -1,72 +1,127 @@
 # Sessions
 
-`vrg-vm session` is the front door to the VM. It launches Claude Code with a
-**deterministic, named session** so you can close your terminal, reboot your
-laptop, or rebuild the VM and pick up exactly where you left off — without
-hunting for session IDs.
+`vrg-vm session` is the front door to the VM. It launches Claude Code with an
+**explicitly named session** so you can close your terminal, reboot your laptop,
+or rebuild the VM and pick up exactly where you left off — by naming the session
+you want, never by hunting for session IDs.
 
-This guide explains the model and shows the workflows: resuming, running several
-agents at once, recovering after a reboot, and keeping old context from polluting
-new work.
+This guide explains the model and shows the workflows: creating a named session,
+reconnecting to one by name, running several agents at once, recovering after a
+reboot, and starting clean without losing history.
 
 ## The mental model
 
 The VM exists to sandbox Claude Code, so `vrg-vm session` **launches Claude by
-default** — not a shell. Every session gets a structured name:
+default** — not a shell. Every session has a two-part name:
 
 ```text
-<identity>:<slot>:<workspace-relative-path>
+<label>:<workspace-relative-path>
 ```
 
-For example, working in `my-project` as the `vergil` identity:
+For example, working on epic #213 in `my-project`:
 
 ```text
-vergil:01:my-project
+epic-213-explicit-sessions:my-project
 ```
 
-- **identity** — which identity you're running as (the `--identity`, or your
-  `default_identity`). It tells you *who* you are in this window.
-- **slot** — a two-digit number (`01`–`99`) distinguishing multiple concurrent
-  sessions for the same identity and workspace.
+- **label** — the human, functional name for *what this session is for*. Bind it
+  to a purpose: an epic (`epic-<N>-<slug>`) or an ad-hoc problem
+  (`adhoc-<slug>`). The label is a clean slug; if it lacks an `epic-`/`adhoc-`
+  prefix you get a **warning, not a rejection** — start with a bare slug and
+  rename once the epic number exists.
 - **workspace path** — the repo you started in, relative to your projects root.
-  It tells you *where* you are.
+  It anchors the session's `CLAUDE.md`/memory bootstrap and tells you *where* you
+  are.
 
-The name shows up in Claude's UI, so at a glance you know which identity and repo
-each window belongs to.
+The name shows up in Claude's UI, so at a glance you know what each window is for
+and which repo it belongs to.
 
-A session is in one of three states:
+!!! note "Reconnect is by exact name"
+    You address a session **explicitly by its name** — there is no auto-resume
+    guess, no slot number, and no "most recent" default. Because the system never
+    guesses which session you meant, it can never guess *wrong*.
+
+A session is in one of two states:
 
 | State | Meaning |
 |---|---|
 | **active** | a live Claude client is attached right now |
 | **idle** | the session exists (its transcript is on disk) but nothing is attached |
-| **archived** | set aside, out of the active namespace, but preserved and reconnectable |
 
-## Everyday use
+There is no "archived" state. Every transcript stays on disk and stays
+reconnectable by its exact name; long-idle sessions are simply **hidden from the
+default listing** by a recency filter (see [Listing and
+reconnecting](#listing-and-reconnecting)), never moved or relabeled.
+
+## Two verbs: create and attach
+
+Creating a new session and reconnecting to an existing one are **distinct verbs**,
+which makes both typo-safe:
+
+| Verb | Flag | Rule |
+|---|---|---|
+| **Create** | `--label <name>` | the name **must not already exist** |
+| **Attach** | `--resume <name>` | the name **must already exist** |
+
+### Create a named session
 
 ```bash
-vrg-vm session my-project
+vrg-vm session --label epic-213-explicit-sessions my-project
 ```
 
-The **workspace argument is required** — it's the repo, relative to your projects
-root, that the session bootstraps from (its `CLAUDE.md`). Tab-complete it from
-your projects directory. Use `.` to start at the projects root.
+This launches a new session named `epic-213-explicit-sessions:my-project`. The
+**workspace argument is required** on create — it's the repo, relative to your
+projects root, that the session bootstraps from (its `CLAUDE.md`). Tab-complete it
+from your projects directory; use `.` to start at the projects root.
 
-Re-running the same command **resumes your most recent session** for that repo,
-or starts a fresh one if none exists. "Pick up where I left off" is just running
-the command again — no flags, no session hunting.
+If a **visible session already holds that name**, create **errors** rather than
+silently shadowing it — it points you to `--resume` the existing one or pick
+another label. A label with a non-`epic-`/`adhoc-` prefix only **warns**; a
+structurally invalid slug (empty, or containing a `:` or whitespace) is rejected.
 
-!!! note "Most-recent, not lowest-numbered"
-    If you have several sessions for a repo, the default resumes the one you
-    used **most recently**, not the lowest slot number. The slot number is just
-    an identifier.
+### Attach to an existing session
+
+```bash
+vrg-vm session --resume epic-213-explicit-sessions:my-project
+```
+
+`--resume` resolves the **exact name** to its session and reconnects. It does not
+take a workspace argument — the workspace (and the memory slug that follows from
+it) is **derived from the resolved session**, so a resumed session always keeps
+its original repo context.
+
+Reconnect is deliberately strict:
+
+- A name that resolves to **no visible session errors** ("no session named X —
+  create it with `--label`") instead of spawning an empty session.
+- A name that somehow resolves to **two co-equal live sessions fails loud** — it
+  never silently picks one.
+
+### No verb: list and guide
+
+Running `vrg-vm session <workspace>` with **neither verb** does not launch
+anything. It lists the workspace's sessions, most-recent first, and names the two
+verbs:
+
+```text
+Sessions for this workspace (most recent first):
+  * epic-213-explicit-sessions:my-project
+    adhoc-triage-flake:my-project
+
+Name the session you want — choose one verb:
+  --label <label>   start a new session named <label>:<workspace>
+  --resume <name>   attach to an existing session by its exact name
+```
+
+(`*` marks an active session.) This replaces the old bare-command auto-resume: the
+command now guides you to name what you want rather than guessing.
 
 ## Choosing the model
 
 Set the model per session, or configure a default so you never type it:
 
 ```bash
-vrg-vm session --model opus my-project
+vrg-vm session --label epic-213-x --model opus my-project
 ```
 
 In `identities.toml`, `model` cascades (CLI flag → identity → top-level default):
@@ -83,23 +138,16 @@ id (`claude-opus-4-8`) both work.
 
 ## Running several agents on one repo
 
-Slots let you run more than one agent against the same identity + repo — say two
-windows on separate patches. Just run the command again; if your current session
-is busy, the next invocation starts a new slot automatically:
+Give each agent its own purpose-named session — that is all it takes to run
+several against the same repo at once:
 
 ```bash
-vrg-vm session my-project        # slot 01
-vrg-vm session my-project        # slot 02 (01 is busy)
+vrg-vm session --label epic-213-frontend my-project
+vrg-vm session --label adhoc-triage-flake my-project
 ```
 
-Target a specific slot explicitly:
-
-```bash
-vrg-vm session --slot 02 my-project
-```
-
-An explicit `--slot` is surgical: it resumes (or creates) exactly that slot, with
-no staleness prompt and no auto-archiving of siblings.
+Two windows, two distinct names, two independent transcripts. Reconnect to
+either by its exact name; there is no slot to track.
 
 ## Listing and reconnecting
 
@@ -108,91 +156,71 @@ vrg-vm list --sessions
 ```
 
 ```text
-IDENTITY         SLOT   WORKSPACE                            STATE     LAST ACTIVE
-──────────────── ────── ──────────────────────────────────── ───────── ────────────
-vergil           01     my-project                           active    2h
-vergil           02     vergil-project/vergil-tooling        idle      3d
+NAME                                    STATE     LAST ACTIVE
+──────────────────────────────────────  ───────── ────────────
+adhoc-triage-flake:my-project           active    2h
+epic-213-explicit-sessions:my-project   idle      3d
 ```
 
 It enumerates sessions across all your identity VMs, with how long since each was
-active. Filter by state:
+active. By default it shows only sessions active within **`session_recent_days`**
+(default **7**); older sessions are hidden from the listing but still exist and
+still reconnect by exact name. Filter and widen:
 
 | Flag | Shows |
 |---|---|
-| *(default)* | active + idle |
+| *(default)* | active + idle, within `session_recent_days` |
 | `--active` / `--idle` | just that state |
-| `--archived` | archived sessions (original name, archived time, age) |
-| `--all` | everything, including archived |
+| `--all` | every session regardless of age |
+
+```toml
+session_recent_days = 7   # display window for `list --sessions` (default 7)
+```
+
+`session_recent_days` cascades like `model` (identity → top-level → built-in) and
+must be at least 1. It is a **pure display filter** — nothing is moved, renamed,
+or aged out of existence; `--all` simply drops the window.
 
 This is the recovery tool. After closing a terminal, rebooting, or a
 `vrg-vm rebuild`, your sessions are still there — transcripts persist on the host
-and survive VM rebuilds — so you can see what existed and reconnect deliberately.
+and survive VM rebuilds — so you can see what exists and reconnect deliberately by
+name.
 
-## Staleness: keeping old context out of new work
+!!! note "A legacy name still resolves"
+    A session created under the old `identity:slot:workspace` scheme (or one
+    carrying an old `archived@…` marker) renders as an **opaque string** and still
+    reconnects by its exact name. The old naming behavior is gone, but nothing
+    stops resolving.
 
-Resuming a long-idle session drags weeks-old context back into the model, and
-stale context quietly pollutes current work — the model can't reliably tell which
-of its own context is out of date. So sessions age through three bands, governed
-by two configurable thresholds:
-
-| Band | Age (idle) | What happens |
-|---|---|---|
-| **fresh** | `< session_stale_days` (default **7**) | silently resumed |
-| **warn** | 7–14 days | you're prompted |
-| **stale** | `≥ session_archive_days` (default **14**) | auto-archived, you start fresh |
-
-In the **warn** band you get a prompt:
-
-```text
-Slot 02 for my-project was last active 9 days ago.
-[r]esume / [f]resh / [c]ancel?
-```
-
-In the **stale** band, the session is auto-archived at connection time (with a
-note) and you start clean — so you're never nagged about ancient sessions you've
-clearly abandoned, and a long enough absence simply gives you a clean slate.
-
-```toml
-session_stale_days   = 7    # warn above this
-session_archive_days = 14   # auto-archive above this (0 disables)
-```
-
-Both cascade like `model` (identity → top-level → built-in). Set
-`session_archive_days = 0` to turn auto-archiving off entirely.
-
-!!! note "Two different staleness thresholds"
-    **VM** staleness (default 3 days) prompts you to *rebuild the VM*.
-    **Session** staleness (7/14 days) governs *resuming a conversation*. They're
-    unrelated.
-
-### Starting fresh on purpose
+## Starting fresh on purpose
 
 ```bash
-vrg-vm session --fresh my-project
+vrg-vm session --fresh --label epic-213-x my-project
 ```
 
-`--fresh` archives the current session for that slot and starts a brand-new one
-under the same name. Use it whenever you want a clean slate without waiting for
-the staleness threshold.
+`--fresh` pairs with `--label`. If a visible session already holds that name, it
+is **retired via a supported rename** — renamed to `<name>~<timestamp>` — and a
+brand-new session is created under the clean name. The retired session **keeps its
+full history** and stays reconnectable by its suffixed name; nothing is ever
+deleted. Use it whenever you want a clean slate under a name you're already using.
 
-### Archived, never deleted
-
-Archiving never throws anything away. The old conversation is preserved and
-relabeled out of the active namespace; you can find it with
-`vrg-vm list --sessions --archived` and reconnect to it. Old transcripts are a
-record of *how* decisions were reached, so they're kept, not pruned.
+Because retiring is a rename (never a deletion), old transcripts remain a record
+of *how* decisions were reached — a navigable history keyed by purpose. "Never
+delete" is the point, not hoarding.
 
 ## The fork guardrail
 
 Claude Code has no session locking — resuming the same session in two terminals
 silently interleaves both conversations into one transcript. So the wrapper
-refuses to attach a second live client to an active session. That's a safety
+**refuses to attach a second live client to an active session**. That's a safety
 feature, not a limitation.
 
-When you want to branch off a busy session, fork it into a new slot:
+When you want to branch off a busy session, fork it — this maps to Claude's
+supported `--fork-session`, giving you an independent copy to experiment in
+without disturbing the original:
 
 ```bash
-vrg-vm session --slot 01 --fork my-project
+vrg-vm session --fork my-project
 ```
 
 ## `/clear` vs. a fresh session
@@ -202,16 +230,21 @@ history stays attached to the session and can be pulled back in. A **fresh
 session** is a stronger guarantee: a brand-new session with zero prior history.
 
 - Use **`/clear`** to free up context mid-task while staying in the same session.
-- Use **`--fresh`** (or accept the stale prompt's `[f]resh`) for a genuine clean
-  slate — new history, old one archived.
+- Use **`--fresh --label`** for a genuine clean slate — new history, with the old
+  session retired (renamed, never deleted).
+
+## Renaming a session
+
+Rename a session you're **in** with Claude's supported `/rename` — the natural way
+to promote a bare `adhoc-<slug>` to `epic-<N>-<slug>` once the epic number exists.
 
 ## Escape hatches
 
 Run something other than Claude with a `--` override:
 
 ```bash
-vrg-vm session my-project -- bash               # a shell in the VM
-vrg-vm session my-project -- claude --model opus  # extra Claude flags
+vrg-vm session my-project -- bash                 # a shell in the VM
+vrg-vm session --label epic-213-x my-project -- claude --model opus  # extra Claude flags
 ```
 
 A non-`claude` command (like `bash`) runs raw. A `claude` override still goes
@@ -220,27 +253,27 @@ through the naming/resume logic, with your extra flags appended.
 ## Examples at a glance
 
 ```bash
-# Start or resume your most-recent session for a repo
-vrg-vm session my-project
+# Create a purpose-named session
+vrg-vm session --label epic-213-explicit-sessions my-project
 
-# A second agent on the same repo
-vrg-vm session my-project
+# A second agent on the same repo, under its own name
+vrg-vm session --label adhoc-triage-flake my-project
 
 # See everything and reconnect after a reboot
 vrg-vm list --sessions
-vrg-vm session --slot 02 my-project
+vrg-vm session --resume epic-213-explicit-sessions:my-project
 
-# Browse and reconnect to archived sessions
-vrg-vm list --sessions --archived
+# Reveal sessions older than the recency window
+vrg-vm list --sessions --all
 
-# Clean slate, archiving the old session
-vrg-vm session --fresh my-project
+# Clean slate under a name you're already using (old one retired, never deleted)
+vrg-vm session --fresh --label epic-213-explicit-sessions my-project
 
 # Fork a busy session to experiment without disturbing it
-vrg-vm session --slot 01 --fork my-project
+vrg-vm session --fork my-project
 
 # Pick the model
-vrg-vm session --model opus my-project
+vrg-vm session --label epic-213-x --model opus my-project
 
 # Escape hatch: a raw shell
 vrg-vm session my-project -- bash
