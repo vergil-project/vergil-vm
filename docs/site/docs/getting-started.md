@@ -71,7 +71,7 @@ later by that exact name — see [Sessions](sessions.md).
 The typical workflow is to reconnect to a session by its exact name:
 
 ```bash
-vrg-vm session --resume epic-42-my-feature:my-project
+vrg-vm session --resume epic-42-my-feature my-project
 ```
 
 Not sure of the name? Run `vrg-vm session my-project` with no verb and
