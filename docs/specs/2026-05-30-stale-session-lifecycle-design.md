@@ -1,5 +1,19 @@
 # Stale-Session Lifecycle Design
 
+> **⚠️ SUPERSEDED by epic [vergil-project/.github#230 — Explicit, purpose-named
+> sessions](https://github.com/vergil-project/.github/issues/230).**
+>
+> The entire staleness/archive apparatus this design introduced — the
+> `archived@` marker, the fresh/warn/stale age bands, auto-archiving, and the
+> `session_stale_days` / `session_archive_days` thresholds — has been
+> **deleted**. It existed only to protect the auto-resume-most-recent guess;
+> making reconnect explicit by exact name removed the guess and with it the need
+> for the apparatus. Staleness is now a pure **recency display-filter** on
+> `list --sessions` (`session_recent_days`, default 7), and `--fresh` retires a
+> prior same-named session via a supported rename (never deletes). Retained here
+> as **historical record** — see [`sessions.md`](../site/docs/sessions.md) for
+> the current model.
+
 **Issues:**
 - [vergil-vm #82 — Design: stale-session lifecycle for vrg-vm session](https://github.com/vergil-project/vergil-vm/issues/82)
 - [vergil-tooling #1323 — Stale-session lifecycle: --fresh, age-based resume cutoff, and pruning](https://github.com/vergil-project/vergil-tooling/issues/1323)

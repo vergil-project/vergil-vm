@@ -1,5 +1,15 @@
 # Deterministic Session Naming Design
 
+> **⚠️ SUPERSEDED by epic [vergil-project/.github#230 — Explicit, purpose-named
+> sessions](https://github.com/vergil-project/.github/issues/230).**
+>
+> This design's `identity:slot:workspace` naming, `--slot` selection, and
+> auto-resume-most-recent default have all been **replaced**. Sessions are now
+> named `label:workspace` (identity dropped); creation is explicit
+> (`--label`), reconnect is by exact name (`--resume`), and `--slot` /
+> auto-resume are removed. Retained here as **historical record** — see
+> [`sessions.md`](../site/docs/sessions.md) for the current model.
+
 **Issues:**
 - [vergil-vm #73 — Deterministic session naming from identity and project path](https://github.com/vergil-project/vergil-vm/issues/73)
 - [vergil-tooling #1292 — vrg-vm session: default command to claude, identity to vergil](https://github.com/vergil-project/vergil-tooling/issues/1292)
