@@ -2453,18 +2453,23 @@ downloads packages and tools).</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>VM &#39;vergil&#39; is ready.
 </code></pre></div>
 <h2 id="3-launch-a-claude-code-session">3. Launch a Claude Code session<a class="headerlink" href="#3-launch-a-claude-code-session" title="Permanent link">&para;</a></h2>
-<p>Start a sandboxed Claude Code session:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>vrg-vm<span class="w"> </span>session<span class="w"> </span>my-project
+<p>Start a sandboxed Claude Code session by giving it a purpose name:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>vrg-vm<span class="w"> </span>session<span class="w"> </span>--label<span class="w"> </span>epic-42-my-feature<span class="w"> </span>my-project
 </code></pre></div>
 <p>This connects to the VM (starting it if needed) and launches Claude
 Code with your working directory set to <code>my-project</code> (a subdirectory
 of your configured projects path). The agent has access only to your
 projects directory and can only authenticate to GitHub repositories
 granted to your App.</p>
+<p>The session is named <code>&lt;label&gt;:&lt;workspace&gt;</code>, so you can reconnect to it
+later by that exact name — see <a href="../sessions/">Sessions</a>.</p>
 <h2 id="day-to-day-usage">Day-to-day usage<a class="headerlink" href="#day-to-day-usage" title="Permanent link">&para;</a></h2>
-<p>The typical workflow is:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>vrg-vm<span class="w"> </span>session<span class="w"> </span>my-project
+<p>The typical workflow is to reconnect to a session by its exact name:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>vrg-vm<span class="w"> </span>session<span class="w"> </span>--resume<span class="w"> </span>epic-42-my-feature:my-project
 </code></pre></div>
+<p>Not sure of the name? Run <code>vrg-vm session my-project</code> with no verb and
+it lists the workspace's sessions and points you at <code>--label</code> (create)
+and <code>--resume</code> (attach).</p>
 <p>When you're done, cancel out of Claude Code and the session ends.
 That's it — there's nothing else to manage.</p>
 <p>These are ephemeral, disposable sessions. Rebuild your VM frequently
@@ -2475,8 +2480,8 @@ to stay current with the latest tooling and provisioning:</p>
 you to rebuild automatically.</p>
 <h2 id="next-steps">Next Steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../sessions/">Sessions</a> — naming, resume, slots, <code>--fresh</code>, staleness, and
-  <code>vrg-vm list --sessions</code></li>
+<li><a href="../sessions/">Sessions</a> — naming, <code>--label</code>/<code>--resume</code>, <code>--fresh</code>, the
+  recency filter, and <code>vrg-vm list --sessions</code></li>
 <li><a href="../architecture/">Architecture</a> — understand the VM anatomy and
   provisioning pipeline</li>
 <li><a href="../operations/build-and-test/">Build and Test</a> — run the test suite
