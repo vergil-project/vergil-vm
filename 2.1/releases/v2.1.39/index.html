@@ -11,7 +11,7 @@
       
       
       
-        <link rel="prev" href="../">
+        <link rel="prev" href="../v2.1.40/">
       
       
         <link rel="next" href="../v2.1.38/">
@@ -602,6 +602,8 @@
       
         
       
+        
+      
     
     
     
@@ -657,6 +659,34 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../v2.1.40/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.40
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
               
             
               
@@ -2329,6 +2359,7 @@ cd-release.yml@v2.1 now requires actions:read for its CI-evidence harvest to dow
 The dual-venv model is retired (epic vergil-project/.github#179): the dev container now structurally masks /workspace/.venv, so a single host .venv is safe and .venv-host is obsolete. Remove the export from every VM shell-env provisioning site (30-toolchain.sh, agent.yaml, azure and gcp cloud-init) along with its now-dead rationale comment; invert tests/test_base.sh to assert the export is provisioned nowhere; and replace the dead .venv-host/ gitignore entry with .venv/. Refs #282.</p>
 </li>
 </ul>
+<p><strong>CI Evidence:</strong> All gates passed — full audit bundle available. <a href="https://github.com/vergil-project/vergil-vm/releases/download/v2.1.39/v2.1.39-ci-evidence.tar.gz">Download →</a></p>
 
 
 
