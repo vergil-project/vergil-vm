@@ -51,10 +51,10 @@ VM 'vergil' is ready.
 
 ## 3. Launch a Claude Code session
 
-Start a sandboxed Claude Code session:
+Start a sandboxed Claude Code session by giving it a purpose name:
 
 ```bash
-vrg-vm session my-project
+vrg-vm session --label epic-42-my-feature my-project
 ```
 
 This connects to the VM (starting it if needed) and launches Claude
@@ -63,13 +63,20 @@ of your configured projects path). The agent has access only to your
 projects directory and can only authenticate to GitHub repositories
 granted to your App.
 
+The session is named `<label>:<workspace>`, so you can reconnect to it
+later by that exact name — see [Sessions](sessions.md).
+
 ## Day-to-day usage
 
-The typical workflow is:
+The typical workflow is to reconnect to a session by its exact name:
 
 ```bash
-vrg-vm session my-project
+vrg-vm session --resume epic-42-my-feature:my-project
 ```
+
+Not sure of the name? Run `vrg-vm session my-project` with no verb and
+it lists the workspace's sessions and points you at `--label` (create)
+and `--resume` (attach).
 
 When you're done, cancel out of Claude Code and the session ends.
 That's it — there's nothing else to manage.
@@ -86,8 +93,8 @@ you to rebuild automatically.
 
 ## Next Steps
 
-- [Sessions](sessions.md) — naming, resume, slots, `--fresh`, staleness, and
-  `vrg-vm list --sessions`
+- [Sessions](sessions.md) — naming, `--label`/`--resume`, `--fresh`, the
+  recency filter, and `vrg-vm list --sessions`
 - [Architecture](architecture/index.md) — understand the VM anatomy and
   provisioning pipeline
 - [Build and Test](operations/build-and-test.md) — run the test suite
