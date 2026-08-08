@@ -82,13 +82,15 @@ structurally invalid slug (empty, or containing a `:` or whitespace) is rejected
 ### Attach to an existing session
 
 ```bash
-vrg-vm session --resume epic-213-explicit-sessions:my-project
+vrg-vm session --resume epic-213-explicit-sessions my-project
 ```
 
-`--resume` resolves the **exact name** to its session and reconnects. It does not
-take a workspace argument — the workspace (and the memory slug that follows from
-it) is **derived from the resolved session**, so a resumed session always keeps
-its original repo context.
+`--resume` takes a **bare label** plus the **workspace positional**, which are
+composed into the full session name `<label>:<workspace>` and resolved to an
+existing session. The workspace positional is **required** — it anchors the
+session's `CLAUDE.md`/memory bootstrap, exactly as on create. A full
+`label:workspace` is still accepted, but its workspace segment must **match** the
+positional, otherwise the command errors rather than guess which one you meant.
 
 Reconnect is deliberately strict:
 
@@ -208,20 +210,12 @@ Because retiring is a rename (never a deletion), old transcripts remain a record
 of *how* decisions were reached — a navigable history keyed by purpose. "Never
 delete" is the point, not hoarding.
 
-## The fork guardrail
+## The no-double-attach guardrail
 
 Claude Code has no session locking — resuming the same session in two terminals
 silently interleaves both conversations into one transcript. So the wrapper
 **refuses to attach a second live client to an active session**. That's a safety
 feature, not a limitation.
-
-When you want to branch off a busy session, fork it — this maps to Claude's
-supported `--fork-session`, giving you an independent copy to experiment in
-without disturbing the original:
-
-```bash
-vrg-vm session --fork my-project
-```
 
 ## `/clear` vs. a fresh session
 
@@ -261,16 +255,13 @@ vrg-vm session --label adhoc-triage-flake my-project
 
 # See everything and reconnect after a reboot
 vrg-vm list --sessions
-vrg-vm session --resume epic-213-explicit-sessions:my-project
+vrg-vm session --resume epic-213-explicit-sessions my-project
 
 # Reveal sessions older than the recency window
 vrg-vm list --sessions --all
 
 # Clean slate under a name you're already using (old one retired, never deleted)
 vrg-vm session --fresh --label epic-213-explicit-sessions my-project
-
-# Fork a busy session to experiment without disturbing it
-vrg-vm session --fork my-project
 
 # Pick the model
 vrg-vm session --label epic-213-x --model opus my-project

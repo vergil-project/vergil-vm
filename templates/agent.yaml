@@ -138,7 +138,12 @@ provision:
       jq ripgrep fzf \
       zsh vim tmux nano \
       python3 python3-venv \
+      socat \
       chrony
+
+    # socat — the port-forward relay proxy (templates/provision/80-port-forwards.sh,
+    # issue #298). Its -T idle timeout reaps half-dead connections that
+    # systemd-socket-proxyd leaked forever.
 
     # chrony — reliable, suspend-resilient time + NTP authority for nested
     # libvirt guests (issue #187). Installed here (network-bound, first-boot
@@ -533,11 +538,19 @@ provision:
     if [ -n "$PLUGINS" ]; then
       if ! command -v vagrant >/dev/null 2>&1; then
         if ! command -v gem >/dev/null 2>&1; then
-          printf 'ERROR: vagrant_plugins declared but ruby/gem is unavailable — declare ruby-dev (plus gcc, make, pkg-config) in the repo vergil.toml [vm] packages\n' \
+          printf 'ERROR: vagrant_plugins declared but ruby/gem is unavailable — declare ruby-dev (plus build-essential, pkg-config) in the repo vergil.toml [vm] packages\n' \
             | tee /etc/vergil/provision-error >&2
           exit 1
         fi
-        gem install vagrant
+        # The vagrant gem compiles native extensions, so a complete C toolchain must be
+        # present. Trap the failure and name it (#244) — a bare `gem install` left no
+        # provision-error, so a missing build dep buried itself in raw gem output. The
+        # usual culprit on a minimal base is no libc6-dev (declare build-essential).
+        if ! gem install vagrant; then
+          printf 'ERROR: "gem install vagrant" failed to build its native extensions — declare build-essential (gcc/g++/make/libc6-dev) in the repo vergil.toml [vm] packages; the minimal cloud base ships no libc6-dev, so a "stdio.h: No such file" compile error here means the C toolchain is incomplete\n' \
+            | tee /etc/vergil/provision-error >&2
+          exit 1
+        fi
       fi
       for _p in $PLUGINS; do
         # Idempotency guard (#177): `vagrant plugin install` contacts
@@ -759,15 +772,18 @@ provision:
 # 0.0.0.0 bind is what Lima auto-forwards to the Mac's localhost (verified —
 # limactl binds 127.0.0.1:<port> on the host with no config change or restart).
 #
-# Each entry becomes a socket-activated systemd-socket-proxyd relay (ships with
-# systemd — no extra packages): a .socket binding 0.0.0.0:<port> and a matching
-# .service that proxies accepted connections to <to>. systemd keeps it alive
-# across reboots; a down guest yields a passed-through connection refusal
-# (transparent). The .service is hardened to survive a downstream restart on
-# its own (Restart=always + no start-rate-limit) — see the unit comments and
-# issue #192. PORT_FORWARDS is ";"-joined "port|host:port" records; empty
-# leaves the base box untouched. The marker records the declared-forward count
-# for the in-guest test suite (tests/test_port_forwards.sh).
+# Each entry becomes a systemd .service running a forking socat relay: it binds
+# 0.0.0.0:<port> and proxies each accepted connection to <to>. socat replaced
+# systemd-socket-proxyd (#298) because proxyd has no idle timeout and leaked
+# half-dead connections (zero-window persist) forever until the relay hit its fd
+# limit; socat's -T reaps a silent connection and fork isolates each one, curing
+# the leak. systemd keeps it alive across reboots; a down guest yields a
+# passed-through connection refusal (transparent). The .service is hardened to
+# survive a downstream restart on its own (Restart=always + no start-rate-limit)
+# — see the unit comments and issue #192. PORT_FORWARDS is ";"-joined
+# "port|host:port" records; empty leaves the base box untouched. The marker
+# records the declared-forward count for the in-guest test suite
+# (tests/test_port_forwards.sh).
 - mode: system
   script: |
     #!/bin/bash
@@ -778,6 +794,12 @@ provision:
 
     mkdir -p /etc/vergil
     FORWARDS="$PORT_FORWARDS"
+
+    # Idle timeout (seconds) for each relay connection. socat -T reaps a connection
+    # whose data channel is silent in both directions this long, curing the
+    # zero-window-persist leak (#298). 120s sits well above any normal request gap
+    # or live-panel heartbeat and far below the old "leaks forever"; retune here.
+    _RELAY_IDLE_TIMEOUT=120
 
     if [ -z "$FORWARDS" ]; then
       printf '0\n' > /etc/vergil/port-forwards.requested
@@ -795,51 +817,46 @@ provision:
         exit 1
       fi
       _unit="vergil-portforward-${_port}"
-      # Heredoc bodies/terminators sit at the YAML block-scalar base indent (4
-      # spaces) — flush-left after dedent — so the unit-file lines and the
-      # terminators land at column 0 in the executed script (cf. the
+      # The heredoc body/terminator sit at the YAML block-scalar base indent (4
+      # spaces) — flush-left after dedent — so the unit-file lines and the SERVICE
+      # terminator land at column 0 in the executed script (cf. the
       # managed-settings.json heredoc above). A less-indented line would end the
       # YAML block; a non-column-0 terminator would never close the heredoc.
-      cat > "/etc/systemd/system/${_unit}.socket" <<SOCKET
-    [Unit]
-    Description=Vergil port-forward relay socket (:${_port} -> ${_to})
-
-    [Socket]
-    ListenStream=0.0.0.0:${_port}
-
-    [Install]
-    WantedBy=sockets.target
-    SOCKET
       cat > "/etc/systemd/system/${_unit}.service" <<SERVICE
     [Unit]
     Description=Vergil port-forward relay (:${_port} -> ${_to})
-    Requires=${_unit}.socket
-    After=${_unit}.socket
-    # Never let a restart storm wedge the relay (issue #192). When the
-    # downstream restarts it can RST the proxyd's held connections and the
-    # proxyd exits; Restart= below then respawns it. Under a rapid bounce
-    # those respawns would trip systemd's default start-rate-limiter, fail
-    # the unit AND cascade-fail the .socket, and the relay then accepts but
-    # resets every new connection until a manual restart — the exact symptom
-    # reported. Disabling the limiter keeps respawns unbounded so the relay
+    # Never let a restart storm wedge the relay (issue #192): a rapid bounce of the
+    # listener would trip systemd's default start-rate-limiter, latch the unit
+    # failed, and the relay would then accept-but-reset every new connection until a
+    # manual restart. Disabling the limiter keeps respawns unbounded so the relay
     # always recovers on its own.
     StartLimitIntervalSec=0
 
     [Service]
-    ExecStart=/usr/lib/systemd/systemd-socket-proxyd ${_to}
-    # systemd-socket-proxyd is a single long-lived process that inherits the
-    # listening socket (its only supported mode — Accept=no; it cannot proxy
-    # a per-connection accepted socket, so the Accept=yes idiom resets every
-    # connection). Respawn it whenever it exits so a downstream restart that
-    # kills it is recovered transparently; the replacement re-inherits the
-    # socket and re-dials the current downstream per new connection.
+    # socat, not systemd-socket-proxyd (#298). proxyd has no idle/inactivity timeout
+    # and TCP keepalive never applies in TCP zero-window persist, so a client that
+    # vanishes mid-transfer strands its fds and ~600 KB of Send-Q forever; under
+    # sustained use the relay hits its NOFILE limit and resets every client while
+    # still reporting active. socat's -T reaps a connection whose data channel is
+    # silent for ${_RELAY_IDLE_TIMEOUT}s, freeing both fds and the Send-Q, and fork
+    # isolates every connection in its own child so a single wedge can never exhaust
+    # the whole relay. TCP4-LISTEN + bind=0.0.0.0 keeps the IPv4 0.0.0.0 listen that
+    # triggers Lima's auto-forward to the Mac; reuseaddr lets a respawn rebind
+    # immediately through TIME_WAIT.
+    ExecStart=/usr/bin/socat -T ${_RELAY_IDLE_TIMEOUT} TCP4-LISTEN:${_port},bind=0.0.0.0,fork,reuseaddr TCP:${_to}
+    # A downstream restart only kills the affected per-connection child, not the
+    # parent listener, so recovery is automatic; Restart= here guards the rarer case
+    # of the listener process itself crashing.
     Restart=always
     RestartSec=100ms
+
+    [Install]
+    WantedBy=multi-user.target
     SERVICE
-      # Enable (boot persistence) and start now. A port already in use makes
-      # the socket start fail; set -e then aborts the build loudly (issue #130)
-      # rather than shipping a VM whose declared forward never bound.
-      if ! systemctl enable --now "${_unit}.socket"; then
+      # Enable (boot persistence) and start now. A port already in use makes the
+      # service start fail; set -e then aborts the build loudly (issue #130) rather
+      # than shipping a VM whose declared forward never bound.
+      if ! systemctl enable --now "${_unit}.service"; then
         printf 'ERROR: port-forward relay for :%s failed to start (port already in use?)\n' \
           "$_port" | tee /etc/vergil/provision-error >&2
         exit 1
