@@ -597,6 +597,8 @@
       
         
       
+        
+      
     
     
     
@@ -649,6 +651,34 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../releases/v2.1.41/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.41
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
               
             
               
@@ -1957,10 +1987,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#the-fork-guardrail" class="md-nav__link">
+  <a href="#the-no-double-attach-guardrail" class="md-nav__link">
     <span class="md-ellipsis">
       
-        The fork guardrail
+        The no-double-attach guardrail
       
     </span>
   </a>
@@ -2571,10 +2601,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#the-fork-guardrail" class="md-nav__link">
+  <a href="#the-no-double-attach-guardrail" class="md-nav__link">
     <span class="md-ellipsis">
       
-        The fork guardrail
+        The no-double-attach guardrail
       
     </span>
   </a>
@@ -2746,12 +2776,14 @@ silently shadowing it — it points you to <code>--resume</code> the existing on
 another label. A label with a non-<code>epic-</code>/<code>adhoc-</code> prefix only <strong>warns</strong>; a
 structurally invalid slug (empty, or containing a <code>:</code> or whitespace) is rejected.</p>
 <h3 id="attach-to-an-existing-session">Attach to an existing session<a class="headerlink" href="#attach-to-an-existing-session" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>vrg-vm<span class="w"> </span>session<span class="w"> </span>--resume<span class="w"> </span>epic-213-explicit-sessions:my-project
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>vrg-vm<span class="w"> </span>session<span class="w"> </span>--resume<span class="w"> </span>epic-213-explicit-sessions<span class="w"> </span>my-project
 </code></pre></div>
-<p><code>--resume</code> resolves the <strong>exact name</strong> to its session and reconnects. It does not
-take a workspace argument — the workspace (and the memory slug that follows from
-it) is <strong>derived from the resolved session</strong>, so a resumed session always keeps
-its original repo context.</p>
+<p><code>--resume</code> takes a <strong>bare label</strong> plus the <strong>workspace positional</strong>, which are
+composed into the full session name <code>&lt;label&gt;:&lt;workspace&gt;</code> and resolved to an
+existing session. The workspace positional is <strong>required</strong> — it anchors the
+session's <code>CLAUDE.md</code>/memory bootstrap, exactly as on create. A full
+<code>label:workspace</code> is still accepted, but its workspace segment must <strong>match</strong> the
+positional, otherwise the command errors rather than guess which one you meant.</p>
 <p>Reconnect is deliberately strict:</p>
 <ul>
 <li>A name that resolves to <strong>no visible session errors</strong> ("no session named X —
@@ -2854,16 +2886,11 @@ deleted. Use it whenever you want a clean slate under a name you're already usin
 <p>Because retiring is a rename (never a deletion), old transcripts remain a record
 of <em>how</em> decisions were reached — a navigable history keyed by purpose. "Never
 delete" is the point, not hoarding.</p>
-<h2 id="the-fork-guardrail">The fork guardrail<a class="headerlink" href="#the-fork-guardrail" title="Permanent link">&para;</a></h2>
+<h2 id="the-no-double-attach-guardrail">The no-double-attach guardrail<a class="headerlink" href="#the-no-double-attach-guardrail" title="Permanent link">&para;</a></h2>
 <p>Claude Code has no session locking — resuming the same session in two terminals
 silently interleaves both conversations into one transcript. So the wrapper
 <strong>refuses to attach a second live client to an active session</strong>. That's a safety
 feature, not a limitation.</p>
-<p>When you want to branch off a busy session, fork it — this maps to Claude's
-supported <code>--fork-session</code>, giving you an independent copy to experiment in
-without disturbing the original:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>vrg-vm<span class="w"> </span>session<span class="w"> </span>--fork<span class="w"> </span>my-project
-</code></pre></div>
 <h2 id="clear-vs-a-fresh-session"><code>/clear</code> vs. a fresh session<a class="headerlink" href="#clear-vs-a-fresh-session" title="Permanent link">&para;</a></h2>
 <p>Claude's in-session <code>/clear</code> resets the <em>active context</em> but the conversation
 history stays attached to the session and can be pulled back in. A <strong>fresh
@@ -2878,36 +2905,33 @@ session</strong> is a stronger guarantee: a brand-new session with zero prior hi
 to promote a bare <code>adhoc-&lt;slug&gt;</code> to <code>epic-&lt;N&gt;-&lt;slug&gt;</code> once the epic number exists.</p>
 <h2 id="escape-hatches">Escape hatches<a class="headerlink" href="#escape-hatches" title="Permanent link">&para;</a></h2>
 <p>Run something other than Claude with a <code>--</code> override:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>vrg-vm<span class="w"> </span>session<span class="w"> </span>my-project<span class="w"> </span>--<span class="w"> </span>bash<span class="w">                 </span><span class="c1"># a shell in the VM</span>
-<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>vrg-vm<span class="w"> </span>session<span class="w"> </span>--label<span class="w"> </span>epic-213-x<span class="w"> </span>my-project<span class="w"> </span>--<span class="w"> </span>claude<span class="w"> </span>--model<span class="w"> </span>opus<span class="w">  </span><span class="c1"># extra Claude flags</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>vrg-vm<span class="w"> </span>session<span class="w"> </span>my-project<span class="w"> </span>--<span class="w"> </span>bash<span class="w">                 </span><span class="c1"># a shell in the VM</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>vrg-vm<span class="w"> </span>session<span class="w"> </span>--label<span class="w"> </span>epic-213-x<span class="w"> </span>my-project<span class="w"> </span>--<span class="w"> </span>claude<span class="w"> </span>--model<span class="w"> </span>opus<span class="w">  </span><span class="c1"># extra Claude flags</span>
 </code></pre></div>
 <p>A non-<code>claude</code> command (like <code>bash</code>) runs raw. A <code>claude</code> override still goes
 through the naming/resume logic, with your extra flags appended.</p>
 <h2 id="examples-at-a-glance">Examples at a glance<a class="headerlink" href="#examples-at-a-glance" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="c1"># Create a purpose-named session</span>
-<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>vrg-vm<span class="w"> </span>session<span class="w"> </span>--label<span class="w"> </span>epic-213-explicit-sessions<span class="w"> </span>my-project
-<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>
-<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="c1"># A second agent on the same repo, under its own name</span>
-<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>vrg-vm<span class="w"> </span>session<span class="w"> </span>--label<span class="w"> </span>adhoc-triage-flake<span class="w"> </span>my-project
-<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a>
-<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a><span class="c1"># See everything and reconnect after a reboot</span>
-<a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a>vrg-vm<span class="w"> </span>list<span class="w"> </span>--sessions
-<a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a>vrg-vm<span class="w"> </span>session<span class="w"> </span>--resume<span class="w"> </span>epic-213-explicit-sessions:my-project
-<a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a>
-<a id="__codelineno-14-11" name="__codelineno-14-11" href="#__codelineno-14-11"></a><span class="c1"># Reveal sessions older than the recency window</span>
-<a id="__codelineno-14-12" name="__codelineno-14-12" href="#__codelineno-14-12"></a>vrg-vm<span class="w"> </span>list<span class="w"> </span>--sessions<span class="w"> </span>--all
-<a id="__codelineno-14-13" name="__codelineno-14-13" href="#__codelineno-14-13"></a>
-<a id="__codelineno-14-14" name="__codelineno-14-14" href="#__codelineno-14-14"></a><span class="c1"># Clean slate under a name you&#39;re already using (old one retired, never deleted)</span>
-<a id="__codelineno-14-15" name="__codelineno-14-15" href="#__codelineno-14-15"></a>vrg-vm<span class="w"> </span>session<span class="w"> </span>--fresh<span class="w"> </span>--label<span class="w"> </span>epic-213-explicit-sessions<span class="w"> </span>my-project
-<a id="__codelineno-14-16" name="__codelineno-14-16" href="#__codelineno-14-16"></a>
-<a id="__codelineno-14-17" name="__codelineno-14-17" href="#__codelineno-14-17"></a><span class="c1"># Fork a busy session to experiment without disturbing it</span>
-<a id="__codelineno-14-18" name="__codelineno-14-18" href="#__codelineno-14-18"></a>vrg-vm<span class="w"> </span>session<span class="w"> </span>--fork<span class="w"> </span>my-project
-<a id="__codelineno-14-19" name="__codelineno-14-19" href="#__codelineno-14-19"></a>
-<a id="__codelineno-14-20" name="__codelineno-14-20" href="#__codelineno-14-20"></a><span class="c1"># Pick the model</span>
-<a id="__codelineno-14-21" name="__codelineno-14-21" href="#__codelineno-14-21"></a>vrg-vm<span class="w"> </span>session<span class="w"> </span>--label<span class="w"> </span>epic-213-x<span class="w"> </span>--model<span class="w"> </span>opus<span class="w"> </span>my-project
-<a id="__codelineno-14-22" name="__codelineno-14-22" href="#__codelineno-14-22"></a>
-<a id="__codelineno-14-23" name="__codelineno-14-23" href="#__codelineno-14-23"></a><span class="c1"># Escape hatch: a raw shell</span>
-<a id="__codelineno-14-24" name="__codelineno-14-24" href="#__codelineno-14-24"></a>vrg-vm<span class="w"> </span>session<span class="w"> </span>my-project<span class="w"> </span>--<span class="w"> </span>bash
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="c1"># Create a purpose-named session</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>vrg-vm<span class="w"> </span>session<span class="w"> </span>--label<span class="w"> </span>epic-213-explicit-sessions<span class="w"> </span>my-project
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="c1"># A second agent on the same repo, under its own name</span>
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>vrg-vm<span class="w"> </span>session<span class="w"> </span>--label<span class="w"> </span>adhoc-triage-flake<span class="w"> </span>my-project
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>
+<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="c1"># See everything and reconnect after a reboot</span>
+<a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a>vrg-vm<span class="w"> </span>list<span class="w"> </span>--sessions
+<a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a>vrg-vm<span class="w"> </span>session<span class="w"> </span>--resume<span class="w"> </span>epic-213-explicit-sessions<span class="w"> </span>my-project
+<a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a>
+<a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a><span class="c1"># Reveal sessions older than the recency window</span>
+<a id="__codelineno-13-12" name="__codelineno-13-12" href="#__codelineno-13-12"></a>vrg-vm<span class="w"> </span>list<span class="w"> </span>--sessions<span class="w"> </span>--all
+<a id="__codelineno-13-13" name="__codelineno-13-13" href="#__codelineno-13-13"></a>
+<a id="__codelineno-13-14" name="__codelineno-13-14" href="#__codelineno-13-14"></a><span class="c1"># Clean slate under a name you&#39;re already using (old one retired, never deleted)</span>
+<a id="__codelineno-13-15" name="__codelineno-13-15" href="#__codelineno-13-15"></a>vrg-vm<span class="w"> </span>session<span class="w"> </span>--fresh<span class="w"> </span>--label<span class="w"> </span>epic-213-explicit-sessions<span class="w"> </span>my-project
+<a id="__codelineno-13-16" name="__codelineno-13-16" href="#__codelineno-13-16"></a>
+<a id="__codelineno-13-17" name="__codelineno-13-17" href="#__codelineno-13-17"></a><span class="c1"># Pick the model</span>
+<a id="__codelineno-13-18" name="__codelineno-13-18" href="#__codelineno-13-18"></a>vrg-vm<span class="w"> </span>session<span class="w"> </span>--label<span class="w"> </span>epic-213-x<span class="w"> </span>--model<span class="w"> </span>opus<span class="w"> </span>my-project
+<a id="__codelineno-13-19" name="__codelineno-13-19" href="#__codelineno-13-19"></a>
+<a id="__codelineno-13-20" name="__codelineno-13-20" href="#__codelineno-13-20"></a><span class="c1"># Escape hatch: a raw shell</span>
+<a id="__codelineno-13-21" name="__codelineno-13-21" href="#__codelineno-13-21"></a>vrg-vm<span class="w"> </span>session<span class="w"> </span>my-project<span class="w"> </span>--<span class="w"> </span>bash
 </code></pre></div>
 <h2 id="see-also">See also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
