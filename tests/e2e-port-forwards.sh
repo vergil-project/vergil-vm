@@ -5,7 +5,7 @@
 # full data path the feature promises:
 #
 #   Mac localhost:<port> -> (Lima auto-forward) -> VM 0.0.0.0:<port>
-#     -> (systemd-socket-proxyd) -> <to>
+#     -> (socat relay) -> <to>
 #
 # The "<to>" target is a throwaway HTTP listener started INSIDE the VM on a
 # loopback port, standing in for the nested libvirt guest the feature really
@@ -44,18 +44,20 @@ limactl create --name="${INSTANCE}" --tty=false \
   "${TEMPLATE}"
 limactl start "${INSTANCE}" --tty=false
 
-# 1. The relay socket unit is active and bound on 0.0.0.0:<port> in the VM.
-#    The 0.0.0.0 bind is the precondition for Lima's auto-forward.
-limactl shell "${INSTANCE}" -- systemctl is-active --quiet "${UNIT}.socket" \
-  || fail "relay socket ${UNIT}.socket is not active"
+# 1. The relay service unit is active and bound on 0.0.0.0:<port> in the VM.
+#    socat binds the listener directly (no socket-activation unit); that 0.0.0.0
+#    bind is the precondition for Lima's auto-forward.
+limactl shell "${INSTANCE}" -- systemctl is-active --quiet "${UNIT}.service" \
+  || fail "relay service ${UNIT}.service is not active"
 limactl shell "${INSTANCE}" -- ss -ltn \
   | grep -q "0.0.0.0:${VM_PORT}" \
   || fail "relay is not listening on 0.0.0.0:${VM_PORT} in the VM"
 
-# 2. The relay's proxy target matches what was declared.
-limactl shell "${INSTANCE}" -- grep -q "systemd-socket-proxyd ${TARGET}" \
+# 2. The relay proxies to the declared target via socat, and carries the -T
+#    idle-timeout that reaps half-dead connections (issue #298 — the leak fix).
+limactl shell "${INSTANCE}" -- grep -qE "/socat -T [0-9]+ .* TCP:${TARGET}\$" \
   "/etc/systemd/system/${UNIT}.service" \
-  || fail "relay service does not proxy to ${TARGET}"
+  || fail "relay service does not run 'socat -T <n> ... TCP:${TARGET}'"
 
 # 3. Stand up the stand-in "nested guest": a detached HTTP listener on the VM's
 #    loopback target port. setsid+nohup so it outlives this shell channel.
@@ -96,16 +98,17 @@ done
 #
 #    5a. A plain downstream restart (the issue's literal acceptance criterion):
 #        kill the stand-in "nested guest" listener and start a fresh one, then
-#        reconnect through the relay. The proxyd re-dials the current downstream.
+#        reconnect through the relay. A fresh connection re-dials the current
+#        downstream.
 #
-#    5b. A restart *storm* (the actual root cause): repeatedly kill the proxyd
-#        while driving connections. The pre-#192 unit had no Restart= and the
-#        default start-rate-limiter, so a storm drove the .service AND its
-#        .socket into `failed` — the relay then accepted-but-reset every new
-#        connection until a manual `systemctl restart`. The hardened unit
-#        (Restart=always + StartLimitIntervalSec=0) must instead stay live and
-#        keep serving. This sub-case wedges the old unit and passes the new one,
-#        so it is the real regression guard.
+#    5b. A restart *storm* (the actual root cause): repeatedly kill the relay
+#        listener while driving connections. The pre-#192 unit had no Restart=
+#        and the default start-rate-limiter, so a storm drove the unit into
+#        `failed` — the relay then accepted-but-reset every new connection until
+#        a manual `systemctl restart`. The hardened unit (Restart=always +
+#        StartLimitIntervalSec=0) must instead stay live and keep serving. This
+#        sub-case wedges the old unit and passes the new one, so it is the real
+#        regression guard.
 #
 # We never run `systemctl restart` on a relay unit anywhere below — recovery
 # must come entirely from the unit's own restart policy.
@@ -128,11 +131,13 @@ done
 [ "${recovered:-0}" = 1 ] \
   || fail "relay did not recover after a plain downstream restart (issue #192)"
 
-# 5b. Restart storm: kill the proxyd repeatedly while connecting. Eight kills in
-#     ~2s comfortably exceeds systemd's default 5-starts-in-10s limit, so the
-#     pre-#192 unit would latch `failed` here.
+# 5b. Restart storm: kill the socat listener repeatedly while connecting. Eight
+#     kills in ~2s comfortably exceeds systemd's default 5-starts-in-10s limit,
+#     so the pre-#192 unit would latch `failed` here. The pattern matches the
+#     relay's own listener (TCP4-LISTEN:<port>) so it never touches an unrelated
+#     socat.
 for _ in $(seq 1 8); do
-  limactl shell "${INSTANCE}" -- pkill -f "systemd-socket-proxyd ${TARGET}" || true
+  limactl shell "${INSTANCE}" -- pkill -f "socat -T .* TCP4-LISTEN:${VM_PORT}," || true
   limactl shell "${INSTANCE}" -- \
     curl -fsS -o /dev/null --max-time 2 "http://127.0.0.1:${VM_PORT}/" || true
   sleep 0.25
@@ -147,13 +152,11 @@ for _ in $(seq 1 30); do
   sleep 1
 done
 [ "${storm_ok:-0}" = 1 ] \
-  || fail "relay wedged after a proxyd restart storm — start-rate-limiter not disabled? (issue #192 regression)"
+  || fail "relay wedged after a socat restart storm — start-rate-limiter not disabled? (issue #192 regression)"
 
-# Both relay units must still be live (not latched into `failed`), and still the
-# same socket-activated units we never manually restarted.
-limactl shell "${INSTANCE}" -- systemctl is-active --quiet "${UNIT}.socket" \
-  || fail "relay socket ${UNIT}.socket is not active after the storm"
+# The relay service must still be live (not latched into `failed`), the same unit
+# we never manually restarted.
 limactl shell "${INSTANCE}" -- systemctl is-active --quiet "${UNIT}.service" \
   || fail "relay service ${UNIT}.service is not active after the storm"
 
-echo "PASS: port-forward relay end-to-end (socket bind + proxy target + host auto-forward reachability + downstream-restart + storm recovery)"
+echo "PASS: port-forward relay end-to-end (0.0.0.0 bind + socat proxy target + host auto-forward reachability + downstream-restart + storm recovery)"

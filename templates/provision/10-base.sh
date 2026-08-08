@@ -21,7 +21,12 @@ apt-get install -y --no-install-recommends \
   jq ripgrep fzf \
   zsh vim tmux nano \
   python3 python3-venv \
+  socat \
   chrony
+
+# socat — the port-forward relay proxy (templates/provision/80-port-forwards.sh,
+# issue #298). Its -T idle timeout reaps half-dead connections that
+# systemd-socket-proxyd leaked forever.
 
 # chrony — reliable, suspend-resilient time + NTP authority for nested
 # libvirt guests (issue #187). Installed here (network-bound, first-boot
