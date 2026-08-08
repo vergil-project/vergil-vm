@@ -11,10 +11,10 @@
       
       
       
-        <link rel="prev" href="../v2.1.18/">
+        <link rel="prev" href="../">
       
       
-        <link rel="next" href="../v2.1.16/">
+        <link rel="next" href="../v2.1.40/">
       
       
         
@@ -25,7 +25,7 @@
     
     
       
-        <title>2.1.17 - Vergil VM</title>
+        <title>2.1.41 - Vergil VM</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#release-2117-2026-06-08" class="md-skip">
+        <a href="#release-2141-2026-08-08" class="md-skip">
           Skip to content
         </a>
       
@@ -116,7 +116,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              2.1.17
+              2.1.41
             
           </span>
         </div>
@@ -667,10 +667,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../v2.1.41/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.41
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -686,6 +713,48 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#bug-fixes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bug fixes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Documentation
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1339,37 +1408,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    2.1.17
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../v2.1.17/" class="md-nav__link">
         
   
   
@@ -1385,37 +1427,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#bug-fixes" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Bug fixes
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -2356,6 +2367,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Documentation
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -2373,12 +2395,27 @@
 
 
 
-<h1 id="release-2117-2026-06-08">Release 2.1.17 (2026-06-08)<a class="headerlink" href="#release-2117-2026-06-08" title="Permanent link">&para;</a></h1>
+<h1 id="release-2141-2026-08-08">Release 2.1.41 (2026-08-08)<a class="headerlink" href="#release-2141-2026-08-08" title="Permanent link">&para;</a></h1>
 <h2 id="bug-fixes">Bug fixes<a class="headerlink" href="#bug-fixes" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>export VRG_IDENTITY_MODE from ~/.zshenv, not ~/.bashrc (#149)</strong>
-The identity-mode env var was only exported from ~/.bashrc, which this VM's zsh shell never sources — so VRG_IDENTITY_MODE was absent in live zsh sessions even when the identity is correctly resolved. Bake a guarded export into ~/.zshenv (the zsh hook sourced for every invocation) at image-build time; the file-presence guard keeps it inert until the per-VM mode file is injected. Assert the on-disk mechanism in test_base.sh.</li>
+<li><strong>reap idle relay connections with socat -T (#299)</strong></li>
+<li>docs(port-forwards): add design for socat idle-reap relay (#298)</li>
 </ul>
+<p>Capture the decision to replace systemd-socket-proxyd with a forking socat -T relay that reaps zero-window-persist connections, curing the fd/socket-buffer leak on abrupt client disconnect.</p>
+<ul>
+<li>fix(port-forwards): reap idle relay connections with socat -T (#298)</li>
+</ul>
+<p>systemd-socket-proxyd has no idle/inactivity timeout, and TCP keepalive never applies in TCP zero-window persist, so a client that disconnects abruptly mid-transfer strands both file descriptors and ~600 KB of Send-Q forever. Under sustained use the relay climbs to its NOFILE limit and then accepts-but-resets every client while still reporting active.</p>
+<p>Replace the socket-activated proxyd .socket/.service pair with a single forking socat .service per forward:</p>
+<p>socat -T 120 TCP4-LISTEN:<port>,bind=0.0.0.0,fork,reuseaddr TCP:<to></p>
+<p>-T reaps a connection whose data channel is silent for 120s (freeing its fds and Send-Q), and fork isolates every connection in its own child so one wedge can never exhaust the whole relay. TCP4-LISTEN + bind=0.0.0.0 preserves the IPv4 0.0.0.0 listen that triggers Lima's auto-forward. The #192 hardening (Restart=always + StartLimitIntervalSec=0) is retained on the listener.</p>
+<p>Adds socat to the first-boot base packages, regenerates agent.yaml and both provider cloud-init.yaml files, and updates the port-forward tests (count .service units; assert the socat/-T ExecStart; retarget the storm pkill to the socat listener).</p>
+<h2 id="documentation">Documentation<a class="headerlink" href="#documentation" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>reflect bare-label --resume and --fork removal (#297)</strong>
+Update session docs to match shipped vrg-vm 2.1.179 after the validation-driven changes in #2653: --resume now takes a bare label plus a required workspace positional composed into <label>:<workspace>, and the --fork verb was removed while the no-double-attach guardrail stays.</li>
+</ul>
+<p><strong>CI Evidence:</strong> All gates passed — full audit bundle available. <a href="https://github.com/vergil-project/vergil-vm/releases/download/v2.1.41/v2.1.41-ci-evidence.tar.gz">Download →</a></p>
 
 
 
