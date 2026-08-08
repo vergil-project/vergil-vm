@@ -243,15 +243,18 @@ provision:
 # 0.0.0.0 bind is what Lima auto-forwards to the Mac's localhost (verified —
 # limactl binds 127.0.0.1:<port> on the host with no config change or restart).
 #
-# Each entry becomes a socket-activated systemd-socket-proxyd relay (ships with
-# systemd — no extra packages): a .socket binding 0.0.0.0:<port> and a matching
-# .service that proxies accepted connections to <to>. systemd keeps it alive
-# across reboots; a down guest yields a passed-through connection refusal
-# (transparent). The .service is hardened to survive a downstream restart on
-# its own (Restart=always + no start-rate-limit) — see the unit comments and
-# issue #192. PORT_FORWARDS is ";"-joined "port|host:port" records; empty
-# leaves the base box untouched. The marker records the declared-forward count
-# for the in-guest test suite (tests/test_port_forwards.sh).
+# Each entry becomes a systemd .service running a forking socat relay: it binds
+# 0.0.0.0:<port> and proxies each accepted connection to <to>. socat replaced
+# systemd-socket-proxyd (#298) because proxyd has no idle timeout and leaked
+# half-dead connections (zero-window persist) forever until the relay hit its fd
+# limit; socat's -T reaps a silent connection and fork isolates each one, curing
+# the leak. systemd keeps it alive across reboots; a down guest yields a
+# passed-through connection refusal (transparent). The .service is hardened to
+# survive a downstream restart on its own (Restart=always + no start-rate-limit)
+# — see the unit comments and issue #192. PORT_FORWARDS is ";"-joined
+# "port|host:port" records; empty leaves the base box untouched. The marker
+# records the declared-forward count for the in-guest test suite
+# (tests/test_port_forwards.sh).
 - mode: system
   script: |
     # @@INCLUDE templates/provision/80-port-forwards.sh@@
