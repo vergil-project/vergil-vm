@@ -2,6 +2,7 @@
 *.swp
 *.swo
 *~
+*.bak
 .idea/
 .vscode/
 
@@ -9,21 +10,68 @@
 .DS_Store
 Thumbs.db
 
+# Secrets / env
+.env
+.env.*
+
+# Logs
+*.log
+
 # Vergil
 .venv/
 .worktrees/
 # .vergil/ is Vergil scratch only (PR-template staging, *.local.toml overrides,
 # work-in-progress). Nothing source-controlled lives here — see vergil-vm#105.
 .vergil/
+.superpowers/
+.claude/scheduled_tasks.lock
+.claude/settings.local.json
+
+# Build output
+build/
+dist/
+*.egg-info/
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+junit.xml
+pip-audit.json
+licenses.json
+quality-ruff.json
+quality-mypy.xml
+
+# Docs site
+docs/site/site/
+
+# Node / TypeScript
+node_modules/
+*.tsbuildinfo
+
+# Go
+*.test
+*.out
+
+# Ruby
+.bundle/
+vendor/bundle/
+
+# C / native objects
+*.o
+*.obj
+*.a
+*.so
 
 # Lima build artifacts
 *.qcow2
 *.raw
 *.img
 *.iso
-
-# Build output
-/build/
 
 # OpenTofu local scratch (off-platform backend, #199). Keep .terraform.lock.hcl.
 opentofu/**/.terraform/
