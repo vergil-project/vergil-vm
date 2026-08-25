@@ -2515,7 +2515,7 @@ SSH <code>session</code>, and credential injection — lives in the
 companion and is <strong>out of scope here</strong>.</p>
 <h2 id="two-modules-two-lifecycles">Two modules, two lifecycles<a class="headerlink" href="#two-modules-two-lifecycles" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>opentofu/modules/gcp/
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>  volume/   persistent block disk — created once, long-lived (the &quot;laptop analog&quot;)
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>  volume/   persistent block disk — created once, long-lived (the "laptop analog")
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>  vm/       ephemeral instance + attach + cloud-init — destroyed and rebuilt routinely
 </code></pre></div>
 <ul>

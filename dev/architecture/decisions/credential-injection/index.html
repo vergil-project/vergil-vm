@@ -2555,7 +2555,7 @@ The latency is negligible (~100ms) and GitHub's rate limits for App
 token creation are generous (5000/hour).</p>
 <h3 id="https-only-git-access">HTTPS-only git access<a class="headerlink" href="#https-only-git-access" title="Permanent link">&para;</a></h3>
 <p>The VM is configured with a global git URL rewrite:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>url.&quot;https://github.com/&quot;.insteadOf &quot;git@github.com:&quot;
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>url."https://github.com/".insteadOf "git@github.com:"
 </code></pre></div>
 <p>This forces all git operations through HTTPS, where the credential
 helper can inject the installation token.</p>

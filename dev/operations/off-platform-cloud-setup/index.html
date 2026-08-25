@@ -2855,13 +2855,13 @@ immediately; no <code>PATH</code> edit is needed for the core tool.</p>
 <p>Optionally, enable shell completion and put the SDK's <em>additional</em> components on
 <code>PATH</code> (for <code>gcloud components install …</code>) by sourcing the init scripts from your
 shell profile (zsh):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nb">echo</span><span class="w"> </span><span class="s1">&#39;source &quot;/opt/homebrew/share/google-cloud-sdk/path.zsh.inc&quot;&#39;</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>~/.zshrc
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="nb">echo</span><span class="w"> </span><span class="s1">&#39;source &quot;/opt/homebrew/share/google-cloud-sdk/completion.zsh.inc&quot;&#39;</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>~/.zshrc
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nb">echo</span><span class="w"> </span><span class="s1">'source "/opt/homebrew/share/google-cloud-sdk/path.zsh.inc"'</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>~/.zshrc
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="nb">echo</span><span class="w"> </span><span class="s1">'source "/opt/homebrew/share/google-cloud-sdk/completion.zsh.inc"'</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>~/.zshrc
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="nb">exec</span><span class="w"> </span>zsh
 </code></pre></div>
 <p>Verify the install:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>gcloud<span class="w"> </span>version<span class="w">          </span><span class="c1"># -&gt; Google Cloud SDK 573.0.0, bq, core, gsutil, ...</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>gcloud<span class="w"> </span>auth<span class="w"> </span>list<span class="w">        </span><span class="c1"># -&gt; &quot;No credentialed accounts.&quot; until you log in (Step 2)</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>gcloud<span class="w"> </span>auth<span class="w"> </span>list<span class="w">        </span><span class="c1"># -&gt; "No credentialed accounts." until you log in (Step 2)</span>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>gcloud<span class="w"> </span>config<span class="w"> </span>list<span class="w">      </span><span class="c1"># -&gt; active configuration: [default], no project yet</span>
 </code></pre></div>
 <!--
@@ -3002,7 +3002,7 @@ delete the whole project to clean up later.</p>
 </ol>
 <p><strong>Cleaner alternative — create it from the CLI</strong> (after Step 6 auth). This sets the ID
 explicitly and skips the fiddly form entirely:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>gcloud<span class="w"> </span>projects<span class="w"> </span>create<span class="w"> </span>vergil-project-500213-a1<span class="w"> </span>--name<span class="o">=</span><span class="s2">&quot;Vergil Project Personal Sandbox&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>gcloud<span class="w"> </span>projects<span class="w"> </span>create<span class="w"> </span>vergil-project-500213-a1<span class="w"> </span>--name<span class="o">=</span><span class="s2">"Vergil Project Personal Sandbox"</span>
 </code></pre></div>
 <p>Record the <strong>Project ID</strong> — you need it for <code>gcloud config set project &lt;PROJECT_ID&gt;</code>
 (Step 6) and the repo's off-platform profile.</p>
@@ -3032,7 +3032,7 @@ no separate billing setup per project during the trial.</p>
 move the project into it — the <strong>Project ID survives</strong>; only the parent changes:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>gcloud<span class="w"> </span>organizations<span class="w"> </span>list<span class="w">                                         </span><span class="c1"># find &lt;ORG_ID&gt; + display name</span>
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>gcloud<span class="w"> </span>beta<span class="w"> </span>projects<span class="w"> </span>move<span class="w"> </span>&lt;PROJECT_ID&gt;<span class="w"> </span>--organization<span class="o">=</span>&lt;ORG_ID&gt;
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>gcloud<span class="w"> </span>projects<span class="w"> </span>describe<span class="w"> </span>&lt;PROJECT_ID&gt;<span class="w"> </span>--format<span class="o">=</span><span class="s2">&quot;value(parent)&quot;</span><span class="w">    </span><span class="c1"># -&gt; organizations/&lt;ORG_ID&gt;</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>gcloud<span class="w"> </span>projects<span class="w"> </span>describe<span class="w"> </span>&lt;PROJECT_ID&gt;<span class="w"> </span>--format<span class="o">=</span><span class="s2">"value(parent)"</span><span class="w">    </span><span class="c1"># -&gt; organizations/&lt;ORG_ID&gt;</span>
 </code></pre></div>
 <p><code>move</code> is a <strong><code>beta</code></strong> command (gcloud installs the component on first use) and <strong>warns
 that org policies may change what's enforced</strong>. The move needs an org-level role
@@ -3172,9 +3172,9 @@ vCPU, <strong>N2</strong> family — N2 supports nested virtualization). Confirm
 quota. <code>describe</code> does <strong>not</strong> accept <code>--filter</code> (that's a <code>list</code> flag), so flatten and
 grep:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>gcloud<span class="w"> </span>compute<span class="w"> </span>regions<span class="w"> </span>describe<span class="w"> </span>us-central1<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span>--flatten<span class="o">=</span><span class="s2">&quot;quotas&quot;</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">  </span>--format<span class="o">=</span><span class="s2">&quot;value(quotas.metric,quotas.limit,quotas.usage)&quot;</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">  </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-E<span class="w"> </span><span class="s1">&#39;^(CPUS|N2_CPUS)&#39;</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span>--flatten<span class="o">=</span><span class="s2">"quotas"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">  </span>--format<span class="o">=</span><span class="s2">"value(quotas.metric,quotas.limit,quotas.usage)"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">  </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-E<span class="w"> </span><span class="s1">'^(CPUS|N2_CPUS)'</span>
 </code></pre></div>
 <ul>
 <li><strong><code>CPUS</code></strong> — total vCPUs in the region; <strong><code>N2_CPUS</code></strong> — N2-family vCPUs.</li>
@@ -3221,7 +3221,7 @@ per-instance OpenTofu module — see vergil-vm#226.)</p>
 <p>Verify it exists (egress takes ~1–2 min to propagate after creation):</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>gcloud<span class="w"> </span>compute<span class="w"> </span>routers<span class="w"> </span>nats<span class="w"> </span>describe<span class="w"> </span>vergil-nat<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="w">  </span>--router<span class="o">=</span>vergil-nat-router<span class="w"> </span>--region<span class="o">=</span>us-central1<span class="w"> </span>--project<span class="o">=</span>&lt;PROJECT_ID&gt;<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="w">  </span>--format<span class="o">=</span><span class="s1">&#39;value(name)&#39;</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="w">  </span>--format<span class="o">=</span><span class="s1">'value(name)'</span>
 </code></pre></div>
 <blockquote>
 <p>One NAT per region is enough no matter how many repos/VMs you run there. If you build
@@ -3231,7 +3231,7 @@ in a second region, repeat this step for that region.</p>
 <p>The VM is reached over SSH, and the OpenTofu <code>vm</code> module takes an <code>ssh_public_key</code>.
 Generate a dedicated keypair on your Mac:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>ssh-keygen<span class="w"> </span>-t<span class="w"> </span>ed25519<span class="w"> </span>-f<span class="w"> </span>~/.ssh/vergil-off-platform<span class="w"> </span>-C<span class="w"> </span>vergil-off-platform
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>cat<span class="w"> </span>~/.ssh/vergil-off-platform.pub<span class="w">      </span><span class="c1"># the module&#39;s ssh_public_key input</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>cat<span class="w"> </span>~/.ssh/vergil-off-platform.pub<span class="w">      </span><span class="c1"># the module's ssh_public_key input</span>
 </code></pre></div>
 <p>In the full flow the backend (<code>vergil-tooling#1706</code>) manages this key per <code>create</code> and
 injects it; for a manual <code>tofu apply</code> you pass the <code>.pub</code> contents as <code>ssh_public_key</code>.
@@ -3243,11 +3243,11 @@ propagate.</p>
 <li><strong>Declare the off-platform profile</strong> in the consuming repo's <code>vergil.toml</code>:</li>
 </ol>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="k">[vm.vergil-user]</span>
-<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="n">backend</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;off-platform&quot;</span>
-<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="n">provider</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;gcp&quot;</span>
-<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="n">region</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;us-central1&quot;</span>
-<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="n">instance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;n2-standard-16&quot;</span><span class="w">   </span><span class="c1"># or n2-standard-8 to validate</span>
-<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="n">volume</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;300GiB&quot;</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="n">backend</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s2">"off-platform"</span>
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="n">provider</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"gcp"</span>
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="n">region</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s2">"us-central1"</span>
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="n">instance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"n2-standard-16"</span><span class="w">   </span><span class="c1"># or n2-standard-8 to validate</span>
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="n">volume</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s2">"300GiB"</span>
 <a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="n">nested</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
 </code></pre></div>
 <ol>
