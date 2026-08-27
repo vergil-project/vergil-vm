@@ -1,71 +1,45 @@
-# Editors
+# >>> vergil-managed: base (managed by vrg-gitignore-sync; do not edit) >>>
 *.swp
 *.swo
 *~
 *.bak
 .idea/
 .vscode/
-
-# OS
 .DS_Store
 Thumbs.db
-
-# Secrets / env
 .env
 .env.*
-
-# Logs
 *.log
-
-# Vergil
 .venv/
 .worktrees/
-# .vergil/ is Vergil scratch only (PR-template staging, *.local.toml overrides,
-# work-in-progress). Nothing source-controlled lives here — see vergil-vm#105.
 .vergil/
 .superpowers/
 .claude/scheduled_tasks.lock
 .claude/settings.local.json
-
-# Build output
 build/
 dist/
-*.egg-info/
-
-# Python
-__pycache__/
-*.pyc
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-.coverage
 coverage.xml
 junit.xml
-pip-audit.json
 licenses.json
-quality-ruff.json
-quality-mypy.xml
+docs/site/site/
+node_modules/
+# <<< vergil-managed <<<
+
+# Secrets / env
+
+# Vergil
+# .vergil/ is Vergil scratch only (PR-template staging, *.local.toml overrides,
+# work-in-progress). Nothing source-controlled lives here — see vergil-vm#105.
+
+# Build output
+
+# Python
 
 # Docs site
-docs/site/site/
-
-# Node / TypeScript
-node_modules/
-*.tsbuildinfo
 
 # Go
-*.test
-*.out
-
-# Ruby
-.bundle/
-vendor/bundle/
 
 # C / native objects
-*.o
-*.obj
-*.a
-*.so
 
 # Lima build artifacts
 *.qcow2
@@ -77,17 +51,3 @@ vendor/bundle/
 opentofu/**/.terraform/
 opentofu/**/*.tfstate
 opentofu/**/*.tfstate.*
-
-# --- Vergil baseline sync (vergil-project/.github#322): lines added to match gitignore.baseline ---
-build-sanitize/
-CMakePresets.json
-CMakeUserPresets.json
-cmakedeps_macros.cmake
-conan_toolchain.cmake
-conandeps_legacy.cmake
-conanbuild*.sh
-conanrun*.sh
-conanbuildenv-*.sh
-conanrunenv-*.sh
-deactivate_conanbuild*.sh
-deactivate_conanrun*.sh
