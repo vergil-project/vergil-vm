@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.1.42] - 2026-10-02
+
+### Chores
+
+- reconcile .gitignore to baseline + add ops.yml (#304) (#305)
+- sync .gitignore to the canonical baseline (#307)
+- sync the vergil-managed .gitignore block (#309)
+
+### Documentation
+
+- fix dead vergil-tooling doc links (#303)
+
+### Features
+
+- boot_disk_type variable on the vm modules (#312) (#313)
+
+### Refactoring
+
+- drop the hardcoded matrix inputs from ci.yml (#311)
+
 ## [2.1.41] - 2026-08-08
 
 ### Bug fixes

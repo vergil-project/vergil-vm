@@ -10,14 +10,14 @@ first Claude Code session.
 - **Lima 2.0+** — VM manager
   ([install](https://lima-vm.io/docs/installation/))
 - **vergil-tooling** — provides the `vrg-vm` CLI and related tools
-  ([install](https://vergil-project.github.io/vergil-tooling/getting-started.html))
+  ([install](https://vergil-project.github.io/vergil-tooling/dev/getting-started/))
 
 ## 1. Configure your identity
 
 Before creating a VM, you need an identity configuration that tells
 the tooling which GitHub App to use and where your projects live.
 Identity setup and management is documented in the
-[vergil-tooling identity guide](https://vergil-project.github.io/vergil-tooling/identity-setup.html).
+[vergil-tooling identity guide](https://vergil-project.github.io/vergil-tooling/dev/guides/identity-architecture/).
 
 The identity name `vergil` is the standard primary identity. The
 GitHub App is typically named `<your-username>-vergil` and granted
