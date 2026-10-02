@@ -599,6 +599,8 @@
       
         
       
+        
+      
     
     
     
@@ -651,6 +653,34 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../releases/v2.1.42/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.42
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
               
             
               
@@ -2515,7 +2545,7 @@ SSH <code>session</code>, and credential injection — lives in the
 companion and is <strong>out of scope here</strong>.</p>
 <h2 id="two-modules-two-lifecycles">Two modules, two lifecycles<a class="headerlink" href="#two-modules-two-lifecycles" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>opentofu/modules/gcp/
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>  volume/   persistent block disk — created once, long-lived (the &quot;laptop analog&quot;)
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>  volume/   persistent block disk — created once, long-lived (the "laptop analog")
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>  vm/       ephemeral instance + attach + cloud-init — destroyed and rebuilt routinely
 </code></pre></div>
 <ul>
@@ -2529,6 +2559,30 @@ companion and is <strong>out of scope here</strong>.</p>
   conditionalized, so it also blocked that legitimate verb.)</li>
 <li><strong>The boot disk is ephemeral and fixed-size</strong> (<code>boot_disk_gib</code>, default 30); only the
   persistent <code>volume</code> size is author-facing. (<code>disk</code> is a Lima knob, not a cloud one.)</li>
+<li><strong>The boot disk type is selectable</strong> (<code>boot_disk_type</code>, #312). Consumers that put
+  I/O-heavy work on the ephemeral boot disk (for example, libvirt's default image pool
+  holding nested guests' qcow2 files) can choose faster storage than the default.</li>
+<li><strong>GCP</strong> sets <code>boot_disk.initialize_params.type</code>. The default is <code>null</code>, which omits
+    the field, so behaviour is unchanged: GCE applies the
+    <a href="https://cloud.google.com/compute/docs/reference/rest/v1/instances">machine series' default disk type</a>.
+    That is <code>pd-standard</code> for N1/N2-era series, <code>pd-balanced</code> for C3/C3D/M3, and
+    <code>hyperdisk-balanced</code> for newer series. A literal <code>pd-standard</code> default would break
+    C4/N4 and other series that do not support Standard Persistent Disk. Allowed values
+    are <code>pd-standard</code>, <code>pd-balanced</code>, <code>pd-ssd</code> and <code>hyperdisk-balanced</code>, and the chosen
+    type must suit the
+    <a href="https://cloud.google.com/compute/docs/disks/persistent-disks#disk-types">machine series</a>.
+    <code>pd-extreme</code> is left out because it needs provisioned IOPS, which the module does not
+    expose. The other Hyperdisk types are left out because they are not boot-disk types.</li>
+<li><strong>Azure</strong> sets <code>os_disk.storage_account_type</code>. The default is <code>StandardSSD_LRS</code>, the
+    value the module always hard-coded. Allowed values are the
+    <a href="https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/linux_virtual_machine#storage_account_type-1">azurerm</a>
+    set: <code>Standard_LRS</code>, <code>StandardSSD_LRS</code>, <code>Premium_LRS</code>, <code>StandardSSD_ZRS</code> and
+    <code>Premium_ZRS</code>.</li>
+<li>The values are provider-native, like <code>instance_type</code>; only the variable name is
+    shared. A bad value fails at <code>tofu plan</code> through a <code>validation</code> block.</li>
+<li><strong>Changing it replaces the instance.</strong> The field is <code>ForceNew</code> in both providers. That
+    is acceptable because the boot disk is ephemeral by design, and the persistent volume
+    is untouched.</li>
 </ul>
 <h2 id="provider-agnostic-interface">Provider-agnostic interface<a class="headerlink" href="#provider-agnostic-interface" title="Permanent link">&para;</a></h2>
 <p>Every provider's <code>volume</code>/<code>vm</code> modules expose exactly the variable/output names in

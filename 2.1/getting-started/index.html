@@ -599,6 +599,8 @@
       
         
       
+        
+      
     
     
     
@@ -651,6 +653,34 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../releases/v2.1.42/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.42
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
               
             
               
@@ -2483,13 +2513,13 @@ first Claude Code session.</p>
 <li><strong>Lima 2.0+</strong> — VM manager
   (<a href="https://lima-vm.io/docs/installation/">install</a>)</li>
 <li><strong>vergil-tooling</strong> — provides the <code>vrg-vm</code> CLI and related tools
-  (<a href="https://vergil-project.github.io/vergil-tooling/getting-started.html">install</a>)</li>
+  (<a href="https://vergil-project.github.io/vergil-tooling/dev/getting-started/">install</a>)</li>
 </ul>
 <h2 id="1-configure-your-identity">1. Configure your identity<a class="headerlink" href="#1-configure-your-identity" title="Permanent link">&para;</a></h2>
 <p>Before creating a VM, you need an identity configuration that tells
 the tooling which GitHub App to use and where your projects live.
 Identity setup and management is documented in the
-<a href="https://vergil-project.github.io/vergil-tooling/identity-setup.html">vergil-tooling identity guide</a>.</p>
+<a href="https://vergil-project.github.io/vergil-tooling/dev/guides/identity-architecture/">vergil-tooling identity guide</a>.</p>
 <p>The identity name <code>vergil</code> is the standard primary identity. The
 GitHub App is typically named <code>&lt;your-username&gt;-vergil</code> and granted
 access to the repositories you want the agent to work with.</p>
@@ -2510,7 +2540,7 @@ your GitHub App credentials, and installs vergil-tooling inside the
 VM. The process takes several minutes on first run (provisioning
 downloads packages and tools).</p>
 <p>When complete, you'll see:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>VM &#39;vergil&#39; is ready.
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>VM 'vergil' is ready.
 </code></pre></div>
 <h2 id="3-launch-a-claude-code-session">3. Launch a Claude Code session<a class="headerlink" href="#3-launch-a-claude-code-session" title="Permanent link">&para;</a></h2>
 <p>Start a sandboxed Claude Code session by giving it a purpose name:</p>
