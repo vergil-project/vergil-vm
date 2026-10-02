@@ -31,6 +31,37 @@ variable "boot_disk_gib" {
   default = 30
 }
 
+# GCE disk type for the ephemeral boot disk (boot_disk.initialize_params.type). The
+# default null omits the field, which preserves the module's original behaviour exactly:
+# GCE then picks the machine series' default. Per the Compute Engine API reference
+# (AttachedDiskInitializeParams.diskType), that is pd-standard for first- and
+# second-generation series (N1, N2, ...), pd-balanced for C3/C3D/M3, and
+# hyperdisk-balanced for other third-generation and all newer series (C4, N4, ...).
+# A literal "pd-standard" default would therefore break the newer series, which do not
+# support Standard Persistent Disk.
+#   https://cloud.google.com/compute/docs/reference/rest/v1/instances
+#   https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_instance#type-1
+#
+# Allowed values are the durable block-storage types that are valid boot disks and need
+# no extra provisioning knobs the module does not expose. pd-extreme is excluded because
+# it requires provisioned IOPS and only runs on a few machine series. Hyperdisk
+# Extreme/Throughput/ML and Balanced HA are excluded because they are not boot-disk
+# types. The type must also suit var.instance_type's machine series:
+#   https://cloud.google.com/compute/docs/disks/persistent-disks#disk-types
+#   https://cloud.google.com/compute/docs/disks/hyperdisks
+#
+# Changing this value replaces the boot disk, and so the instance. That is acceptable
+# because the boot disk is ephemeral by design; the persistent volume is unaffected.
+variable "boot_disk_type" {
+  type    = string
+  default = null
+
+  validation {
+    condition     = var.boot_disk_type == null ? true : contains(["pd-standard", "pd-balanced", "pd-ssd", "hyperdisk-balanced"], var.boot_disk_type)
+    error_message = "boot_disk_type must be one of pd-standard, pd-balanced, pd-ssd, hyperdisk-balanced (or null for the machine series' default)."
+  }
+}
+
 variable "provision_env" { type = string } # rendered /etc/vergil/provision.env body
 
 variable "labels" {

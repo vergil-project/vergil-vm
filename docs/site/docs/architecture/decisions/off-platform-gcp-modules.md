@@ -26,6 +26,30 @@ opentofu/modules/gcp/
   conditionalized, so it also blocked that legitimate verb.)
 - **The boot disk is ephemeral and fixed-size** (`boot_disk_gib`, default 30); only the
   persistent `volume` size is author-facing. (`disk` is a Lima knob, not a cloud one.)
+- **The boot disk type is selectable** (`boot_disk_type`, #312). Consumers that put
+  I/O-heavy work on the ephemeral boot disk (for example, libvirt's default image pool
+  holding nested guests' qcow2 files) can choose faster storage than the default.
+  - **GCP** sets `boot_disk.initialize_params.type`. The default is `null`, which omits
+    the field, so behaviour is unchanged: GCE applies the
+    [machine series' default disk type](https://cloud.google.com/compute/docs/reference/rest/v1/instances).
+    That is `pd-standard` for N1/N2-era series, `pd-balanced` for C3/C3D/M3, and
+    `hyperdisk-balanced` for newer series. A literal `pd-standard` default would break
+    C4/N4 and other series that do not support Standard Persistent Disk. Allowed values
+    are `pd-standard`, `pd-balanced`, `pd-ssd` and `hyperdisk-balanced`, and the chosen
+    type must suit the
+    [machine series](https://cloud.google.com/compute/docs/disks/persistent-disks#disk-types).
+    `pd-extreme` is left out because it needs provisioned IOPS, which the module does not
+    expose. The other Hyperdisk types are left out because they are not boot-disk types.
+  - **Azure** sets `os_disk.storage_account_type`. The default is `StandardSSD_LRS`, the
+    value the module always hard-coded. Allowed values are the
+    [azurerm](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/linux_virtual_machine#storage_account_type-1)
+    set: `Standard_LRS`, `StandardSSD_LRS`, `Premium_LRS`, `StandardSSD_ZRS` and
+    `Premium_ZRS`.
+  - The values are provider-native, like `instance_type`; only the variable name is
+    shared. A bad value fails at `tofu plan` through a `validation` block.
+  - **Changing it replaces the instance.** The field is `ForceNew` in both providers. That
+    is acceptable because the boot disk is ephemeral by design, and the persistent volume
+    is untouched.
 
 ## Provider-agnostic interface
 

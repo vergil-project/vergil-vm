@@ -39,6 +39,25 @@ variable "boot_disk_gib" {
   default = 30
 }
 
+# Storage SKU for the ephemeral OS disk (os_disk.storage_account_type). The default is
+# the value the module always hard-coded, so behaviour is unchanged. The values are
+# Azure-native, like instance_type; the GCP module takes GCE disk types under the same
+# interface name. Allowed values and the forces-replacement note come from the azurerm
+# docs. Premium_* SKUs need a VM size that supports premium storage (the "s" sizes):
+#   https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/linux_virtual_machine#storage_account_type-1
+#
+# Changing this value replaces the VM. That is acceptable because the OS disk is
+# ephemeral by design; the persistent volume is unaffected.
+variable "boot_disk_type" {
+  type    = string
+  default = "StandardSSD_LRS"
+
+  validation {
+    condition     = contains(["Standard_LRS", "StandardSSD_LRS", "Premium_LRS", "StandardSSD_ZRS", "Premium_ZRS"], var.boot_disk_type)
+    error_message = "boot_disk_type must be one of Standard_LRS, StandardSSD_LRS, Premium_LRS, StandardSSD_ZRS, Premium_ZRS."
+  }
+}
+
 variable "provision_env" { type = string } # rendered /etc/vergil/provision.env body
 
 variable "labels" {

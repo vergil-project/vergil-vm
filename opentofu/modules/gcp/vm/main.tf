@@ -54,11 +54,13 @@ resource "google_compute_instance" "vm" {
   labels       = var.labels
 
   # Ephemeral root/boot disk — dies with the instance. The persistent data disk is
-  # attached separately below.
+  # attached separately below. A null boot_disk_type omits `type`, so GCE applies the
+  # machine series' default disk type; any change to it replaces the instance.
   boot_disk {
     initialize_params {
       image = "ubuntu-os-cloud/ubuntu-2404-lts-amd64"
       size  = var.boot_disk_gib
+      type  = var.boot_disk_type
     }
   }
 
