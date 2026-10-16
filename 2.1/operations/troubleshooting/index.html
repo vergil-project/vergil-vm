@@ -601,6 +601,8 @@
       
         
       
+        
+      
     
     
     
@@ -653,6 +655,34 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../releases/v2.1.43/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.43
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
               
             
               
@@ -2509,7 +2539,9 @@ provisioning log inside the VM:</p>
 <li><strong>Disk space</strong> — a full host disk prevents the VM image from
   expanding. Check with <code>df -h</code>.</li>
 <li><strong>Lima version</strong> — the template requires Lima 2.0+. Check with
-  <code>limactl --version</code>.</li>
+  <code>limactl --version</code> or <code>vrg-host status</code>, and upgrade with
+  <code>vrg-host upgrade lima</code> (see the
+  <a href="https://vergil-project.github.io/vergil-tooling/dev/reference/dev/host/"><code>vrg-host</code> reference</a>).</li>
 </ul>
 <h2 id="readiness-probe-timeout">Readiness probe timeout<a class="headerlink" href="#readiness-probe-timeout" title="Permanent link">&para;</a></h2>
 <p>The readiness probe waits up to 30 minutes for provisioning to finish
