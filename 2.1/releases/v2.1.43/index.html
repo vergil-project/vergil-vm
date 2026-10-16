@@ -11,7 +11,7 @@
       
       
       
-        <link rel="prev" href="../">
+        <link rel="prev" href="../v2.1.44/">
       
       
         <link rel="next" href="../v2.1.42/">
@@ -610,6 +610,8 @@
       
         
       
+        
+      
     
     
     
@@ -665,6 +667,34 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../v2.1.44/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.44
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
               
             
               
@@ -2466,6 +2496,7 @@ Getting started, the off-platform cloud setup and troubleshooting now point at v
 <li><strong>add the dependency-update hook and read the vergil series in vrg-vm-init (#320)</strong>
 Add scripts/dev/update-deps.sh, wired through [dependency-update].hook, for vrg-update-deps to run in the dev container (epic vergil-project/.github#381, issue #317). It runs tofu init -upgrade per module within the existing ~&gt; ranges, bumps NERDCTL_VERSION to the newest release within its major and regenerates cloud-init.yaml, and reports (never bumps) a newer nerdctl major, a Lima major above minimumLimaVersion, and a Node LTS major above the NodeSource major. Every lookup, parse or tool failure exits non-zero. scripts/vrg-vm-init.sh now installs vergil-tooling at the [dependencies].vergil series from vergil.toml instead of a hard-coded v2.1, failing before any VM side effect when it is missing. New hermetic checks (stubbed curl, tofu and limactl) run from run-host-tests.sh and validate-custom.</li>
 </ul>
+<p><strong>CI Evidence:</strong> All gates passed — full audit bundle available. <a href="https://github.com/vergil-project/vergil-vm/releases/download/v2.1.43/v2.1.43-ci-evidence.tar.gz">Download →</a></p>
 
 
 
