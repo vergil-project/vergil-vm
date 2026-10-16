@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.1.45] - 2026-10-16
+
+### Documentation
+
+- document the dependency-update hook and the vrg-vm-init series source (#337)
+
+### Testing
+
+- make the update-deps hook test hermetic to the Lima floor and NodeSource major (#336)
+
 ## [2.1.44] - 2026-10-16
 
 ### Chores
