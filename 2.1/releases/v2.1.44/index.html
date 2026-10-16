@@ -11,7 +11,7 @@
       
       
       
-        <link rel="prev" href="../">
+        <link rel="prev" href="../v2.1.45/">
       
       
         <link rel="next" href="../v2.1.43/">
@@ -612,6 +612,8 @@
       
         
       
+        
+      
     
     
     
@@ -667,6 +669,34 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../v2.1.45/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.45
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
               
             
               
@@ -2245,6 +2275,8 @@
       
         
       
+        
+      
     
     
     
@@ -2402,6 +2434,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../operations/dependency-updates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dependency Updates
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -2475,6 +2535,7 @@
 </li>
 </ul>
 <p>check-update-deps-hook.sh asserted that the live repo pinned NERDCTL_VERSION=2.3.3 and compared its no-op scenario against the live cloud-init files, so it failed every time the hook did its job (the 2.1.44 update moved nerdctl to 2.4.1). The scenarios now run against a scratch fixture baseline: every vm skeleton is normalized to 2.3.3 with the hook's own set_nerdctl_version, cloud-init.yaml is regenerated with build-cloud-init.sh, and the baseline is asserted to be fresh and normalized. new_repo copies that baseline, and the no-op scenario compares against it. The live-value assertion is gone. No hook-behaviour assertion was weakened.</p>
+<p><strong>CI Evidence:</strong> All gates passed — full audit bundle available. <a href="https://github.com/vergil-project/vergil-vm/releases/download/v2.1.44/v2.1.44-ci-evidence.tar.gz">Download →</a></p>
 
 
 
