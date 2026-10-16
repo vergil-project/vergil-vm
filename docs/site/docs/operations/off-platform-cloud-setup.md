@@ -43,6 +43,8 @@ lab.
 
 - A **Google account** that can sign in to [console.cloud.google.com](https://console.cloud.google.com).
 - **Homebrew** on your Mac (for the gcloud install below).
+- **OpenTofu 1.8+** on your Mac (`brew install opentofu`). `vrg-vm` checks for it
+  before any cloud command.
 - A way to pay: GCP requires a **billing account** (a payment method) before you can
   run instances. We set that up in a later step; you just need a card available.
 
@@ -80,6 +82,28 @@ gcloud version          # -> Google Cloud SDK 573.0.0, bq, core, gsutil, ...
 gcloud auth list        # -> "No credentialed accounts." until you log in (Step 2)
 gcloud config list      # -> active configuration: [default], no project yet
 ```
+
+### Keeping gcloud and OpenTofu healthy
+
+`vrg-host`, part of vergil-tooling, tracks `gcloud` and OpenTofu on your Mac:
+
+- `vrg-host status` reports each tool's installed version against the latest
+  release. It also checks that the Python interpreter gcloud runs on can import
+  **NumPy**. Without NumPy, every IAP tunnel session prints an "install NumPy"
+  warning and runs slower, so `status` reports a missing NumPy as an ERROR.
+- `vrg-host status --fix` installs NumPy into gcloud's own interpreter, then
+  reports again.
+- `vrg-host upgrade gcloud opentofu` upgrades both. OpenTofu upgrades through
+  Homebrew; gcloud upgrades through its own component manager
+  (`gcloud components update`). Neither needs `sudo`: gcloud's SDK directory
+  belongs to your user.
+
+> **Gotcha:** don't upgrade gcloud with `brew upgrade --greedy`. The `gcloud-cli`
+> cask updates itself, and gcloud's component manager owns its updates. Use
+> `vrg-host upgrade gcloud`.
+
+The full command set is in the
+[`vrg-host` reference](https://vergil-project.github.io/vergil-tooling/dev/reference/dev/host/).
 
 <!--
   The next three steps are the WEB CONSOLE part — the first-time Google Cloud
