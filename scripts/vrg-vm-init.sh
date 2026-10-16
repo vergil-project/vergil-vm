@@ -22,6 +22,21 @@ set -euo pipefail
 IDENTITY="${1:?Usage: vrg-vm-init <identity-name> <vm-instance>}"
 INSTANCE="${2:?Usage: vrg-vm-init <identity-name> <vm-instance>}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
+# The vergil-tooling series to install is the one this repo declares in
+# vergil.toml ([dependencies].vergil), not a hard-coded pin. Read it before
+# touching the VM so a missing declaration fails before any side effect.
+VERGIL_SERIES="$(awk '
+    /^[[:space:]]*\[/ { in_deps = ($0 ~ /^[[:space:]]*\[dependencies\][[:space:]]*$/); next }
+    in_deps && match($0, /^[[:space:]]*vergil[[:space:]]*=[[:space:]]*"v[0-9]+\.[0-9]+"[[:space:]]*$/) {
+        sub(/^[^"]*"/, ""); sub(/".*$/, ""); print; exit
+    }
+' "${REPO_ROOT}/vergil.toml")"
+if [ -z "$VERGIL_SERIES" ]; then
+    echo "ERROR: [dependencies].vergil (e.g. vergil = \"v2.1\") not found in ${REPO_ROOT}/vergil.toml" >&2
+    exit 1
+fi
 
 echo "=== Initializing identity VM: $INSTANCE (identity: $IDENTITY) ==="
 echo ""
@@ -103,10 +118,9 @@ limactl shell "$INSTANCE" -- \
 
 # --- Install vergil-tooling ---
 
-echo "Installing vergil-tooling in VM..."
-# shellcheck disable=SC2016
+echo "Installing vergil-tooling ${VERGIL_SERIES} in VM..."
 limactl shell "$INSTANCE" -- bash -c \
-    'export PATH="$HOME/.local/bin:$PATH" && uv tool install "vergil-tooling @ git+https://github.com/vergil-project/vergil-tooling@v2.1"' \
+    "export PATH=\"\$HOME/.local/bin:\$PATH\" && uv tool install \"vergil-tooling @ git+https://github.com/vergil-project/vergil-tooling@${VERGIL_SERIES}\"" \
     2>&1 | tail -3
 echo ""
 
