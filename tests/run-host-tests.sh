@@ -6,7 +6,8 @@ set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 for t in check-template-generation check-provision-manifest check-cloud-init-generation \
          check-rootless-userns \
-         check-opentofu-contract check-opentofu-validate check-opentofu-name-validation; do
+         check-opentofu-contract check-opentofu-validate check-opentofu-name-validation \
+         check-update-deps-hook check-vm-init-series; do
   echo "== ${t} =="
   bash "${HERE}/${t}.sh"
 done

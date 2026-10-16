@@ -14,3 +14,6 @@ docs = true
 
 [dependencies]
 vergil = "v2.1"
+
+[dependency-update]
+hook = "scripts/dev/update-deps.sh"
