@@ -24,6 +24,11 @@ permissions.
 See the [documentation site](https://vergil-project.github.io/vergil-vm/)
 for the full guide.
 
+Pinned versions that no lockfile covers (OpenTofu providers, nerdctl, Lima,
+Node.js) are kept current by the dependency-update hook,
+`scripts/dev/update-deps.sh`; see
+[Dependency Updates](docs/site/docs/operations/dependency-updates.md).
+
 ## Getting Started
 
 See the [documentation](https://vergil-project.github.io/vergil-vm/).

@@ -33,6 +33,12 @@ these concerns means:
 - Credential rotation does not require VM recreation — re-run
   `vrg-vm-init.sh` with updated credentials.
 
+The same script also installs vergil-tooling in the VM. It installs the
+series this repo declares in `vergil.toml` under `[dependencies].vergil`
+(for example `vergil = "v2.1"`) rather than a hard-coded version. The script
+reads that value before it touches the VM, and exits with an error if it is
+missing.
+
 **Trade-off:** VM creation is a two-step process (create + initialize)
 rather than a single command. This is acceptable because VM creation is
 infrequent — typically once per identity.
