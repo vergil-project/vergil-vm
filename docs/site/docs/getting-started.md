@@ -12,6 +12,15 @@ first Claude Code session.
 - **vergil-tooling** — provides the `vrg-vm` CLI and related tools
   ([install](https://vergil-project.github.io/vergil-tooling/dev/getting-started/))
 
+### Keeping host tools current
+
+vergil-tooling includes `vrg-host`, which tracks the macOS host tools
+Vergil needs, Lima among them. Run `vrg-host status` to compare each
+installed version with the latest release, and `vrg-host upgrade lima`
+(or `vrg-host upgrade --all`) to upgrade. See the
+[`vrg-host` reference](https://vergil-project.github.io/vergil-tooling/dev/reference/dev/host/)
+for the full command set.
+
 ## 1. Configure your identity
 
 Before creating a VM, you need an identity configuration that tells
