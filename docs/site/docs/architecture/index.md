@@ -54,19 +54,28 @@ that runs when a VM is created.
 
 Installs OS packages and development tools:
 
-| Tool | Source | Purpose |
-| ---- | ------ | ------- |
-| curl, wget, unzip | apt | File downloads and extraction |
-| jq | apt | JSON processing |
-| ripgrep | apt | Fast code search |
-| fzf | apt | Fuzzy finder |
-| zsh, vim, tmux, nano | apt | Shell and editors |
-| python3, python3-venv | apt | Python runtime |
-| git | apt | Version control |
-| gh | GitHub CLI apt repo | GitHub API and workflows |
-| Node.js 22 | NodeSource apt repo | Runtime for Claude Code |
-| yq | GitHub releases binary | YAML processing |
-| Claude Code | npm global install | AI-assisted development |
+| Tool | Source | Purpose | Dependency hook |
+| ---- | ------ | ------- | --------------- |
+| curl, wget, unzip | apt | File downloads and extraction | — |
+| jq | apt | JSON processing | — |
+| ripgrep | apt | Fast code search | — |
+| fzf | apt | Fuzzy finder | — |
+| zsh, vim, tmux, nano | apt | Shell and editors | — |
+| python3, python3-venv | apt | Python runtime | — |
+| git | apt | Version control | — |
+| gh | GitHub CLI apt repo | GitHub API and workflows | — |
+| Node.js 22 | NodeSource apt repo (`setup_22.x`) | Runtime for Claude Code | Reports a newer LTS major |
+| yq | GitHub releases binary | YAML processing | — |
+| Claude Code | npm global install | AI-assisted development | — |
+| nerdctl-full (containerd, nerdctl, buildkit) | Lima's bundle on Lima; pinned `NERDCTL_VERSION` GitHub release on off-platform cloud VMs | Rootless containers | Bumps the cloud pin within its major; reports a newer major |
+
+The last column shows what the [dependency-update
+hook](../operations/dependency-updates.md) does at the end of each release.
+Two more pins sit outside the guest: the Lima version floor
+(`minimumLimaVersion` in `templates/agent.yaml.skel`), which the hook reports
+when Lima has a newer major, and the OpenTofu providers (`hashicorp/google`,
+`hashicorp/azurerm`) used by the off-platform modules, which the hook bumps
+within their `~>` ranges.
 
 Also configures:
 
@@ -105,7 +114,8 @@ The injection step:
 2. Injects `app.pem` and `app.env` into `~/.config/vergil/` inside the
    VM (mode 600)
 3. Configures git to rewrite `git@github.com:` URLs to HTTPS
-4. Installs vergil-tooling via `uv tool install`
+4. Installs vergil-tooling via `uv tool install`, at the series declared
+   in `vergil.toml` (`[dependencies].vergil`)
 5. Runs a verification check (5 assertions)
 
 ## Credential Model

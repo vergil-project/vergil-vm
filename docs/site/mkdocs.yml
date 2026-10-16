@@ -74,3 +74,4 @@ nav:
       - Resource Tuning: operations/resource-tuning.md
       - Troubleshooting: operations/troubleshooting.md
       - Off-Platform Cloud Setup: operations/off-platform-cloud-setup.md
+      - Dependency Updates: operations/dependency-updates.md

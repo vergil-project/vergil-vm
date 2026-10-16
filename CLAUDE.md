@@ -4,6 +4,10 @@ This file provides guidance to Claude Code when working in this repository.
 
 **Project name**: vergil-vm
 
+**Dependency updates**: `[dependency-update].hook` in `vergil.toml` runs
+`scripts/dev/update-deps.sh` at the end of every `vrg-release`; see
+`docs/site/docs/operations/dependency-updates.md`.
+
 ## Validation
 
 ```bash
