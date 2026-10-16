@@ -32,7 +32,9 @@ Common causes:
 - **Disk space** — a full host disk prevents the VM image from
   expanding. Check with `df -h`.
 - **Lima version** — the template requires Lima 2.0+. Check with
-  `limactl --version`.
+  `limactl --version` or `vrg-host status`, and upgrade with
+  `vrg-host upgrade lima` (see the
+  [`vrg-host` reference](https://vergil-project.github.io/vergil-tooling/dev/reference/dev/host/)).
 
 ## Readiness probe timeout
 
