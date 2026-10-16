@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.1.43] - 2026-10-16
+
+### Documentation
+
+- point host-setup pages at vrg-host for Lima, gcloud and OpenTofu upkeep (#319)
+
+### Features
+
+- add the dependency-update hook and read the vergil series in vrg-vm-init (#320)
+
 ## [2.1.42] - 2026-10-02
 
 ### Chores
