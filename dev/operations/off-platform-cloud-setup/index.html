@@ -2357,6 +2357,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Step 1 — Install the Google Cloud CLI (macOS)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#keeping-gcloud-and-opentofu-healthy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Keeping gcloud and OpenTofu healthy
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2625,6 +2642,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Step 1 — Install the Google Cloud CLI (macOS)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#keeping-gcloud-and-opentofu-healthy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Keeping gcloud and OpenTofu healthy
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2866,6 +2900,8 @@ lab.</p>
 <ul>
 <li>A <strong>Google account</strong> that can sign in to <a href="https://console.cloud.google.com">console.cloud.google.com</a>.</li>
 <li><strong>Homebrew</strong> on your Mac (for the gcloud install below).</li>
+<li><strong>OpenTofu 1.8+</strong> on your Mac (<code>brew install opentofu</code>). <code>vrg-vm</code> checks for it
+  before any cloud command.</li>
 <li>A way to pay: GCP requires a <strong>billing account</strong> (a payment method) before you can
   run instances. We set that up in a later step; you just need a card available.</li>
 </ul>
@@ -2894,6 +2930,27 @@ shell profile (zsh):</p>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>gcloud<span class="w"> </span>auth<span class="w"> </span>list<span class="w">        </span><span class="c1"># -&gt; "No credentialed accounts." until you log in (Step 2)</span>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>gcloud<span class="w"> </span>config<span class="w"> </span>list<span class="w">      </span><span class="c1"># -&gt; active configuration: [default], no project yet</span>
 </code></pre></div>
+<h3 id="keeping-gcloud-and-opentofu-healthy">Keeping gcloud and OpenTofu healthy<a class="headerlink" href="#keeping-gcloud-and-opentofu-healthy" title="Permanent link">&para;</a></h3>
+<p><code>vrg-host</code>, part of vergil-tooling, tracks <code>gcloud</code> and OpenTofu on your Mac:</p>
+<ul>
+<li><code>vrg-host status</code> reports each tool's installed version against the latest
+  release. It also checks that the Python interpreter gcloud runs on can import
+  <strong>NumPy</strong>. Without NumPy, every IAP tunnel session prints an "install NumPy"
+  warning and runs slower, so <code>status</code> reports a missing NumPy as an ERROR.</li>
+<li><code>vrg-host status --fix</code> installs NumPy into gcloud's own interpreter, then
+  reports again.</li>
+<li><code>vrg-host upgrade gcloud opentofu</code> upgrades both. OpenTofu upgrades through
+  Homebrew; gcloud upgrades through its own component manager
+  (<code>gcloud components update</code>). Neither needs <code>sudo</code>: gcloud's SDK directory
+  belongs to your user.</li>
+</ul>
+<blockquote>
+<p><strong>Gotcha:</strong> don't upgrade gcloud with <code>brew upgrade --greedy</code>. The <code>gcloud-cli</code>
+cask updates itself, and gcloud's component manager owns its updates. Use
+<code>vrg-host upgrade gcloud</code>.</p>
+</blockquote>
+<p>The full command set is in the
+<a href="https://vergil-project.github.io/vergil-tooling/dev/reference/dev/host/"><code>vrg-host</code> reference</a>.</p>
 <!--
   The next three steps are the WEB CONSOLE part — the first-time Google Cloud
   sign-up, project creation, and billing. This is the most confusing part of the

@@ -1893,6 +1893,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Prerequisites">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#keeping-host-tools-current" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Keeping host tools current
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2429,6 +2446,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Prerequisites">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#keeping-host-tools-current" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Keeping host tools current
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2515,6 +2549,13 @@ first Claude Code session.</p>
 <li><strong>vergil-tooling</strong> — provides the <code>vrg-vm</code> CLI and related tools
   (<a href="https://vergil-project.github.io/vergil-tooling/dev/getting-started/">install</a>)</li>
 </ul>
+<h3 id="keeping-host-tools-current">Keeping host tools current<a class="headerlink" href="#keeping-host-tools-current" title="Permanent link">&para;</a></h3>
+<p>vergil-tooling includes <code>vrg-host</code>, which tracks the macOS host tools
+Vergil needs, Lima among them. Run <code>vrg-host status</code> to compare each
+installed version with the latest release, and <code>vrg-host upgrade lima</code>
+(or <code>vrg-host upgrade --all</code>) to upgrade. See the
+<a href="https://vergil-project.github.io/vergil-tooling/dev/reference/dev/host/"><code>vrg-host</code> reference</a>
+for the full command set.</p>
 <h2 id="1-configure-your-identity">1. Configure your identity<a class="headerlink" href="#1-configure-your-identity" title="Permanent link">&para;</a></h2>
 <p>Before creating a VM, you need an identity configuration that tells
 the tooling which GitHub App to use and where your projects live.
