@@ -2185,6 +2185,8 @@
       
         
       
+        
+      
     
     
     
@@ -2329,6 +2331,34 @@
     
   
     Off-Platform Cloud Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../operations/dependency-updates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dependency Updates
   
 
     
@@ -2538,6 +2568,7 @@ manifest, so the <strong>same</strong> scripts drive the off-platform cloud-init
 <th>Tool</th>
 <th>Source</th>
 <th>Purpose</th>
+<th>Dependency hook</th>
 </tr>
 </thead>
 <tbody>
@@ -2545,59 +2576,83 @@ manifest, so the <strong>same</strong> scripts drive the off-platform cloud-init
 <td>curl, wget, unzip</td>
 <td>apt</td>
 <td>File downloads and extraction</td>
+<td>—</td>
 </tr>
 <tr>
 <td>jq</td>
 <td>apt</td>
 <td>JSON processing</td>
+<td>—</td>
 </tr>
 <tr>
 <td>ripgrep</td>
 <td>apt</td>
 <td>Fast code search</td>
+<td>—</td>
 </tr>
 <tr>
 <td>fzf</td>
 <td>apt</td>
 <td>Fuzzy finder</td>
+<td>—</td>
 </tr>
 <tr>
 <td>zsh, vim, tmux, nano</td>
 <td>apt</td>
 <td>Shell and editors</td>
+<td>—</td>
 </tr>
 <tr>
 <td>python3, python3-venv</td>
 <td>apt</td>
 <td>Python runtime</td>
+<td>—</td>
 </tr>
 <tr>
 <td>git</td>
 <td>apt</td>
 <td>Version control</td>
+<td>—</td>
 </tr>
 <tr>
 <td>gh</td>
 <td>GitHub CLI apt repo</td>
 <td>GitHub API and workflows</td>
+<td>—</td>
 </tr>
 <tr>
 <td>Node.js 22</td>
-<td>NodeSource apt repo</td>
+<td>NodeSource apt repo (<code>setup_22.x</code>)</td>
 <td>Runtime for Claude Code</td>
+<td>Reports a newer LTS major</td>
 </tr>
 <tr>
 <td>yq</td>
 <td>GitHub releases binary</td>
 <td>YAML processing</td>
+<td>—</td>
 </tr>
 <tr>
 <td>Claude Code</td>
 <td>npm global install</td>
 <td>AI-assisted development</td>
+<td>—</td>
+</tr>
+<tr>
+<td>nerdctl-full (containerd, nerdctl, buildkit)</td>
+<td>Lima's bundle on Lima; pinned <code>NERDCTL_VERSION</code> GitHub release on off-platform cloud VMs</td>
+<td>Rootless containers</td>
+<td>Bumps the cloud pin within its major; reports a newer major</td>
 </tr>
 </tbody>
 </table>
+<p>The last column shows what the <a href="../operations/dependency-updates/">dependency-update
+hook</a> does at the end of each release.
+Two more pins sit outside the guest: the Lima version floor
+(<code>minimumLimaVersion</code> in <code>templates/agent.yaml.skel</code>), which the hook reports
+when Lima has a newer major, and the OpenTofu providers (<code>hashicorp/google</code>,
+<code>hashicorp/azurerm</code>) used by the off-platform modules, which the hook bumps
+within their <code>~&gt;</code> ranges.</p>
 <p>Also configures:</p>
 <ul>
 <li>zsh as the default shell for the Lima user</li>
@@ -2631,7 +2686,8 @@ for the design rationale.</p>
 <li>Injects <code>app.pem</code> and <code>app.env</code> into <code>~/.config/vergil/</code> inside the
    VM (mode 600)</li>
 <li>Configures git to rewrite <code>git@github.com:</code> URLs to HTTPS</li>
-<li>Installs vergil-tooling via <code>uv tool install</code></li>
+<li>Installs vergil-tooling via <code>uv tool install</code>, at the series declared
+   in <code>vergil.toml</code> (<code>[dependencies].vergil</code>)</li>
 <li>Runs a verification check (5 assertions)</li>
 </ol>
 <h2 id="credential-model">Credential Model<a class="headerlink" href="#credential-model" title="Permanent link">&para;</a></h2>

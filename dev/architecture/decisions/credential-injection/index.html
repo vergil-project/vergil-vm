@@ -2306,6 +2306,8 @@
       
         
       
+        
+      
     
     
     
@@ -2450,6 +2452,34 @@
     
   
     Off-Platform Cloud Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../operations/dependency-updates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dependency Updates
   
 
     
@@ -2612,6 +2642,11 @@ these concerns means:</p>
 <li>Credential rotation does not require VM recreation — re-run
   <code>vrg-vm-init.sh</code> with updated credentials.</li>
 </ul>
+<p>The same script also installs vergil-tooling in the VM. It installs the
+series this repo declares in <code>vergil.toml</code> under <code>[dependencies].vergil</code>
+(for example <code>vergil = "v2.1"</code>) rather than a hard-coded version. The script
+reads that value before it touches the VM, and exits with an error if it is
+missing.</p>
 <p><strong>Trade-off:</strong> VM creation is a two-step process (create + initialize)
 rather than a single command. This is acceptable because VM creation is
 infrequent — typically once per identity.</p>
