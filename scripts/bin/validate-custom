@@ -3,7 +3,8 @@
 # (vergil_tooling.bin.vrg_validate._find_custom_validator looks for exactly this path).
 # Runs the host-side check-*.sh assertions (OpenTofu, cloud-init, the
 # dependency-update hook, vrg-vm-init series), and — when tofu is available
-# (vergil-docker#352) — `tofu fmt`/`validate` for every provider module. fail-defer:
+# (vergil-docker#352) — `tofu fmt`/`validate` for every provider module, plus
+# `tofu test` where a module has a tests/ dir (mocked providers, plan-only). fail-defer:
 # run everything, report all failures, exit nonzero if any failed.
 set -uo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
@@ -31,11 +32,12 @@ done
 if command -v tofu >/dev/null 2>&1; then
   for mdir in "${ROOT}"/opentofu/modules/*/volume "${ROOT}"/opentofu/modules/*/vm; do
     [ -d "$mdir" ] || continue
-    echo "→ tofu fmt/validate ${mdir#"${ROOT}/"}"
+    echo "→ tofu fmt/validate/test ${mdir#"${ROOT}/"}"
     ( cd "$mdir" \
-      && tofu fmt -check \
+      && tofu fmt -check -recursive \
       && tofu init -backend=false -input=false >/dev/null \
-      && tofu validate ) || fail=1
+      && tofu validate \
+      && { [ ! -d tests ] || tofu test -no-color; } ) || fail=1
   done
 else
   echo "SKIP: tofu not installed (vergil-docker#352) — HCL fmt/validate not run in-sandbox" >&2

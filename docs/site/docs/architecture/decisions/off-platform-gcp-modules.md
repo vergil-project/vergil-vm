@@ -93,9 +93,14 @@ password SSH.
 
 ## Security
 
-- **No public attack surface.** The instance has **no public IP** (`access_config` is
-  dropped), so there is no internet-facing sshd. Access is via **GCP Identity-Aware
-  Proxy (IAP) TCP tunneling**: the SSH firewall allows ingress only from Google's fixed
+- **External IP for browsing, not for SSH (#260).** The instance has an **ephemeral
+  external IP** (`access_config {}`), shown by `vrg-vm list`. The IP carries the
+  browse ports, which the `-browse` firewall admits from `0.0.0.0/0`, and the VM's
+  internet egress. Public Cloud NAT does not apply to an interface with an external
+  IP. The exposure is deliberate: the boxes are ephemeral, hold no real data, and the
+  forwarded UIs are meant to be shared by IP. There is still **no internet-facing
+  sshd**. SSH is via **GCP Identity-Aware Proxy (IAP) TCP tunneling**: the SSH
+  firewall allows ingress only from Google's fixed
   IAP range `35.235.240.0/20` — a module constant, not an operator address, so nothing
   refreshes when the operator roams. IAP supersedes the original operator-IP allow-list,
   which was unsound behind NAT (a host cannot self-detect its public IP without a
@@ -111,6 +116,14 @@ password SSH.
   provider-agnostic module interface stays connection-method-blind.
 - The GitHub App private key (injected by #1706) lands on the **ephemeral boot disk**,
   never the persistent volume — teardown destroys it.
+- **Browse ports follow `port_forwards` (#322).** The `-browse` firewall opens exactly
+  the host-side ports of the profile's `[vm] port_forwards`. These are the same entries
+  `80-port-forwards.sh` turns into `0.0.0.0:<port>` relays, so a repo controls its
+  exposure in the one declaration that creates the relay. The module reads them from
+  the `PORT_FORWARDS` line of `provision_env`, so the interface gains no new variable.
+  An absent `PORT_FORWARDS` line, a non-numeric or out-of-range port, or port 22 fails
+  the plan. With no forwards, the rule is omitted entirely. A GCE `allow` block with an
+  empty `ports` list would admit every TCP port, so the module never renders one.
 
 ## Reproducibility
 
