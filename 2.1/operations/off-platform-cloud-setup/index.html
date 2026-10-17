@@ -607,6 +607,8 @@
       
         
       
+        
+      
     
     
     
@@ -659,6 +661,34 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../releases/v2.1.46/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.46
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
               
             
               
@@ -2609,10 +2639,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-11b-cloud-nat-for-egress-one-time-per-region" class="md-nav__link">
+  <a href="#step-11b-cloud-nat-for-egress-no-longer-needed" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Step 11b — Cloud NAT for egress (one-time, per region)
+        Step 11b — Cloud NAT for egress (no longer needed)
       
     </span>
   </a>
@@ -2922,10 +2952,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-11b-cloud-nat-for-egress-one-time-per-region" class="md-nav__link">
+  <a href="#step-11b-cloud-nat-for-egress-no-longer-needed" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Step 11b — Cloud NAT for egress (one-time, per region)
+        Step 11b — Cloud NAT for egress (no longer needed)
       
     </span>
   </a>
@@ -3005,9 +3035,11 @@ lab.</p>
 <ul>
 <li>A GCP project with billing enabled and the Compute Engine API on.</li>
 <li><code>gcloud</code> installed and authenticated on your Mac (Application Default Credentials).</li>
-<li>IAM permissions to create instances, disks, firewall rules, and a Cloud Router + NAT.</li>
-<li>A <strong>private VM (no public IP)</strong>: SSH <em>ingress</em> over an IAP tunnel; internet <em>egress</em>
-  via a one-time <strong>Cloud NAT</strong> in your region (Step 11b).</li>
+<li>IAM permissions to create instances, disks, and firewall rules.</li>
+<li>A VM with an <strong>ephemeral external IP</strong> (shown by <code>vrg-vm list</code>). The VM's <code>-browse</code>
+  firewall rule admits the browse ports on that IP. SSH <em>ingress</em> stays IAP-only, and
+  internet <em>egress</em> goes out through the external IP (no Cloud NAT needed; see
+  Step 11b).</li>
 <li>Confirmed nested-virtualization quota and a working machine-type + region.</li>
 <li>An SSH keypair for the instance.</li>
 </ul>
@@ -3175,8 +3207,9 @@ with a team" driver doesn't apply. That leaves two defensible options:</p>
   and lets you apply org-level security policy <em>on purpose</em> (e.g. OS Login or external-IP
   restrictions). The cost: <strong>org policies inherit into the project</strong> and can restrict it
   (OS Login, Shielded VM, external IPs), so you must reconcile them with what the VM
-  needs (Step 5b). The private no-public-IP design already satisfies most of these —
-  an external-IP restriction <em>aligns</em> with it rather than conflicting.</li>
+  needs (Step 5b). Most of them do not affect the VM. The exception is an external-IP
+  restriction (<code>compute.vmExternalIpAccess</code>). The VM relies on its ephemeral external
+  IP for browse access, so an org that enforces that policy must allow it.</li>
 </ul>
 <p><strong>This guide uses the personal org deliberately</strong> — managing everything in one place and
 <em>leveraging</em> org-level SSH/security controls beats treating the org as a black box. If
@@ -3295,7 +3328,7 @@ what the off-platform VM actually does:</p>
 <tr>
 <td><code>compute.vmExternalIpAccess</code></td>
 <td>restricts external IPs</td>
-<td><strong>None — aligned.</strong> The VM has no external IP (IAP ingress + Cloud NAT egress), so an external-IP restriction <em>matches</em> the design</td>
+<td><strong>Must allow the VM.</strong> The VM has an ephemeral external IP (#260) carrying its browse ports and its egress. If this policy denies external IPs on the project, instance creation fails and browse access is impossible. Override it at the project level (see the note below)</td>
 </tr>
 </tbody>
 </table>
@@ -3306,14 +3339,19 @@ what the off-platform VM actually does:</p>
   SSH path (<code>vergil-tooling#1706</code> <code>session</code>) must switch to OS Login.</li>
 </ul>
 <blockquote>
-<p>The VM is <strong>private — no public IP</strong>. Ingress is an <strong>IAP tunnel</strong> to the internal IP
-(the <code>vm</code> module opens a firewall rule for the IAP range <code>35.235.240.0/20</code> on tcp/22);
-egress is a <strong>Cloud NAT</strong> (Step 11b). So org policies that restrict <em>external IPs</em> never
-conflict — they reinforce the design. OS Login is the one real reconciliation item.</p>
+<p>The VM has an <strong>ephemeral external IP</strong> (<code>access_config</code> in the <code>vm</code> module, #260).
+<code>vrg-vm list</code> shows it. <strong>SSH</strong> is still an <strong>IAP tunnel</strong> to the internal IP: the <code>vm</code>
+module's <code>-ssh</code> firewall rule admits tcp/22 only from the IAP range <code>35.235.240.0/20</code>.
+The external IP carries the <strong>browse ports</strong>, which the <code>-browse</code> rule admits from
+anywhere, and the VM's internet <strong>egress</strong>. So the two reconciliation items are OS
+Login and any external-IP restriction, which must allow the VM.</p>
 </blockquote>
-<p>Net: moving into the org pulled in the secure-by-default set, <strong>none of which block the
-off-platform VM</strong> — even the external-IP restriction aligns with the private design, and
-OS Login was not enforced — clear to proceed. Check yours the same way before you build.</p>
+<p>Net: moving into the org pulled in the secure-by-default set, most of which does not
+touch the off-platform VM. Check yours the same way before you build. Confirm OS Login is
+not enforced. If <code>compute.vmExternalIpAccess</code> restricts external IPs on the project,
+override it at the project level to allow them, for example with an <code>allowAll</code> rule. The
+instance names are hashed and change on rebuild, so an allow-list of specific instances
+would go stale.</p>
 <h2 id="step-6-authenticate-gcloud-cli-login-select-project">Step 6 — Authenticate gcloud (CLI: login + select project)<a class="headerlink" href="#step-6-authenticate-gcloud-cli-login-select-project" title="Permanent link">&para;</a></h2>
 <p>Once the account, project, and billing exist, point the CLI at them. Log in with your
 Google account (opens a browser for OAuth and stores your <em>user</em> credential):</p>
@@ -3408,39 +3446,27 @@ ample default quota. If yours genuinely is too low, validate first with a smalle
 <p>Verify nested virt on your chosen machine type/zone against the current
 <a href="https://cloud.google.com/compute/docs/instances/nested-virtualization/overview">GCP nested-virtualization docs</a>
 rather than a static list — the supported matrix shifts.</p>
-<h2 id="step-11b-cloud-nat-for-egress-one-time-per-region">Step 11b — Cloud NAT for egress (one-time, per region)<a class="headerlink" href="#step-11b-cloud-nat-for-egress-one-time-per-region" title="Permanent link">&para;</a></h2>
-<p>The VM has <strong>no public IP</strong> (ingress is the IAP tunnel). IAP gives <em>inbound</em> SSH only —
-it provides <strong>no outbound</strong> path. But provisioning fetches from the public internet (the
-<code>uv</code> installer from <code>astral.sh</code>, apt packages, GitHub), so the box needs <strong>egress</strong>.
-Without it, cloud-init hangs ~5 min per fetch and <code>vrg-vm create</code> fails at
-<code>await-readiness</code> with <em>"cloud-init did not complete"</em>.</p>
-<p>The fix is a <strong>Cloud NAT</strong> — outbound-only, no inbound exposure, the canonical GCP pattern
-for "IAP ingress + internet egress." It is a <strong>regional singleton</strong>: one Cloud Router +
-NAT covers <em>every</em> off-platform VM in that region on the <code>default</code> network, so you create
-it <strong>once per region</strong>, not per VM. (That's why it lives here in setup, not in the
-per-instance OpenTofu module — see vergil-vm#226.)</p>
-<p>Create it in the region you chose in Step 11 (<code>us-central1</code> here):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>gcloud<span class="w"> </span>compute<span class="w"> </span>routers<span class="w"> </span>create<span class="w"> </span>vergil-nat-router<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="w">  </span>--network<span class="o">=</span>default<span class="w"> </span>--region<span class="o">=</span>us-central1<span class="w"> </span>--project<span class="o">=</span>&lt;PROJECT_ID&gt;
-<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>
-<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>gcloud<span class="w"> </span>compute<span class="w"> </span>routers<span class="w"> </span>nats<span class="w"> </span>create<span class="w"> </span>vergil-nat<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="w">  </span>--router<span class="o">=</span>vergil-nat-router<span class="w"> </span>--region<span class="o">=</span>us-central1<span class="w"> </span>--project<span class="o">=</span>&lt;PROJECT_ID&gt;<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="w">  </span>--auto-allocate-nat-external-ips<span class="w"> </span>--nat-all-subnet-ip-ranges
+<h2 id="step-11b-cloud-nat-for-egress-no-longer-needed">Step 11b — Cloud NAT for egress (no longer needed)<a class="headerlink" href="#step-11b-cloud-nat-for-egress-no-longer-needed" title="Permanent link">&para;</a></h2>
+<p>Provisioning fetches from the public internet (the <code>uv</code> installer from <code>astral.sh</code>, apt
+packages, GitHub), so the box needs <strong>egress</strong>. Before #260 the VM had no external IP
+and egress needed a regional <strong>Cloud NAT</strong>. Without one, cloud-init hung on every fetch
+and <code>vrg-vm create</code> failed at <code>await-readiness</code>.</p>
+<p>Since #260 the VM has its own <strong>ephemeral external IP</strong>, and that IP carries its egress.
+GCP does not apply Public Cloud NAT to an interface that has an external IP. The
+external IP always takes precedence for the primary internal address
+(<a href="https://docs.cloud.google.com/nat/docs/public-nat">Public NAT docs</a>). So this step
+creates nothing. A NAT left over from an earlier setup is harmless, but it no longer
+serves these VMs. Delete it if nothing else in the region uses it:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>gcloud<span class="w"> </span>compute<span class="w"> </span>routers<span class="w"> </span>nats<span class="w"> </span>delete<span class="w"> </span>vergil-nat<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="w">  </span>--router<span class="o">=</span>vergil-nat-router<span class="w"> </span>--region<span class="o">=</span>us-central1<span class="w"> </span>--project<span class="o">=</span>&lt;PROJECT_ID&gt;
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>gcloud<span class="w"> </span>compute<span class="w"> </span>routers<span class="w"> </span>delete<span class="w"> </span>vergil-nat-router<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="w">  </span>--region<span class="o">=</span>us-central1<span class="w"> </span>--project<span class="o">=</span>&lt;PROJECT_ID&gt;
 </code></pre></div>
-<p>Verify it exists (egress takes ~1–2 min to propagate after creation):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>gcloud<span class="w"> </span>compute<span class="w"> </span>routers<span class="w"> </span>nats<span class="w"> </span>describe<span class="w"> </span>vergil-nat<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="w">  </span>--router<span class="o">=</span>vergil-nat-router<span class="w"> </span>--region<span class="o">=</span>us-central1<span class="w"> </span>--project<span class="o">=</span>&lt;PROJECT_ID&gt;<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="w">  </span>--format<span class="o">=</span><span class="s1">'value(name)'</span>
-</code></pre></div>
-<blockquote>
-<p>One NAT per region is enough no matter how many repos/VMs you run there. If you build
-in a second region, repeat this step for that region.</p>
-</blockquote>
 <h2 id="step-12-ssh-keypair">Step 12 — SSH keypair<a class="headerlink" href="#step-12-ssh-keypair" title="Permanent link">&para;</a></h2>
 <p>The VM is reached over SSH, and the OpenTofu <code>vm</code> module takes an <code>ssh_public_key</code>.
 Generate a dedicated keypair on your Mac:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>ssh-keygen<span class="w"> </span>-t<span class="w"> </span>ed25519<span class="w"> </span>-f<span class="w"> </span>~/.ssh/vergil-off-platform<span class="w"> </span>-C<span class="w"> </span>vergil-off-platform
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>cat<span class="w"> </span>~/.ssh/vergil-off-platform.pub<span class="w">      </span><span class="c1"># the module's ssh_public_key input</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>ssh-keygen<span class="w"> </span>-t<span class="w"> </span>ed25519<span class="w"> </span>-f<span class="w"> </span>~/.ssh/vergil-off-platform<span class="w"> </span>-C<span class="w"> </span>vergil-off-platform
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>cat<span class="w"> </span>~/.ssh/vergil-off-platform.pub<span class="w">      </span><span class="c1"># the module's ssh_public_key input</span>
 </code></pre></div>
 <p>In the full flow the backend (<code>vergil-tooling#1706</code>) manages this key per <code>create</code> and
 injects it; for a manual <code>tofu apply</code> you pass the <code>.pub</code> contents as <code>ssh_public_key</code>.
@@ -3451,13 +3477,13 @@ propagate.</p>
 <ol>
 <li><strong>Declare the off-platform profile</strong> in the consuming repo's <code>vergil.toml</code>:</li>
 </ol>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="k">[vm.vergil-user]</span>
-<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="n">backend</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s2">"off-platform"</span>
-<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="n">provider</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"gcp"</span>
-<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="n">region</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s2">"us-central1"</span>
-<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="n">instance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"n2-standard-16"</span><span class="w">   </span><span class="c1"># or n2-standard-8 to validate</span>
-<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="n">volume</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s2">"300GiB"</span>
-<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="n">nested</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="k">[vm.vergil-user]</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="n">backend</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s2">"off-platform"</span>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="n">provider</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"gcp"</span>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="n">region</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s2">"us-central1"</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="n">instance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"n2-standard-16"</span><span class="w">   </span><span class="c1"># or n2-standard-8 to validate</span>
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="n">volume</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s2">"300GiB"</span>
+<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="n">nested</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
 </code></pre></div>
 <ol>
 <li><strong>Create the VM</strong> — <code>vrg-vm create &lt;org&gt;/&lt;repo&gt;</code> drives the OpenTofu modules,
@@ -3466,6 +3492,13 @@ propagate.</p>
    manual <code>tofu apply</code> with hand-composed inputs.</li>
 <li><strong>Confirm the payoff</strong> — a lab guest resolves <strong><code>driver=kvm</code></strong> (nested KVM, not the
    TCG emulation tax) — the entire reason for the off-platform backend.</li>
+<li><strong>Browse the forwarded ports</strong> — the VM's <code>-browse</code> firewall rule follows the
+   profile's <code>port_forwards</code>. Each entry's host-side port (the part before the <code>|</code>,
+   e.g. <code>9443</code> in <code>9443|127.0.0.1:19443</code>) is opened on the VM's external IP, from any
+   source. Undeclared ports stay closed. A profile with no <code>port_forwards</code> gets no
+   browse rule at all. SSH (22) is never in it: SSH stays IAP-only, and forwarding
+   host port 22 fails the plan. To change what is reachable, edit <code>port_forwards</code> and
+   re-apply or rebuild. The rule is updated along with the relays.</li>
 </ol>
 <hr />
 <h2 id="azure-parity-todo-when-the-azure-path-is-set-up">Azure (parity — TODO when the Azure path is set up)<a class="headerlink" href="#azure-parity-todo-when-the-azure-path-is-set-up" title="Permanent link">&para;</a></h2>

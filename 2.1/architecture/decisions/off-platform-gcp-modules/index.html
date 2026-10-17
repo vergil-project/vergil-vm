@@ -607,6 +607,8 @@
       
         
       
+        
+      
     
     
     
@@ -659,6 +661,34 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../releases/v2.1.46/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.46
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
               
             
               
@@ -2738,9 +2768,14 @@ and mounts the persistent volume at <code>/vergil</code> before provisioning, an
 password SSH.</p>
 <h2 id="security">Security<a class="headerlink" href="#security" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>No public attack surface.</strong> The instance has <strong>no public IP</strong> (<code>access_config</code> is
-  dropped), so there is no internet-facing sshd. Access is via <strong>GCP Identity-Aware
-  Proxy (IAP) TCP tunneling</strong>: the SSH firewall allows ingress only from Google's fixed
+<li><strong>External IP for browsing, not for SSH (#260).</strong> The instance has an <strong>ephemeral
+  external IP</strong> (<code>access_config {}</code>), shown by <code>vrg-vm list</code>. The IP carries the
+  browse ports, which the <code>-browse</code> firewall admits from <code>0.0.0.0/0</code>, and the VM's
+  internet egress. Public Cloud NAT does not apply to an interface with an external
+  IP. The exposure is deliberate: the boxes are ephemeral, hold no real data, and the
+  forwarded UIs are meant to be shared by IP. There is still <strong>no internet-facing
+  sshd</strong>. SSH is via <strong>GCP Identity-Aware Proxy (IAP) TCP tunneling</strong>: the SSH
+  firewall allows ingress only from Google's fixed
   IAP range <code>35.235.240.0/20</code> — a module constant, not an operator address, so nothing
   refreshes when the operator roams. IAP supersedes the original operator-IP allow-list,
   which was unsound behind NAT (a host cannot self-detect its public IP without a
@@ -2756,6 +2791,14 @@ password SSH.</p>
   provider-agnostic module interface stays connection-method-blind.</li>
 <li>The GitHub App private key (injected by #1706) lands on the <strong>ephemeral boot disk</strong>,
   never the persistent volume — teardown destroys it.</li>
+<li><strong>Browse ports follow <code>port_forwards</code> (#322).</strong> The <code>-browse</code> firewall opens exactly
+  the host-side ports of the profile's <code>[vm] port_forwards</code>. These are the same entries
+  <code>80-port-forwards.sh</code> turns into <code>0.0.0.0:&lt;port&gt;</code> relays, so a repo controls its
+  exposure in the one declaration that creates the relay. The module reads them from
+  the <code>PORT_FORWARDS</code> line of <code>provision_env</code>, so the interface gains no new variable.
+  An absent <code>PORT_FORWARDS</code> line, a non-numeric or out-of-range port, or port 22 fails
+  the plan. With no forwards, the rule is omitted entirely. A GCE <code>allow</code> block with an
+  empty <code>ports</code> list would admit every TCP port, so the module never renders one.</li>
 </ul>
 <h2 id="reproducibility">Reproducibility<a class="headerlink" href="#reproducibility" title="Permanent link">&para;</a></h2>
 <p><code>required_version</code> and <code>required_providers</code> (<code>hashicorp/google ~&gt; 6.0</code>) are pinned, and
