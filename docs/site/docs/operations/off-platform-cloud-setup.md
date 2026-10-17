@@ -524,6 +524,13 @@ The account is ready. The VM lifecycle is driven by the off-platform backend:
    manual `tofu apply` with hand-composed inputs.
 3. **Confirm the payoff** — a lab guest resolves **`driver=kvm`** (nested KVM, not the
    TCG emulation tax) — the entire reason for the off-platform backend.
+4. **Browse the forwarded ports** — the VM's `-browse` firewall rule follows the
+   profile's `port_forwards`. Each entry's host-side port (the part before the `|`,
+   e.g. `9443` in `9443|127.0.0.1:19443`) is opened on the VM's external IP, from any
+   source. Undeclared ports stay closed. A profile with no `port_forwards` gets no
+   browse rule at all. SSH (22) is never in it: SSH stays IAP-only, and forwarding
+   host port 22 fails the plan. To change what is reachable, edit `port_forwards` and
+   re-apply or rebuild. The rule is updated along with the relays.
 
 ---
 
