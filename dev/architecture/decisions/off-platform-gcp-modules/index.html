@@ -2738,9 +2738,14 @@ and mounts the persistent volume at <code>/vergil</code> before provisioning, an
 password SSH.</p>
 <h2 id="security">Security<a class="headerlink" href="#security" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>No public attack surface.</strong> The instance has <strong>no public IP</strong> (<code>access_config</code> is
-  dropped), so there is no internet-facing sshd. Access is via <strong>GCP Identity-Aware
-  Proxy (IAP) TCP tunneling</strong>: the SSH firewall allows ingress only from Google's fixed
+<li><strong>External IP for browsing, not for SSH (#260).</strong> The instance has an <strong>ephemeral
+  external IP</strong> (<code>access_config {}</code>), shown by <code>vrg-vm list</code>. The IP carries the
+  browse ports, which the <code>-browse</code> firewall admits from <code>0.0.0.0/0</code>, and the VM's
+  internet egress. Public Cloud NAT does not apply to an interface with an external
+  IP. The exposure is deliberate: the boxes are ephemeral, hold no real data, and the
+  forwarded UIs are meant to be shared by IP. There is still <strong>no internet-facing
+  sshd</strong>. SSH is via <strong>GCP Identity-Aware Proxy (IAP) TCP tunneling</strong>: the SSH
+  firewall allows ingress only from Google's fixed
   IAP range <code>35.235.240.0/20</code> — a module constant, not an operator address, so nothing
   refreshes when the operator roams. IAP supersedes the original operator-IP allow-list,
   which was unsound behind NAT (a host cannot self-detect its public IP without a
