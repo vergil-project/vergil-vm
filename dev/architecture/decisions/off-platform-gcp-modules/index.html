@@ -2756,6 +2756,14 @@ password SSH.</p>
   provider-agnostic module interface stays connection-method-blind.</li>
 <li>The GitHub App private key (injected by #1706) lands on the <strong>ephemeral boot disk</strong>,
   never the persistent volume — teardown destroys it.</li>
+<li><strong>Browse ports follow <code>port_forwards</code> (#322).</strong> The <code>-browse</code> firewall opens exactly
+  the host-side ports of the profile's <code>[vm] port_forwards</code>. These are the same entries
+  <code>80-port-forwards.sh</code> turns into <code>0.0.0.0:&lt;port&gt;</code> relays, so a repo controls its
+  exposure in the one declaration that creates the relay. The module reads them from
+  the <code>PORT_FORWARDS</code> line of <code>provision_env</code>, so the interface gains no new variable.
+  An absent <code>PORT_FORWARDS</code> line, a non-numeric or out-of-range port, or port 22 fails
+  the plan. With no forwards, the rule is omitted entirely. A GCE <code>allow</code> block with an
+  empty <code>ports</code> list would admit every TCP port, so the module never renders one.</li>
 </ul>
 <h2 id="reproducibility">Reproducibility<a class="headerlink" href="#reproducibility" title="Permanent link">&para;</a></h2>
 <p><code>required_version</code> and <code>required_providers</code> (<code>hashicorp/google ~&gt; 6.0</code>) are pinned, and

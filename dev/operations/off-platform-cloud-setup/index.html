@@ -3466,6 +3466,13 @@ propagate.</p>
    manual <code>tofu apply</code> with hand-composed inputs.</li>
 <li><strong>Confirm the payoff</strong> — a lab guest resolves <strong><code>driver=kvm</code></strong> (nested KVM, not the
    TCG emulation tax) — the entire reason for the off-platform backend.</li>
+<li><strong>Browse the forwarded ports</strong> — the VM's <code>-browse</code> firewall rule follows the
+   profile's <code>port_forwards</code>. Each entry's host-side port (the part before the <code>|</code>,
+   e.g. <code>9443</code> in <code>9443|127.0.0.1:19443</code>) is opened on the VM's external IP, from any
+   source. Undeclared ports stay closed. A profile with no <code>port_forwards</code> gets no
+   browse rule at all. SSH (22) is never in it: SSH stays IAP-only, and forwarding
+   host port 22 fails the plan. To change what is reachable, edit <code>port_forwards</code> and
+   re-apply or rebuild. The rule is updated along with the relays.</li>
 </ol>
 <hr />
 <h2 id="azure-parity-todo-when-the-azure-path-is-set-up">Azure (parity — TODO when the Azure path is set up)<a class="headerlink" href="#azure-parity-todo-when-the-azure-path-is-set-up" title="Permanent link">&para;</a></h2>
