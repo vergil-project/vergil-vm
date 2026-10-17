@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.1.46] - 2026-10-17
+
+### Documentation
+
+- describe the VM's external IP and correct the vmExternalIpAccess guidance (#342)
+
+### Features
+
+- open every port_forwards host port in the browse firewall (#341)
+
 ## [2.1.45] - 2026-10-16
 
 ### Documentation
