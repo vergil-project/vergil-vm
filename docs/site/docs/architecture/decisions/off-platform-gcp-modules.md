@@ -111,6 +111,14 @@ password SSH.
   provider-agnostic module interface stays connection-method-blind.
 - The GitHub App private key (injected by #1706) lands on the **ephemeral boot disk**,
   never the persistent volume — teardown destroys it.
+- **Browse ports follow `port_forwards` (#322).** The `-browse` firewall opens exactly
+  the host-side ports of the profile's `[vm] port_forwards`. These are the same entries
+  `80-port-forwards.sh` turns into `0.0.0.0:<port>` relays, so a repo controls its
+  exposure in the one declaration that creates the relay. The module reads them from
+  the `PORT_FORWARDS` line of `provision_env`, so the interface gains no new variable.
+  An absent `PORT_FORWARDS` line, a non-numeric or out-of-range port, or port 22 fails
+  the plan. With no forwards, the rule is omitted entirely. A GCE `allow` block with an
+  empty `ports` list would admit every TCP port, so the module never renders one.
 
 ## Reproducibility
 
