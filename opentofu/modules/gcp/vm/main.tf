@@ -27,9 +27,10 @@ locals {
   browse_ports = distinct([for p in local.browse_ports_raw : try(tostring(tonumber(p)), p)])
 }
 
-# Ingress: SSH only, from Google's IAP range. There is no public IP and no
-# operator-IP allow-list — IAP gates access via the operator's GCP IAM
-# (roles/iap.tunnelResourceAccessor), so nothing here refreshes when they roam.
+# Ingress: SSH, from Google's IAP range only — never from the instance's external IP
+# (that IP carries only the browse ports below). There is no operator-IP allow-list —
+# IAP gates access via the operator's GCP IAM (roles/iap.tunnelResourceAccessor), so
+# nothing here refreshes when they roam.
 resource "google_compute_firewall" "ssh" {
   name    = "${var.name}-ssh"
   network = "default"
