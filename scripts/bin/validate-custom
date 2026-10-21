@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # scripts/bin/validate-custom — repo-specific validation, auto-discovered by vrg-validate
 # (vergil_tooling.bin.vrg_validate._find_custom_validator looks for exactly this path).
-# Runs the host-side check-*.sh assertions (OpenTofu, cloud-init, the
-# dependency-update hook, vrg-vm-init series), and — when tofu is available
+# Runs the host-side check-*.sh assertions (OpenTofu, cloud-init, the dependency-update
+# hook, vrg-vm-init series, vagrant plugin helpers), and — when tofu is available
 # (vergil-docker#352) — `tofu fmt`/`validate` for every provider module, plus
 # `tofu test` where a module has a tests/ dir (mocked providers, plan-only). fail-defer:
 # run everything, report all failures, exit nonzero if any failed.
@@ -16,7 +16,7 @@ run() { echo "→ $*"; "$@" || fail=1; }
 # 1) Grep-based opentofu checks — no tofu needed, always run.
 for chk in check-opentofu-contract check-opentofu-name-validation \
            check-cloud-init-generation check-azure-volume-id-parse \
-           check-update-deps-hook check-vm-init-series; do
+           check-update-deps-hook check-vm-init-series check-vagrant-plugins; do
   s="${ROOT}/tests/${chk}.sh"
   if [ -f "$s" ]; then
     run bash "$s"
