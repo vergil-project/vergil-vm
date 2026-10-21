@@ -11,7 +11,7 @@
       
       
       
-        <link rel="prev" href="../">
+        <link rel="prev" href="../v2.1.47/">
       
       
         <link rel="next" href="../v2.1.45/">
@@ -616,6 +616,8 @@
       
         
       
+        
+      
     
     
     
@@ -671,6 +673,34 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../v2.1.47/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.47
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
               
             
               
@@ -2585,6 +2615,7 @@
 <li><strong>open every port_forwards host port in the browse firewall (#341)</strong>
 The -browse firewall rule admitted only tcp:3000, so any other forwarded port was reachable on Lima but blocked on a cloud VM. Derive the rule's ports from the PORT_FORWARDS line of provision_env (the same declaration that creates the relays). Omit the rule when there are no forwards, since an empty ports list would admit every port. Fail the plan on a missing line, a bad port, or port 22. A moved block carries existing state. Add a mocked-provider tofu test suite and run it from validate-custom.</li>
 </ul>
+<p><strong>CI Evidence:</strong> All gates passed — full audit bundle available. <a href="https://github.com/vergil-project/vergil-vm/releases/download/v2.1.46/v2.1.46-ci-evidence.tar.gz">Download →</a></p>
 
 
 
