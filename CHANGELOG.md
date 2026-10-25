@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.1.48] - 2026-10-25
+
+### Chores
+
+- turn off Claude Code co-author attribution (#352)
+- add the report-only dependabot.yml (#354)
+- sync the vergil-managed .gitignore block (#358)
+- stop tracking generated changelog/releases docs (#360)
+
+### Documentation
+
+- document IAP ingress prerequisites for SSH (#359)
+
 ## [2.1.47] - 2026-10-21
 
 ### Bug fixes
