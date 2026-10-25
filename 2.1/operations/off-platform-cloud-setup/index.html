@@ -611,6 +611,8 @@
       
         
       
+        
+      
     
     
     
@@ -663,6 +665,34 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../releases/v2.1.48/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.48
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
               
             
               
@@ -2647,6 +2677,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#step-9b-iap-ingress-for-ssh" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 9b — IAP ingress for SSH
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#step-10-check-vcpu-quota" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2953,6 +2994,17 @@
     <span class="md-ellipsis">
       
         Step 9 — IAM permissions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-9b-iap-ingress-for-ssh" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 9b — IAP ingress for SSH
       
     </span>
   </a>
@@ -3443,15 +3495,50 @@ backend (<code>vergil-tooling#1706</code>), not configured here.</p>
 ADC, grant that account <code>roles/compute.admin</code> on the project — but the org policy
 <code>iam.disableServiceAccountKeyCreation</code> means you'd use impersonation / workload
 identity, not a downloaded key.)</p>
+<h2 id="step-9b-iap-ingress-for-ssh">Step 9b — IAP ingress for SSH<a class="headerlink" href="#step-9b-iap-ingress-for-ssh" title="Permanent link">&para;</a></h2>
+<p><code>vrg-vm</code> reaches the VM with <code>gcloud compute ssh --tunnel-through-iap</code>, so every
+readiness probe, provisioning step, and session rides an <strong>Identity-Aware Proxy (IAP)
+TCP-forwarding</strong> tunnel. IAP authorizes that tunnel against the operator's IAM, so the
+identity running <code>vrg-vm</code> needs the <strong>IAP-secured Tunnel User</strong> role
+(<code>roles/iap.tunnelResourceAccessor</code>) on the project:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>gcloud<span class="w"> </span>projects<span class="w"> </span>add-iam-policy-binding<span class="w"> </span>&lt;PROJECT_ID&gt;<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span>--member<span class="o">=</span>user:&lt;YOUR_EMAIL&gt;<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">  </span>--role<span class="o">=</span>roles/iap.tunnelResourceAccessor
+</code></pre></div>
+<blockquote>
+<p><strong>Owners already have it, which is why it is easy to miss.</strong> Google's docs state that
+a principal with the <strong>Owner</strong> role has permission to use IAP for TCP forwarding. A
+single-operator sandbox (Step 9) needs no grant. A <strong>non-owner</strong> operator without this
+role fails at <code>await-readiness</code>, the first SSH-over-IAP step, with an IAP
+authorization error.</p>
+<p><code>gcloud compute ssh</code> also pushes the operator's SSH key into instance metadata, which
+needs the compute permissions Google lists for SSH over IAP
+(<code>roles/compute.instanceAdmin.v1</code>). An operator who can run the OpenTofu apply
+already holds them.</p>
+</blockquote>
+<p><strong>The IAP API.</strong> Google's IAP TCP-forwarding docs for Compute Engine do not list enabling
+the Identity-Aware Proxy API (<code>iap.googleapis.com</code>) as a prerequisite. Enable it only if
+you want to manage tunnel access from the console's <strong>Security → Identity-Aware Proxy</strong>
+page or the IAP API:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>gcloud<span class="w"> </span>services<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>iap.googleapis.com
+</code></pre></div>
+<p><code>vrg-vm create</code> enables no APIs itself. Nothing in the backend or the OpenTofu modules
+turns on <code>iap.googleapis.com</code>, so this step is yours.</p>
+<p><strong>The firewall rule is handled for you.</strong> IAP originates the tunnel from Google's
+<code>35.235.240.0/20</code> range. The <code>vm</code> module's <code>-ssh</code> firewall rule admits tcp/22 from
+exactly that range (see the external-IP note at the end of Step 5b). Do not create
+one by hand.</p>
+<p>Reference:
+<a href="https://docs.cloud.google.com/iap/docs/using-tcp-forwarding">Use IAP for TCP forwarding</a>.</p>
 <h2 id="step-10-check-vcpu-quota">Step 10 — Check vCPU quota<a class="headerlink" href="#step-10-check-vcpu-quota" title="Permanent link">&para;</a></h2>
 <p>A nested-virt instance is large (the off-platform example is <code>n2-standard-16</code> = 16
 vCPU, <strong>N2</strong> family — N2 supports nested virtualization). Confirm the region has the
 quota. <code>describe</code> does <strong>not</strong> accept <code>--filter</code> (that's a <code>list</code> flag), so flatten and
 grep:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>gcloud<span class="w"> </span>compute<span class="w"> </span>regions<span class="w"> </span>describe<span class="w"> </span>us-central1<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span>--flatten<span class="o">=</span><span class="s2">"quotas"</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">  </span>--format<span class="o">=</span><span class="s2">"value(quotas.metric,quotas.limit,quotas.usage)"</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">  </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-E<span class="w"> </span><span class="s1">'^(CPUS|N2_CPUS)'</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>gcloud<span class="w"> </span>compute<span class="w"> </span>regions<span class="w"> </span>describe<span class="w"> </span>us-central1<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="w">  </span>--flatten<span class="o">=</span><span class="s2">"quotas"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="w">  </span>--format<span class="o">=</span><span class="s2">"value(quotas.metric,quotas.limit,quotas.usage)"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="w">  </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-E<span class="w"> </span><span class="s1">'^(CPUS|N2_CPUS)'</span>
 </code></pre></div>
 <ul>
 <li><strong><code>CPUS</code></strong> — total vCPUs in the region; <strong><code>N2_CPUS</code></strong> — N2-family vCPUs.</li>
@@ -3487,16 +3574,16 @@ external IP always takes precedence for the primary internal address
 (<a href="https://docs.cloud.google.com/nat/docs/public-nat">Public NAT docs</a>). So this step
 creates nothing. A NAT left over from an earlier setup is harmless, but it no longer
 serves these VMs. Delete it if nothing else in the region uses it:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>gcloud<span class="w"> </span>compute<span class="w"> </span>routers<span class="w"> </span>nats<span class="w"> </span>delete<span class="w"> </span>vergil-nat<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="w">  </span>--router<span class="o">=</span>vergil-nat-router<span class="w"> </span>--region<span class="o">=</span>us-central1<span class="w"> </span>--project<span class="o">=</span>&lt;PROJECT_ID&gt;
-<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>gcloud<span class="w"> </span>compute<span class="w"> </span>routers<span class="w"> </span>delete<span class="w"> </span>vergil-nat-router<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="w">  </span>--region<span class="o">=</span>us-central1<span class="w"> </span>--project<span class="o">=</span>&lt;PROJECT_ID&gt;
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>gcloud<span class="w"> </span>compute<span class="w"> </span>routers<span class="w"> </span>nats<span class="w"> </span>delete<span class="w"> </span>vergil-nat<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">  </span>--router<span class="o">=</span>vergil-nat-router<span class="w"> </span>--region<span class="o">=</span>us-central1<span class="w"> </span>--project<span class="o">=</span>&lt;PROJECT_ID&gt;
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>gcloud<span class="w"> </span>compute<span class="w"> </span>routers<span class="w"> </span>delete<span class="w"> </span>vergil-nat-router<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="w">  </span>--region<span class="o">=</span>us-central1<span class="w"> </span>--project<span class="o">=</span>&lt;PROJECT_ID&gt;
 </code></pre></div>
 <h2 id="step-12-ssh-keypair">Step 12 — SSH keypair<a class="headerlink" href="#step-12-ssh-keypair" title="Permanent link">&para;</a></h2>
 <p>The VM is reached over SSH, and the OpenTofu <code>vm</code> module takes an <code>ssh_public_key</code>.
 Generate a dedicated keypair on your Mac:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>ssh-keygen<span class="w"> </span>-t<span class="w"> </span>ed25519<span class="w"> </span>-f<span class="w"> </span>~/.ssh/vergil-off-platform<span class="w"> </span>-C<span class="w"> </span>vergil-off-platform
-<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>cat<span class="w"> </span>~/.ssh/vergil-off-platform.pub<span class="w">      </span><span class="c1"># the module's ssh_public_key input</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>ssh-keygen<span class="w"> </span>-t<span class="w"> </span>ed25519<span class="w"> </span>-f<span class="w"> </span>~/.ssh/vergil-off-platform<span class="w"> </span>-C<span class="w"> </span>vergil-off-platform
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>cat<span class="w"> </span>~/.ssh/vergil-off-platform.pub<span class="w">      </span><span class="c1"># the module's ssh_public_key input</span>
 </code></pre></div>
 <p>In the full flow the backend (<code>vergil-tooling#1706</code>) manages this key per <code>create</code> and
 injects it; for a manual <code>tofu apply</code> you pass the <code>.pub</code> contents as <code>ssh_public_key</code>.
@@ -3507,13 +3594,13 @@ propagate.</p>
 <ol>
 <li><strong>Declare the off-platform profile</strong> in the consuming repo's <code>vergil.toml</code>:</li>
 </ol>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="k">[vm.vergil-user]</span>
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="n">backend</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s2">"off-platform"</span>
-<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="n">provider</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"gcp"</span>
-<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="n">region</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s2">"us-central1"</span>
-<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="n">instance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"n2-standard-16"</span><span class="w">   </span><span class="c1"># or n2-standard-8 to validate</span>
-<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="n">volume</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s2">"300GiB"</span>
-<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="n">nested</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="k">[vm.vergil-user]</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="n">backend</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s2">"off-platform"</span>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="n">provider</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"gcp"</span>
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="n">region</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s2">"us-central1"</span>
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="n">instance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"n2-standard-16"</span><span class="w">   </span><span class="c1"># or n2-standard-8 to validate</span>
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="n">volume</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s2">"300GiB"</span>
+<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a><span class="n">nested</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
 </code></pre></div>
 <ol>
 <li><strong>Create the VM</strong> — <code>vrg-vm create &lt;org&gt;/&lt;repo&gt;</code> drives the OpenTofu modules,

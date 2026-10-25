@@ -618,6 +618,8 @@
       
         
       
+        
+      
     
     
     
@@ -673,6 +675,34 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../v2.1.48/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.48
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
               
             
               
@@ -2721,7 +2751,7 @@ Egress filtering (vergil-tooling #901, three-layer iptables/HAProxy/pf, adopted 
 </li>
 <li>
 <p><strong>add VM service-surface minimization implementation plan</strong>
-Task-by-task TDD plan for issue #78: shared inventory snippet + audit/metrics host wrappers, a reconciliation gate that confirms the mask/purge lists against a real build, an intent-asserting regression test (red against the unstripped image), the template minimization block (green after rebuild), and before/after footprint evidence. Reserves lima-<em> and netfilter</em> units for egress filtering.</p>
+Task-by-task TDD plan for issue #78: shared inventory snippet + audit/metrics host wrappers, a reconciliation gate that confirms the mask/purge lists against a real build, an intent-asserting regression test (red against the unstripped image), the template minimization block (green after rebuild), and before/after footprint evidence. Reserves lima-* and netfilter* units for egress filtering.</p>
 </li>
 <li>
 <p><strong>align plan and spec after alignment review</strong>
@@ -2748,7 +2778,7 @@ Host-side wrapper; labeled before/after footprint (proc count, idle memory, root
 </li>
 <li>
 <p><strong>minimize systemd service surface</strong>
-Dedicated mode:system block masks ~31 VM-irrelevant units (VMware tools, iSCSI, multipathd, udisks2, ModemManager, apport, Ubuntu Pro, sysstat, fwupd, mdadm, update-notifier, lxd-installer, motd-news, apt-daily timers, getty@tty1, networkd-wait-online) and purges snapd + unattended-upgrades. mask_if_present gates on systemctl cat so absent units are skipped. Comment header carries the keep/mask/purge table; reserves lima-<em> and netfilter</em>/ufw for egress filtering (#901). Mask/purge lists match tests/test_services.sh exactly. Closes the surface #74 warned about.</p>
+Dedicated mode:system block masks ~31 VM-irrelevant units (VMware tools, iSCSI, multipathd, udisks2, ModemManager, apport, Ubuntu Pro, sysstat, fwupd, mdadm, update-notifier, lxd-installer, motd-news, apt-daily timers, getty@tty1, networkd-wait-online) and purges snapd + unattended-upgrades. mask_if_present gates on systemctl cat so absent units are skipped. Comment header carries the keep/mask/purge table; reserves lima-* and netfilter*/ufw for egress filtering (#901). Mask/purge lists match tests/test_services.sh exactly. Closes the surface #74 warned about.</p>
 </li>
 </ul>
 <h2 id="testing">Testing<a class="headerlink" href="#testing" title="Permanent link">&para;</a></h2>
