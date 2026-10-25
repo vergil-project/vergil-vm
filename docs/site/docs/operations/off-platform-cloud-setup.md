@@ -420,6 +420,51 @@ ADC, grant that account `roles/compute.admin` on the project — but the org pol
 `iam.disableServiceAccountKeyCreation` means you'd use impersonation / workload
 identity, not a downloaded key.)
 
+## Step 9b — IAP ingress for SSH
+
+`vrg-vm` reaches the VM with `gcloud compute ssh --tunnel-through-iap`, so every
+readiness probe, provisioning step, and session rides an **Identity-Aware Proxy (IAP)
+TCP-forwarding** tunnel. IAP authorizes that tunnel against the operator's IAM, so the
+identity running `vrg-vm` needs the **IAP-secured Tunnel User** role
+(`roles/iap.tunnelResourceAccessor`) on the project:
+
+```bash
+gcloud projects add-iam-policy-binding <PROJECT_ID> \
+  --member=user:<YOUR_EMAIL> \
+  --role=roles/iap.tunnelResourceAccessor
+```
+
+> **Owners already have it, which is why it is easy to miss.** Google's docs state that
+> a principal with the **Owner** role has permission to use IAP for TCP forwarding. A
+> single-operator sandbox (Step 9) needs no grant. A **non-owner** operator without this
+> role fails at `await-readiness`, the first SSH-over-IAP step, with an IAP
+> authorization error.
+>
+> `gcloud compute ssh` also pushes the operator's SSH key into instance metadata, which
+> needs the compute permissions Google lists for SSH over IAP
+> (`roles/compute.instanceAdmin.v1`). An operator who can run the OpenTofu apply
+> already holds them.
+
+**The IAP API.** Google's IAP TCP-forwarding docs for Compute Engine do not list enabling
+the Identity-Aware Proxy API (`iap.googleapis.com`) as a prerequisite. Enable it only if
+you want to manage tunnel access from the console's **Security → Identity-Aware Proxy**
+page or the IAP API:
+
+```bash
+gcloud services enable iap.googleapis.com
+```
+
+`vrg-vm create` enables no APIs itself. Nothing in the backend or the OpenTofu modules
+turns on `iap.googleapis.com`, so this step is yours.
+
+**The firewall rule is handled for you.** IAP originates the tunnel from Google's
+`35.235.240.0/20` range. The `vm` module's `-ssh` firewall rule admits tcp/22 from
+exactly that range (see the external-IP note at the end of Step 5b). Do not create
+one by hand.
+
+Reference:
+[Use IAP for TCP forwarding](https://docs.cloud.google.com/iap/docs/using-tcp-forwarding).
+
 ## Step 10 — Check vCPU quota
 
 A nested-virt instance is large (the off-platform example is `n2-standard-16` = 16
