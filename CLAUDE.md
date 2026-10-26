@@ -115,3 +115,10 @@ vrg-container-run -- vrg-validate
 This is the **only** validation command. Do not run individual linters,
 formatters, or other tools outside of `vrg-validate`. If a tool is not
 invoked by `vrg-validate`, it is not part of the validation pipeline.
+
+`vrg-validate` auto-discovers this repo's custom validator,
+`scripts/bin/validate-custom` (host-side checks plus `tofu fmt`/`validate`/`test`
+per OpenTofu module; a missing `tofu` is a hard failure, not a skip). The same
+validator also runs in PR CI as the `quality / custom` job (from vergil-actions
+v2.1.58), and its log is kept as `quality-custom.log` in the `quality / evidence`
+artifact.
