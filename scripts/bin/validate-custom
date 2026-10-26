@@ -6,6 +6,8 @@
 # every provider module, plus `tofu test` where a module has a tests/ dir (mocked
 # providers, plan-only). `tofu` is required: a missing `tofu` fails the run. fail-defer:
 # run everything, report all failures, exit nonzero if any failed.
+# Also runs in PR CI as the `quality / custom` job (vergil-actions >= v2.1.58); its log
+# is `quality-custom.log` in the `quality / evidence` artifact.
 set -uo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "${HERE}/../.." && pwd)"
