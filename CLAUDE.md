@@ -8,7 +8,9 @@ vergil-vm builds the sandboxed Ubuntu VMs that Vergil agents run Claude Code in:
 the Lima agent template (`templates/`, assembled by `scripts/build-template.sh`),
 the OpenTofu modules for off-platform cloud VMs (`opentofu/modules/`), and
 `scripts/vrg-vm-init.sh`, which injects an identity's GitHub App credentials into
-a VM. Full guide: <https://vergil-project.github.io/vergil-vm/>.
+a VM. `templates/agent.yaml` is generated; edit `templates/agent.yaml.skel` or
+`templates/provision/*.sh` and rerun `scripts/build-template.sh`. Full guide:
+<https://vergil-project.github.io/vergil-vm/>.
 
 **Dependency updates**: `[dependency-update].hook` in `vergil.toml` runs
 `scripts/dev/update-deps.sh` at the end of every `vrg-release`; see
