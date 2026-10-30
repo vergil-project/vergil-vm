@@ -22,7 +22,11 @@ apt-get install -y --no-install-recommends \
   zsh vim tmux nano \
   python3 python3-venv \
   socat \
-  chrony
+  chrony \
+  make
+
+# make — repos whose checks run through a Makefile (paad's `make test`,
+# issue #376) need it on the agent VM.
 
 # socat — the port-forward relay proxy (templates/provision/80-port-forwards.sh,
 # issue #298). Its -T idle timeout reaps half-dead connections that
