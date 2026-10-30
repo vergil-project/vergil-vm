@@ -57,7 +57,7 @@ write_files:
       if command -v containerd-rootless-setuptool.sh >/dev/null 2>&1; then exit 0; fi
 
       # Pinned explicitly; Lima tracks its own nerdctl version. Bump deliberately.
-      NERDCTL_VERSION=2.4.1
+      NERDCTL_VERSION=2.4.2
       ARCH="$(dpkg --print-architecture)"   # amd64 | arm64 — matches the nerdctl asset arch
 
       export DEBIAN_FRONTEND=noninteractive
