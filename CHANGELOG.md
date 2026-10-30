@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.1.49] - 2026-10-30
+
+### Bug fixes
+
+- fail the custom validator when tofu is missing instead of skipping (#366)
+
+### Chores
+
+- sync the vergil-managed .gitignore block (#370)
+- sync the vergil-managed .gitignore block (#374)
+
+### Documentation
+
+- note that the custom validator runs in PR CI as quality / custom (#368)
+- steering and settings sweep (epic 558) (#372)
+
+### Features
+
+- install make on the agent VM (#378)
+
 ## [2.1.48] - 2026-10-25
 
 ### Chores
