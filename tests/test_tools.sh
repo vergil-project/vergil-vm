@@ -23,5 +23,6 @@ check_command zsh
 check_command vim
 check_command tmux
 check_command nano
+check_command make
 
 echo "test_tools: all checks passed"

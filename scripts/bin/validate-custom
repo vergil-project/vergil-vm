@@ -2,10 +2,12 @@
 # scripts/bin/validate-custom — repo-specific validation, auto-discovered by vrg-validate
 # (vergil_tooling.bin.vrg_validate._find_custom_validator looks for exactly this path).
 # Runs the host-side check-*.sh assertions (OpenTofu, cloud-init, the dependency-update
-# hook, vrg-vm-init series, vagrant plugin helpers), and — when tofu is available
-# (vergil-docker#352) — `tofu fmt`/`validate` for every provider module, plus
-# `tofu test` where a module has a tests/ dir (mocked providers, plan-only). fail-defer:
+# hook, vrg-vm-init series, vagrant plugin helpers), then `tofu fmt`/`validate` for
+# every provider module, plus `tofu test` where a module has a tests/ dir (mocked
+# providers, plan-only). `tofu` is required: a missing `tofu` fails the run. fail-defer:
 # run everything, report all failures, exit nonzero if any failed.
+# Also runs in PR CI as the `quality / custom` job (vergil-actions >= v2.1.58); its log
+# is `quality-custom.log` in the `quality / evidence` artifact.
 set -uo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "${HERE}/../.." && pwd)"
@@ -26,9 +28,8 @@ for chk in check-opentofu-contract check-opentofu-name-validation \
   fi
 done
 
-# 2) tofu fmt + validate per module — only when tofu is installed. A missing tofu is
-# NOT a silent pass: it is an explicit, loud SKIP so the gap (vergil-docker#352) stays
-# visible until the rebuilt image lands, at which point this activates automatically.
+# 2) tofu fmt + validate per module. tofu is a required tool: a missing tofu is a
+# hard failure, never a skip, so an image without it cannot pass validation.
 if command -v tofu >/dev/null 2>&1; then
   for mdir in "${ROOT}"/opentofu/modules/*/volume "${ROOT}"/opentofu/modules/*/vm; do
     [ -d "$mdir" ] || continue
@@ -40,7 +41,8 @@ if command -v tofu >/dev/null 2>&1; then
       && { [ ! -d tests ] || tofu test -no-color; } ) || fail=1
   done
 else
-  echo "SKIP: tofu not installed (vergil-docker#352) — HCL fmt/validate not run in-sandbox" >&2
+  echo "ERROR: required tool not found on PATH: tofu" >&2
+  fail=1
 fi
 
 exit "$fail"
