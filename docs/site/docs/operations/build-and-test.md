@@ -53,7 +53,7 @@ All tests run inside the VM via `limactl shell`. The test runner
 | `test_nested_virt.sh` | `/dev/kvm` presence matches the `NESTED_VIRT` build request, in both directions |
 | `test_services.sh` | Service-surface minimization: the mask list is applied, snapd and unattended-upgrades are purged |
 | `test_ssh.sh` | sshd accepts `COLORTERM`, `TERM_PROGRAM`, `TERM_PROGRAM_VERSION` |
-| `test_tools.sh` | All development tools installed (git, gh, uv, node, claude, jq, yq, rg, fzf) |
+| `test_tools.sh` | All development tools installed (git, gh, uv, node, claude, jq, yq, rg, fzf, curl, zsh, vim, tmux, nano, make) |
 | `test_vergil.sh` | vergil-tooling installs via uv, `vrg-*` commands resolve on PATH |
 | `test_vm_profile.sh` | Per-repo profile provisioning ran (spec-fingerprint marker stamped), no provisioning error recorded |
 

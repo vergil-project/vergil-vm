@@ -62,6 +62,9 @@ Installs OS packages and development tools:
 | fzf | apt | Fuzzy finder | — |
 | zsh, vim, tmux, nano | apt | Shell and editors | — |
 | python3, python3-venv | apt | Python runtime | — |
+| make | apt | Runs repos' Makefile checks, such as paad's `make test` | — |
+| socat | apt | Port-forward relay proxy | — |
+| chrony | apt | Time sync and NTP for nested libvirt guests | — |
 | git | apt | Version control | — |
 | gh | GitHub CLI apt repo | GitHub API and workflows | — |
 | Node.js 22 | NodeSource apt repo (`setup_22.x`) | Runtime for Claude Code | Reports a newer LTS major |
