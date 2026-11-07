@@ -125,9 +125,13 @@ write_files:
         jq ripgrep fzf \
         zsh vim tmux nano \
         python3 python3-venv \
+        git \
         socat \
         chrony \
         make
+
+      # git — installed explicitly, not left to the base image (issue #387): every
+      # repo workflow on the agent VM needs it.
 
       # make — repos whose checks run through a Makefile (paad's `make test`,
       # issue #376) need it on the agent VM.
