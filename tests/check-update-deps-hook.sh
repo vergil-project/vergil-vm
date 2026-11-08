@@ -7,7 +7,9 @@
 set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "${HERE}/.." && pwd)"
-# shellcheck source=../scripts/dev/update-deps-lib.sh
+# vrg-validate lints without -x, so it cannot follow this source; the lib is linted
+# on its own as scripts/dev/update-deps-lib.sh.
+# shellcheck disable=SC1091
 . "${ROOT}/scripts/dev/update-deps-lib.sh"
 fail() { echo "FAIL: $*" >&2; exit 1; }
 
@@ -30,6 +32,7 @@ tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
 printf '      NERDCTL_VERSION=2.3.3\n      x="${NERDCTL_VERSION}"\n' > "$tmp/skel"
 set_nerdctl_version "$tmp/skel" 2.5.1
 grep -q '^      NERDCTL_VERSION=2.5.1$' "$tmp/skel" || fail "set_nerdctl_version: rewrite"
+# shellcheck disable=SC2016  # literal ${NERDCTL_VERSION} is the fixture line being matched
 grep -qF 'x="${NERDCTL_VERSION}"' "$tmp/skel" || fail "set_nerdctl_version: touched other lines"
 [ ! -e "$tmp/skel.bak" ] || fail "set_nerdctl_version: left a .bak behind"
 printf 'no assignment here\n' > "$tmp/none"
@@ -65,6 +68,7 @@ stubs="$tmp/bin"; mkdir -p "$stubs"
 # curl stub: serve a fixture for each known URL; fail (like `curl -f`) otherwise or when
 # the URL matches the glob in CURL_FAIL. Logs every URL.
 cat_stub_curl() {
+  # shellcheck disable=SC2016  # literal stub-script text; expands when the stub runs
   printf '%s\n' \
     '#!/usr/bin/env bash' \
     'url="${!#}"' \
@@ -81,6 +85,7 @@ cat_stub_curl() {
 cat_stub_curl > "$stubs/curl"
 # tofu stub: record the argv, the TF_DATA_DIR, and simulate init writing the lockfile and
 # its data dir. TOFU_FAIL makes it fail.
+# shellcheck disable=SC2016  # literal stub-script text; expands when the stub runs
 printf '%s\n' \
   '#!/usr/bin/env bash' \
   'echo "TF_DATA_DIR=${TF_DATA_DIR:-} $*" >> "${STUB_LOG}/tofu.log"' \

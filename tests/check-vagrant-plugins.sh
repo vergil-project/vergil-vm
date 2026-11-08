@@ -62,7 +62,9 @@ run() {
     export PATH="$tmp/bin:$PATH" STUB_LOG="$tmp/log" STUB_OUTCOMES="$outcomes" VERGIL_USER=tester
     # shellcheck source=/dev/null
     . "$tmp/helpers.sh"
+    # shellcheck disable=SC2034  # read by the sourced helpers
     PROVISION_ERROR="$tmp/err"
+    # shellcheck disable=SC2329  # shadows sleep for the sourced helpers' retry back-off
     sleep() { :; }
     "$@"
   ) > "$tmp/out" 2>&1
@@ -119,6 +121,7 @@ STUB_SYS_RACC=99.0.0 run "" vagrant_racc_seed_check
 # --- 3. Wiring: the seed runs before the declared plugins ----------------------------
 
 seed_line="$(grep -n 'vagrant_plugin_install racc --plugin-version' "$PROFILE" | cut -d: -f1)"
+# shellcheck disable=SC2016  # literal $PLUGINS is the line being matched
 loop_line="$(grep -n '^  for _p in \$PLUGINS; do' "$PROFILE" | cut -d: -f1)"
 [ -n "$seed_line" ] && [ -n "$loop_line" ] || fail "wiring: seed install or plugin loop not found"
 [ "$seed_line" -lt "$loop_line" ] || fail "wiring: the racc seed must install before the plugin loop"

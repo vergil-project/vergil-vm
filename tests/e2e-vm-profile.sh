@@ -57,6 +57,7 @@ got="$(limactl shell "${INSTANCE}" -- cat /etc/vergil/vm-spec.fingerprint | tr -
 
 # 4. Declaring libvirt-daemon-system granted the Lima user libvirt/kvm group
 #    membership (issue #137) — read from the user database, not the session.
+# shellcheck disable=SC2016  # $(id -un) must expand in the guest, not here
 groups_out="$(limactl shell "${INSTANCE}" -- bash -c 'id -nG "$(id -un)"')"
 echo "${groups_out}" | tr ' ' '\n' | grep -qx libvirt \
   || fail "Lima user not in libvirt group (got: ${groups_out})"

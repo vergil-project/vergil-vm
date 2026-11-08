@@ -70,7 +70,8 @@ assert_not_masked() {       # reserved units must never be masked
 }
 
 # containerd runs as a --user unit; reach the user bus from this non-login shell.
-export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+XDG_RUNTIME_DIR="/run/user/$(id -u)"
+export XDG_RUNTIME_DIR
 
 echo "== Denylist: services must be masked =="
 for u in \
