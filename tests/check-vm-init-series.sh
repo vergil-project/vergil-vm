@@ -15,6 +15,7 @@ fi
 
 tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
 mkdir -p "$tmp/bin"
+# shellcheck disable=SC2016  # literal stub-script text; expands when the stub runs
 printf '%s\n' \
   '#!/usr/bin/env bash' \
   'printf "%s\n" "$*" >> "${LIMACTL_LOG}"' \

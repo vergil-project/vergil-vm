@@ -2,6 +2,7 @@
 # vergil-provision: context=root cadence=once guard=provisioned.profile
 set -eux -o pipefail
 # Backend-neutral inputs (#199): Lima/cloud each write this file their own way.
+# shellcheck disable=SC1091  # guest-only file, written at boot by the backend; not in the repo
 . /etc/vergil/provision.env
 export DEBIAN_FRONTEND=noninteractive
 
@@ -107,7 +108,7 @@ vagrant_plugin_install() {
     _msg="$(grep -m1 -E "Unable to resolve dependency|conflicting dependencies|Unable to activate" "$_out" || true)"
     if [ -n "$_msg" ]; then
       printf 'ERROR: vagrant plugin "%s" failed dependency resolution (not retried — it is deterministic): %s\n' \
-        "$_name" "$(echo "$_msg" | sed 's/^[[:space:]]*//')" | tee "$PROVISION_ERROR" >&2
+        "$_name" "${_msg#"${_msg%%[![:space:]]*}"}" | tee "$PROVISION_ERROR" >&2
       rm -f "$_out"
       exit 1
     fi

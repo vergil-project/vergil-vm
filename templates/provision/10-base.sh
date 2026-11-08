@@ -2,6 +2,7 @@
 # vergil-provision: context=root cadence=once guard=provisioned.base
 set -eux -o pipefail
 # Backend-neutral inputs (#199): Lima/cloud each write this file their own way.
+# shellcheck disable=SC1091  # guest-only file, written at boot by the backend; not in the repo
 . /etc/vergil/provision.env
 export DEBIAN_FRONTEND=noninteractive
 

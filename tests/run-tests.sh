@@ -13,6 +13,7 @@ total=0
 # ("Failed to connect to bus: No medium found"). Export it before exec'ing
 # the test so user-service assertions (rootless containerd) work.
 run_in_guest() { # run_in_guest <test-file>
+    # shellcheck disable=SC2016  # $(id -u) must expand in the guest, not here
     limactl shell "$INSTANCE" -- \
         bash -c 'export XDG_RUNTIME_DIR=/run/user/$(id -u); exec bash -s' < "$1"
 }
