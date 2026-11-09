@@ -504,6 +504,9 @@ write_files:
       # NOT have forces a real download into the plugin dir. The pin must stay newer
       # than every racc the distro Ruby ships; vagrant_racc_seed_check enforces that
       # loudly. To update: bump to the newest racc on rubygems.org.
+      # The agent VMs are pinned to Ubuntu 24.04, whose Ruby 3.2 still ships racc as
+      # a default gem, so the seed is not strictly needed there. It is kept anyway:
+      # it matters again on Ubuntu 26.04 (vergil-project/.github#651).
       VAGRANT_RACC_SEED=1.8.1
 
       # Fail unless every system racc is older than the seed — an equal or newer
