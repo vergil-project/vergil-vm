@@ -3,6 +3,12 @@
 # Creates an Ubuntu 24.04 VM with rootless containerd, core
 # development tools, and dynamic vergil-tooling installation.
 #
+# The base image is pinned to Ubuntu 24.04 (template:_images/ubuntu-24.04),
+# the fleet's shared base platform (epic vergil-project/.github#649), not the
+# floating template:_images/ubuntu-lts, which moves to each new LTS as Lima
+# adopts it. Moving to Ubuntu 26.04 is its own change
+# (vergil-project/.github#651).
+#
 # The projects mount is required — vrg-vm (vergil-tooling) drives this
 # template and injects HOST_PROJECTS_DIR from the identity config at
 # create time:
@@ -17,7 +23,7 @@
 minimumLimaVersion: "2.0.0"
 
 base:
-- template:_images/ubuntu-lts
+- template:_images/ubuntu-24.04
 
 # Resource allocation — conservative defaults for modest hardware.
 #
@@ -119,6 +125,7 @@ provision:
     # vergil-provision: context=root cadence=once guard=provisioned.base
     set -eux -o pipefail
     # Backend-neutral inputs (#199): Lima/cloud each write this file their own way.
+    # shellcheck disable=SC1091  # guest-only file, written at boot by the backend; not in the repo
     . /etc/vergil/provision.env
     export DEBIAN_FRONTEND=noninteractive
 
@@ -138,9 +145,13 @@ provision:
       jq ripgrep fzf \
       zsh vim tmux nano \
       python3 python3-venv \
+      git \
       socat \
       chrony \
       make
+
+    # git — installed explicitly, not left to the base image (issue #387): every
+    # repo workflow on the agent VM needs it.
 
     # make — repos whose checks run through a Makefile (paad's `make test`,
     # issue #376) need it on the agent VM.
@@ -212,6 +223,7 @@ provision:
     # vergil-provision: context=root cadence=boot
     set -eux -o pipefail
     # Backend-neutral inputs (#199): Lima/cloud each write this file their own way.
+    # shellcheck disable=SC1091  # guest-only file, written at boot by the backend; not in the repo
     . /etc/vergil/provision.env
     USER_HOME="$(getent passwd "$VERGIL_USER" | cut -d: -f6)"
     sed -i "s|^PATH=.*|PATH=\"${USER_HOME}/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games\"|" /etc/environment
@@ -458,7 +470,8 @@ provision:
     # vergil-provision: context=user cadence=boot
     set -eux -o pipefail
     export PATH="$HOME/.local/bin:/usr/local/bin:$PATH"
-    export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+    XDG_RUNTIME_DIR="/run/user/$(id -u)"
+    export XDG_RUNTIME_DIR
 
     # install-buildkit requires the rootless containerd user service to exist
     # already (Lima provisions it via its own containerd setup). Wait for it
@@ -478,6 +491,7 @@ provision:
     # vergil-provision: context=root cadence=once guard=provisioned.profile
     set -eux -o pipefail
     # Backend-neutral inputs (#199): Lima/cloud each write this file their own way.
+    # shellcheck disable=SC1091  # guest-only file, written at boot by the backend; not in the repo
     . /etc/vergil/provision.env
     export DEBIAN_FRONTEND=noninteractive
 
@@ -552,6 +566,9 @@ provision:
     # NOT have forces a real download into the plugin dir. The pin must stay newer
     # than every racc the distro Ruby ships; vagrant_racc_seed_check enforces that
     # loudly. To update: bump to the newest racc on rubygems.org.
+    # The agent VMs are pinned to Ubuntu 24.04, whose Ruby 3.2 still ships racc as
+    # a default gem, so the seed is not strictly needed there. It is kept anyway:
+    # it matters again on Ubuntu 26.04 (vergil-project/.github#651).
     VAGRANT_RACC_SEED=1.8.1
 
     # Fail unless every system racc is older than the seed — an equal or newer
@@ -583,7 +600,7 @@ provision:
         _msg="$(grep -m1 -E "Unable to resolve dependency|conflicting dependencies|Unable to activate" "$_out" || true)"
         if [ -n "$_msg" ]; then
           printf 'ERROR: vagrant plugin "%s" failed dependency resolution (not retried — it is deterministic): %s\n' \
-            "$_name" "$(echo "$_msg" | sed 's/^[[:space:]]*//')" | tee "$PROVISION_ERROR" >&2
+            "$_name" "${_msg#"${_msg%%[![:space:]]*}"}" | tee "$PROVISION_ERROR" >&2
           rm -f "$_out"
           exit 1
         fi
@@ -683,6 +700,7 @@ provision:
     # vergil-provision: context=root cadence=boot
     set -eux -o pipefail
     # Backend-neutral inputs (#199): Lima/cloud each write this file their own way.
+    # shellcheck disable=SC1091  # guest-only file, written at boot by the backend; not in the repo
     . /etc/vergil/provision.env
     PKGS="$EXTRA_PACKAGES"
     PLUGINS="$VAGRANT_PLUGINS"
@@ -737,6 +755,7 @@ provision:
     # vergil-provision: context=root cadence=boot
     set -eux -o pipefail
     # Backend-neutral inputs (#199): Lima/cloud each write this file their own way.
+    # shellcheck disable=SC1091  # guest-only file, written at boot by the backend; not in the repo
     . /etc/vergil/provision.env
     PKGS="$EXTRA_PACKAGES"
     PLUGINS="$VAGRANT_PLUGINS"
@@ -816,6 +835,7 @@ provision:
     # vergil-provision: context=root cadence=boot
     set -eux -o pipefail
     # Backend-neutral inputs (#199): Lima/cloud each write this file their own way.
+    # shellcheck disable=SC1091  # guest-only file, written at boot by the backend; not in the repo
     . /etc/vergil/provision.env
     NESTED="$NESTED_VIRT"
     mkdir -p /etc/vergil
@@ -859,6 +879,7 @@ provision:
     # vergil-provision: context=root cadence=boot
     set -eux -o pipefail
     # Backend-neutral inputs (#199): Lima/cloud each write this file their own way.
+    # shellcheck disable=SC1091  # guest-only file, written at boot by the backend; not in the repo
     . /etc/vergil/provision.env
 
     mkdir -p /etc/vergil

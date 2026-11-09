@@ -2,6 +2,7 @@
 # vergil-provision: context=root cadence=once guard=provisioned.base
 set -eux -o pipefail
 # Backend-neutral inputs (#199): Lima/cloud each write this file their own way.
+# shellcheck disable=SC1091  # guest-only file, written at boot by the backend; not in the repo
 . /etc/vergil/provision.env
 export DEBIAN_FRONTEND=noninteractive
 
@@ -21,9 +22,13 @@ apt-get install -y --no-install-recommends \
   jq ripgrep fzf \
   zsh vim tmux nano \
   python3 python3-venv \
+  git \
   socat \
   chrony \
   make
+
+# git — installed explicitly, not left to the base image (issue #387): every
+# repo workflow on the agent VM needs it.
 
 # make — repos whose checks run through a Makefile (paad's `make test`,
 # issue #376) need it on the agent VM.

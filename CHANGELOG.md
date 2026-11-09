@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.1.50] - 2026-11-09
+
+### Bug fixes
+
+- run the template-generation, provision-manifest and rootless-userns checks in validate-custom (#375) (#388)
+- install git explicitly on the agent VM (#389)
+- clear the shellcheck findings across every *.sh file (#392)
+- sync guard.sh with vergil-tooling's packaged hook guard shim (#393)
+- pin agent VMs to Ubuntu 24.04 (#396)
+
+### Chores
+
+- repo hook
+
+### Documentation
+
+- sync the template's build/ exception line (#384)
+- list make, socat and chrony in the agent VM's tool docs (#386)
+
 ## [2.1.49] - 2026-10-30
 
 ### Bug fixes

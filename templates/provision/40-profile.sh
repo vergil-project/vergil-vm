@@ -2,6 +2,7 @@
 # vergil-provision: context=root cadence=once guard=provisioned.profile
 set -eux -o pipefail
 # Backend-neutral inputs (#199): Lima/cloud each write this file their own way.
+# shellcheck disable=SC1091  # guest-only file, written at boot by the backend; not in the repo
 . /etc/vergil/provision.env
 export DEBIAN_FRONTEND=noninteractive
 
@@ -76,6 +77,9 @@ PROVISION_ERROR=/etc/vergil/provision-error
 # NOT have forces a real download into the plugin dir. The pin must stay newer
 # than every racc the distro Ruby ships; vagrant_racc_seed_check enforces that
 # loudly. To update: bump to the newest racc on rubygems.org.
+# The agent VMs are pinned to Ubuntu 24.04, whose Ruby 3.2 still ships racc as
+# a default gem, so the seed is not strictly needed there. It is kept anyway:
+# it matters again on Ubuntu 26.04 (vergil-project/.github#651).
 VAGRANT_RACC_SEED=1.8.1
 
 # Fail unless every system racc is older than the seed — an equal or newer
@@ -107,7 +111,7 @@ vagrant_plugin_install() {
     _msg="$(grep -m1 -E "Unable to resolve dependency|conflicting dependencies|Unable to activate" "$_out" || true)"
     if [ -n "$_msg" ]; then
       printf 'ERROR: vagrant plugin "%s" failed dependency resolution (not retried — it is deterministic): %s\n' \
-        "$_name" "$(echo "$_msg" | sed 's/^[[:space:]]*//')" | tee "$PROVISION_ERROR" >&2
+        "$_name" "${_msg#"${_msg%%[![:space:]]*}"}" | tee "$PROVISION_ERROR" >&2
       rm -f "$_out"
       exit 1
     fi

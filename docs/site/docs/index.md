@@ -48,7 +48,7 @@ Every VM created from the agent template includes:
 
 - **Ubuntu LTS** with zsh as the default shell
 - **Rootless containerd** — agents can pull and run containers without root
-- **Core tools** — git, jq, ripgrep, fzf, vim, tmux, curl, wget
+- **Core tools** — git, jq, ripgrep, fzf, vim, tmux, curl, wget, make
 - **GitHub CLI** (`gh`) for repository operations
 - **Node.js** and **Claude Code** for AI-assisted development
 - **uv** — Python package manager for installing vergil-tooling at runtime

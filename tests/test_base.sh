@@ -39,6 +39,7 @@ grep -q '\.config/vergil/identity-mode' "$HOME/.zshenv"
 # logging in can tell user/audit apart at a glance. Assert the on-disk .zshrc
 # mechanism, consistent with the checks above. Use fixed-string grep so the
 # brackets/braces are matched literally.
+# shellcheck disable=SC2016  # literal ${VRG_IDENTITY_MODE:-} is the .zshrc text being matched
 grep -qF 'case "${VRG_IDENTITY_MODE:-}" in' "$HOME/.zshrc"
 grep -qF 'PROMPT="[role=' "$HOME/.zshrc"
 
@@ -58,14 +59,14 @@ grep -q 'setopt AUTO_PUSHD' "$HOME/.zshrc"
 grep -q 'setopt EXTENDED_GLOB' "$HOME/.zshrc"
 # The deferred personal-override hook must NOT be present: a ~/.zshrc.local
 # source line implies a managed file the VM has no mechanism to maintain.
-! grep -q 'zshrc.local' "$HOME/.zshrc"
+! grep -q 'zshrc.local' "$HOME/.zshrc" || exit 1
 
 # Single-.venv model (issue #282, epic vergil-project/.github#179). The retired
 # dual-venv split provisioned UV_PROJECT_ENVIRONMENT=.venv-host into ~/.zshrc; the
 # container now structurally masks /workspace/.venv, so a single host .venv is safe
 # and .venv-host is obsolete. Assert the export is provisioned NOWHERE in the VM
 # shell env — neither the interactive ~/.zshrc nor the always-sourced ~/.zshenv.
-! grep -q 'UV_PROJECT_ENVIRONMENT' "$HOME/.zshrc"
-! grep -q 'UV_PROJECT_ENVIRONMENT' "$HOME/.zshenv"
+! grep -q 'UV_PROJECT_ENVIRONMENT' "$HOME/.zshrc" || exit 1
+! grep -q 'UV_PROJECT_ENVIRONMENT' "$HOME/.zshenv" || exit 1
 
 echo "test_base: all checks passed"
