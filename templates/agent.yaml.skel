@@ -3,6 +3,12 @@
 # Creates an Ubuntu 24.04 VM with rootless containerd, core
 # development tools, and dynamic vergil-tooling installation.
 #
+# The base image is pinned to Ubuntu 24.04 (template:_images/ubuntu-24.04),
+# the fleet's shared base platform (epic vergil-project/.github#649), not the
+# floating template:_images/ubuntu-lts, which moves to each new LTS as Lima
+# adopts it. Moving to Ubuntu 26.04 is its own change
+# (vergil-project/.github#651).
+#
 # The projects mount is required — vrg-vm (vergil-tooling) drives this
 # template and injects HOST_PROJECTS_DIR from the identity config at
 # create time:
@@ -17,7 +23,7 @@
 minimumLimaVersion: "2.0.0"
 
 base:
-- template:_images/ubuntu-lts
+- template:_images/ubuntu-24.04
 
 # Resource allocation — conservative defaults for modest hardware.
 #
