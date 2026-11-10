@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.1.51] - 2026-11-10
+
+### Bug fixes
+
+- provision buildkitd with the containerd worker in namespace default (#400) (#401)
+
 ## [2.1.50] - 2026-11-09
 
 ### Bug fixes
