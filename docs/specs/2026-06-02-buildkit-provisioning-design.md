@@ -2,7 +2,55 @@
 
 - **Issue:** [#97](https://github.com/vergil-project/vergil-vm/issues/97)
 - **Date:** 2026-06-02
-- **Status:** Approved
+- **Status:** Approved; worker choice revised by
+  [#400](https://github.com/vergil-project/vergil-vm/issues/400)
+
+## Revision: containerd worker (#400)
+
+The original design (below) chose the rootless **OCI** worker from
+`install-buildkit` and treated the containerd worker as "allowed, not
+required". That was wrong. The OCI worker keeps its own content store. It
+can export a build into containerd, but it cannot read containerd's images
+back, so `FROM <locally built image>` is resolved against a registry and
+fails with `pull access denied`. The #97 test built only `FROM` a registry
+image, so it never covered chained local builds. A 17-image tree on a GCP
+VM built its first image and then failed on every later one.
+
+Lima hid the bug. Lima's own containerd setup already installs
+`default-buildkit.service`, a containerd-worker buildkitd in namespace
+`default` with the socket `$XDG_RUNTIME_DIR/buildkit-default/buildkitd.sock`.
+nerdctl probes that socket before `buildkit/`, so on Lima the OCI-worker
+`buildkit.service` that #97 added was running but never used. Cloud VMs
+have no Lima setup, so the OCI worker was the only buildkitd there.
+
+The provisioning step is now:
+
+```bash
+CONTAINERD_NAMESPACE=default containerd-rootless-setuptool.sh install-buildkit-containerd
+```
+
+This installs `default-buildkit.service`
+(`--oci-worker=false --containerd-worker=true --containerd-worker-rootless=true
+--containerd-worker-namespace=default`). `CONTAINERD_NAMESPACE=default` is
+required: without it, the worker reads the `buildkit` namespace and the
+failure remains. On Lima the setuptool finds the unit Lima already wrote
+and skips it. The OCI-worker `buildkit.service` is no longer installed, so
+each VM runs a single buildkitd.
+
+Other changes:
+
+- `tests/test_services.sh` asserts `default-buildkit` instead of `buildkit`.
+- The readiness probe waits for a buildkitd running the containerd worker
+  in namespace `default`. Its `pgrep -f` patterns now bracket their first
+  letter, because the probe's own `bash -c` command line contains the
+  pattern text. Without the bracket, `pgrep` matched that shell and the
+  checks always passed.
+- `tests/test_containerd.sh` checks for the `buildkit-default` socket and
+  the containerd-worker process. It then builds an image `FROM` the
+  locally built test image and runs it, with no registry involved.
+
+Where the sections below mention the OCI worker, `install-buildkit` or the
+`buildkit` unit, this revision replaces them.
 
 ## Goal
 
