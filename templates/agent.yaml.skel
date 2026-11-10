@@ -161,8 +161,9 @@ provision:
 # Lima's nerdctl-full bundle (pulled via `containerd: {user: true}`) already
 # ships buildkitd/buildctl — the gap is that nothing starts the daemon. Use
 # upstream's own containerd-rootless-setuptool.sh to install and start the
-# rootless buildkit systemd --user unit (rootless OCI worker). It exposes the
-# default socket nerdctl auto-probes, so `nerdctl build` needs no
+# rootless default-buildkit systemd --user unit (rootless containerd worker in
+# namespace `default`, issue #400, so a build can use a local parent image). It
+# exposes the socket nerdctl probes first, so `nerdctl build` needs no
 # --buildkit-host wiring. Lingering is already enabled by Lima's containerd
 # setup, so the unit survives logout and reboot.
 - mode: user
@@ -279,13 +280,17 @@ probes:
     # toolchain. Gate on cloud-init reaching a clean "done", and bail out
     # immediately when provisioning has recorded a failure — those tools are
     # never coming, so spinning out the timeout would only bury the error.
+    # The bracketed first letter in each `pgrep -f` pattern stops it matching
+    # the `bash -c` below, whose own command line holds the pattern text
+    # (issue #400). The buildkitd pattern requires the containerd worker in
+    # namespace `default`, the one that can build FROM a local image.
     timeout 1800 bash -c '
       until cloud-init status 2>/dev/null | grep -q "^status: done" &&
             command -v gh >/dev/null 2>&1 &&
             command -v uv >/dev/null 2>&1 &&
             command -v claude >/dev/null 2>&1 &&
-            pgrep -f containerd >/dev/null 2>&1 &&
-            pgrep -f buildkitd >/dev/null 2>&1; do
+            pgrep -f "[c]ontainerd" >/dev/null 2>&1 &&
+            pgrep -f "[b]uildkitd .*--containerd-worker-[n]amespace=default" >/dev/null 2>&1; do
         if [ -f /etc/vergil/provision-error ]; then exit 1; fi
         if cloud-init status 2>/dev/null | grep -q "^status: error"; then exit 1; fi
         sleep 5
