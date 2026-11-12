@@ -2848,8 +2848,11 @@ system mode (e.g., no privileged containers, limited networking
 options). These limitations are acceptable for agent workloads, which
 use containers for development tools rather than production services.</p>
 <h3 id="ubuntu-2404-lts">Ubuntu 24.04 LTS<a class="headerlink" href="#ubuntu-2404-lts" title="Permanent link">&para;</a></h3>
-<p>The VM base image is Ubuntu 24.04 (Noble Numbat), the current LTS
-release.</p>
+<p>The VM base image is Ubuntu 24.04 (Noble Numbat), pinned in the template
+as the fleet's shared base platform (epic
+<a href="https://github.com/vergil-project/.github/issues/649">vergil-project/.github#649</a>).
+Moving to Ubuntu 26.04 is a change of its own
+(<a href="https://github.com/vergil-project/.github/issues/651">vergil-project/.github#651</a>).</p>
 <p><strong>Why?</strong></p>
 <ul>
 <li>Broad package availability — most development tools are available via
