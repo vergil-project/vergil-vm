@@ -3,7 +3,8 @@
 # (vergil_tooling.bin.vrg_validate._find_custom_validator looks for exactly this path).
 # Runs the host-side check-*.sh assertions (Lima template generation, provision
 # manifests, OpenTofu, cloud-init and its rootless-userns ordering, the
-# dependency-update hook, vrg-vm-init series, vagrant plugin helpers), then `tofu fmt`/`validate` for
+# dependency-update hook, vrg-vm-init series, vagrant plugin helpers, test_base.sh's
+# shell-rc assertions), then `tofu fmt`/`validate` for
 # every provider module, plus `tofu test` where a module has a tests/ dir (mocked
 # providers, plan-only). `tofu` is required: a missing `tofu` fails the run. fail-defer:
 # run everything, report all failures, exit nonzero if any failed.
@@ -22,7 +23,7 @@ run() { echo "→ $*"; "$@" || fail=1; }
 for chk in check-template-generation check-provision-manifest check-rootless-userns \
            check-opentofu-contract check-opentofu-name-validation \
            check-cloud-init-generation check-azure-volume-id-parse \
-           check-update-deps-hook check-vm-init-series check-vagrant-plugins; do
+           check-update-deps-hook check-vm-init-series check-vagrant-plugins check-test-base; do
   s="${ROOT}/tests/${chk}.sh"
   if [ -f "$s" ]; then
     run bash "$s"
