@@ -46,7 +46,7 @@ injects fresh credentials and launches Claude Code against your projects.
 
 Every VM created from the agent template includes:
 
-- **Ubuntu LTS** with zsh as the default shell
+- **Ubuntu 24.04 LTS** with zsh as the default shell
 - **Rootless containerd** — agents can pull and run containers without root
 - **Core tools** — git, jq, ripgrep, fzf, vim, tmux, curl, wget, make
 - **GitHub CLI** (`gh`) for repository operations

@@ -57,8 +57,11 @@ use containers for development tools rather than production services.
 
 ### Ubuntu 24.04 LTS
 
-The VM base image is Ubuntu 24.04 (Noble Numbat), the current LTS
-release.
+The VM base image is Ubuntu 24.04 (Noble Numbat), pinned in the template
+as the fleet's shared base platform (epic
+[vergil-project/.github#649](https://github.com/vergil-project/.github/issues/649)).
+Moving to Ubuntu 26.04 is a change of its own
+([vergil-project/.github#651](https://github.com/vergil-project/.github/issues/651)).
 
 **Why?**
 
