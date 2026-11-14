@@ -11,7 +11,7 @@
       
       
       
-        <link rel="prev" href="../">
+        <link rel="prev" href="../v2.1.52/">
       
       
         <link rel="next" href="../v2.1.50/">
@@ -626,6 +626,8 @@
       
         
       
+        
+      
     
     
     
@@ -681,6 +683,34 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../v2.1.52/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.52
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
               
             
               
@@ -2710,6 +2740,7 @@
 install-buildkit's OCI worker keeps its own content store, so nerdctl build could not use a locally built image as a parent (FROM <local> resolved against docker.io: pull access denied). 35-buildkit.sh now runs CONTAINERD_NAMESPACE=default install-buildkit-containerd, giving one default-buildkit.service on the buildkit-default socket nerdctl probes first. On Lima that unit already exists (Lima installs it), which is why the bug only showed on cloud VMs; the setuptool skips it.</li>
 </ul>
 <p>test_services asserts default-buildkit; the readiness probe requires a containerd-worker buildkitd in namespace default, with bracketed pgrep patterns so the probe's own bash -c no longer self-matches (it always passed before). test_containerd checks the worker and socket, then builds and runs an image FROM the locally built test image. Design doc #97 records the revision. Regenerated agent.yaml and the cloud-init files.</p>
+<p><strong>CI Evidence:</strong> All gates passed — full audit bundle available. <a href="https://github.com/vergil-project/vergil-vm/releases/download/v2.1.51/v2.1.51-ci-evidence.tar.gz">Download →</a></p>
 
 
 
