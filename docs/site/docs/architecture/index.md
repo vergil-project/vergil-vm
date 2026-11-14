@@ -6,6 +6,14 @@ Each Vergil identity VM is a full Ubuntu 24.04 virtual machine managed
 by [Lima](https://lima-vm.io/). Lima wraps QEMU to run the guest OS and
 provides transparent SSH access from the host.
 
+The Ubuntu release is pinned in `templates/agent.yaml.skel`, and a VM
+takes its OS when it is created: `vrg-vm rebuild` moves an existing VM
+to the template's OS, and `vrg-vm update` does not change it. The
+vergil-containers [OS usage
+table](https://vergil-project.github.io/vergil-containers/latest/operations/os-usage/)
+lists the OS of the Lima, Azure and GCP VMs alongside every other OS
+choice in the fleet, and why each was made.
+
 The host's projects directory is mounted with **path preservation** —
 the same absolute path used on the host exists inside the VM. This
 means session data, memory files, and project paths are transparently

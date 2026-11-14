@@ -46,7 +46,7 @@ All tests run inside the VM via `limactl shell`. The test runner
 
 | Test | Verifies |
 | ---- | -------- |
-| `test_base.sh` | Ubuntu 24.04, zsh default shell, passwordless sudo |
+| `test_base.sh` | Ubuntu 24.04, zsh default shell, passwordless sudo, autoupdater disabled, the provisioned zsh rc settings; a failing check prints its name |
 | `test_containerd.sh` | Rootless containerd running, nerdctl can pull and run containers |
 | `test_credentials.sh` | Credential files exist with correct permissions, git HTTPS config |
 | `test_libvirt_groups.sh` | Lima user's libvirt/kvm group membership matches the profile's libvirt-stack declaration, in both directions |
