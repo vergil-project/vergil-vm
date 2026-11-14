@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.1.52] - 2026-11-14
+
+### Bug fixes
+
+- ignore provisioner comments in test_base.sh rc checks and keep the host-check lists in step (#410)
+
+### CI
+
+- move the nightly ops cron to the 01:xx UTC hour (#415)
+
+### Chores
+
+- sync the managed .claude/settings.json (#406)
+- sync the managed files with the released templates (#413)
+
+### Documentation
+
+- say the VMs are pinned to Ubuntu 24.04 and link the OS-usage table (#412)
+
 ## [2.1.51] - 2026-11-10
 
 ### Bug fixes
