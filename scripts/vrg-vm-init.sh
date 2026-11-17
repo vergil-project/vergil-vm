@@ -120,7 +120,7 @@ limactl shell "$INSTANCE" -- \
 
 echo "Installing vergil-tooling ${VERGIL_SERIES} in VM..."
 limactl shell "$INSTANCE" -- bash -c \
-    "export PATH=\"\$HOME/.local/bin:\$PATH\" && uv tool install \"vergil-tooling @ git+https://github.com/vergil-project/vergil-tooling@${VERGIL_SERIES}\"" \
+    "export PATH=\"\$HOME/.local/bin:\$PATH\" && uv tool install --python 3.15 \"vergil-tooling @ git+https://github.com/vergil-project/vergil-tooling@${VERGIL_SERIES}\"" \
     2>&1 | tail -3
 echo ""
 

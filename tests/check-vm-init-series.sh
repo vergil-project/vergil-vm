@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # tests/check-vm-init-series.sh — Assert scripts/vrg-vm-init.sh installs vergil-tooling at
-# the series declared in vergil.toml ([dependencies].vergil), not a hard-coded pin, and
-# fails loud (before touching the VM) when the series cannot be read. Spec §8.4 of epic
+# the series declared in vergil.toml ([dependencies].vergil), not a hard-coded pin, under
+# --python 3.15 (epic vergil-project/.github#1256), and fails loud (before touching the VM) when the series cannot be read. Spec §8.4 of epic
 # vergil-project/.github#381. Hermetic: `limactl` is a stub on PATH that records its argv.
 # HOST-side. check-* prefix keeps it out of the run-tests.sh in-guest glob.
 set -euo pipefail
@@ -46,8 +46,8 @@ repo="$tmp/r-real"
 new_repo "$repo" "$(cat "${ROOT}/vergil.toml")"
 run_init "$repo"
 [ "$init_rc" = 0 ] || { cat "$repo/init.out" >&2; fail "vrg-vm-init exited $init_rc"; }
-grep -qF "vergil-tooling @ git+https://github.com/vergil-project/vergil-tooling@${series}\"" "$repo/limactl.log" \
-  || { cat "$repo/limactl.log" >&2; fail "did not install vergil-tooling@${series}"; }
+grep -qF "uv tool install --python 3.15 \"vergil-tooling @ git+https://github.com/vergil-project/vergil-tooling@${series}\"" "$repo/limactl.log" \
+  || { cat "$repo/limactl.log" >&2; fail "did not install vergil-tooling@${series} with --python 3.15"; }
 
 # A different declared series is followed, and only [dependencies].vergil counts.
 repo="$tmp/r-other"
@@ -63,4 +63,4 @@ run_init "$repo"
 [ "$init_rc" != 0 ] || fail "missing [dependencies].vergil: vrg-vm-init should fail"
 [ ! -s "$repo/limactl.log" ] || fail "missing [dependencies].vergil: limactl was called before failing"
 grep -q 'dependencies' "$repo/init.out" || fail "missing series: error does not name [dependencies].vergil"
-echo "PASS: vrg-vm-init installs vergil-tooling at the vergil.toml series"
+echo "PASS: vrg-vm-init installs vergil-tooling at the vergil.toml series with --python 3.15"
