@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # tests/check-vm-init-series.sh — Assert scripts/vrg-vm-init.sh installs vergil-tooling at
 # the series declared in vergil.toml ([dependencies].vergil), not a hard-coded pin, under
-# --python 3.15 (epic vergil-project/.github#1256), and fails loud (before touching the VM) when the series cannot be read. Spec §8.4 of epic
-# vergil-project/.github#381. Hermetic: `limactl` is a stub on PATH that records its argv.
+# --python 3.15 (epic vergil-project/.github#1256), and fails loud (before touching the
+# VM) when the series cannot be read. Spec §8.4 of epic vergil-project/.github#381.
+# Hermetic: `limactl` is a stub on PATH that records its argv.
 # HOST-side. check-* prefix keeps it out of the run-tests.sh in-guest glob.
 set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
