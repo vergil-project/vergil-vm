@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.1.53] - 2026-11-17
+
+### Build
+
+- install vergil-tooling with --python 3.15 (#421)
+
+### Chores
+
+- sync the managed files with the released templates (#419)
+
 ## [2.1.52] - 2026-11-14
 
 ### Bug fixes
