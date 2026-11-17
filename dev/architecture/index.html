@@ -2981,8 +2981,8 @@ for the design rationale.</p>
 <li>Injects <code>app.pem</code> and <code>app.env</code> into <code>~/.config/vergil/</code> inside the
    VM (mode 600)</li>
 <li>Configures git to rewrite <code>git@github.com:</code> URLs to HTTPS</li>
-<li>Installs vergil-tooling via <code>uv tool install</code>, at the series declared
-   in <code>vergil.toml</code> (<code>[dependencies].vergil</code>)</li>
+<li>Installs vergil-tooling via <code>uv tool install --python 3.15</code>, at the
+   series declared in <code>vergil.toml</code> (<code>[dependencies].vergil</code>)</li>
 <li>Runs a verification check (5 assertions)</li>
 </ol>
 <h2 id="credential-model">Credential Model<a class="headerlink" href="#credential-model" title="Permanent link">&para;</a></h2>
