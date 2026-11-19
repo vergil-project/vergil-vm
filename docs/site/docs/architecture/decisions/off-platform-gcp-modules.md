@@ -24,7 +24,7 @@ opentofu/modules/gcp/
   the dedicated `destroy-volume` verb is confirmation-gated. (An earlier
   `prevent_destroy` guard on the disk was removed — a literal can't be
   conditionalized, so it also blocked that legitimate verb.)
-- **The boot disk is ephemeral and fixed-size** (`boot_disk_gib`, default 30); only the
+- **The boot disk is ephemeral and fixed-size** (`boot_disk_gib`, default 60, #433); only the
   persistent `volume` size is author-facing. (`disk` is a Lima knob, not a cloud one.)
 - **The boot disk type is selectable** (`boot_disk_type`, #312). Consumers that put
   I/O-heavy work on the ephemeral boot disk (for example, libvirt's default image pool

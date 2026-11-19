@@ -36,7 +36,7 @@ variable "nested" {
 
 variable "boot_disk_gib" {
   type    = number
-  default = 30
+  default = 60
 }
 
 # Storage SKU for the ephemeral OS disk (os_disk.storage_account_type). The default is
