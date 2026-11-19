@@ -2,14 +2,22 @@
 
 ## Defaults
 
-The VM template defines conservative defaults suitable for modest
-hardware:
+The defaults are conservative, suitable for modest hardware. The disk
+default depends on which kind of Lima VM `vrg-vm` creates:
 
-| Resource | Default |
-| -------- | ------- |
-| CPUs | 4 |
-| Memory | 4 GiB |
-| Disk | 50 GiB |
+| Resource | Shared VM | Dedicated per-repo VM |
+| -------- | --------- | --------------------- |
+| CPUs | 4 | 4 |
+| Memory | 4 GiB | 4 GiB |
+| Disk | 50 GiB | 100 GiB |
+
+The shared VM takes the VM template's own values (`templates/agent.yaml`)
+for any field the identity leaves unset. A dedicated VM takes its size
+from `vrg-vm`'s base footprint, which sets a 100 GiB disk
+(vergil-tooling #4791). A repo's `[vm]` profile can size a dedicated VM
+itself; see vergil-tooling's VM spec reference. Off-platform cloud VMs
+have no `disk` field: they size an ephemeral boot disk (60 GiB by
+default) and a persistent volume instead.
 
 ## How to Configure
 
