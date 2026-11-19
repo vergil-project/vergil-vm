@@ -28,7 +28,7 @@ variable "nested" {
 
 variable "boot_disk_gib" {
   type    = number
-  default = 30
+  default = 60
 }
 
 # GCE disk type for the ephemeral boot disk (boot_disk.initialize_params.type). The
