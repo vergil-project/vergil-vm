@@ -125,9 +125,10 @@ The injection step:
 2. Injects `app.pem` and `app.env` into `~/.config/vergil/` inside the
    VM (mode 600)
 3. Configures git to rewrite `git@github.com:` URLs to HTTPS
-4. Installs vergil-tooling via `uv tool install`, at the series declared
-   in `vergil.toml` (`[dependencies].vergil`)
-5. Runs a verification check (5 assertions)
+4. Runs a verification check (5 assertions)
+
+`vrg-vm create` then installs vergil-tooling with uv into `~/.local/bin`,
+in its `tooling` stage. The injection step installs none.
 
 ## Credential Model
 

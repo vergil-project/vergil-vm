@@ -3,8 +3,9 @@
 # (vergil_tooling.bin.vrg_validate._find_custom_validator looks for exactly this path).
 # Runs the host-side check-*.sh assertions (Lima template generation, provision
 # manifests, OpenTofu, cloud-init and its rootless-userns ordering, the
-# dependency-update hook, vrg-vm-init series, vagrant plugin helpers, test_base.sh's
-# shell-rc assertions, this list's parity with tests/run-host-tests.sh), then `tofu fmt`/`validate` for
+# dependency-update hook, vrg-vm-init installing no vergil-tooling, vagrant plugin
+# helpers, test_base.sh's shell-rc assertions, this list's parity with
+# tests/run-host-tests.sh), then `tofu fmt`/`validate` for
 # every provider module, plus `tofu test` where a module has a tests/ dir (mocked
 # providers, plan-only). `tofu` is required: a missing `tofu` fails the run. fail-defer:
 # run everything, report all failures, exit nonzero if any failed.
@@ -31,7 +32,7 @@ host_checks=(
   check-cloud-init-generation
   check-azure-volume-id-parse
   check-update-deps-hook
-  check-vm-init-series
+  check-vm-init-no-tooling
   check-vagrant-plugins
   check-test-base
   check-host-check-lists

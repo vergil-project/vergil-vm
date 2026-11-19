@@ -18,7 +18,7 @@ host_checks=(
   check-opentofu-validate
   check-opentofu-name-validation
   check-update-deps-hook
-  check-vm-init-series
+  check-vm-init-no-tooling
   check-vagrant-plugins
   check-test-base
   check-host-check-lists
