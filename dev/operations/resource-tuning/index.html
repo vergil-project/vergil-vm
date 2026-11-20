@@ -2834,39 +2834,38 @@
 
 <h1 id="resource-tuning">Resource Tuning<a class="headerlink" href="#resource-tuning" title="Permanent link">&para;</a></h1>
 <h2 id="defaults">Defaults<a class="headerlink" href="#defaults" title="Permanent link">&para;</a></h2>
-<p>The defaults are conservative, suitable for modest hardware. The disk
-default depends on which kind of Lima VM <code>vrg-vm</code> creates:</p>
+<p>The defaults are conservative, suitable for modest hardware, and the
+same for both kinds of Lima VM <code>vrg-vm</code> creates, the shared VM and a
+dedicated per-repo VM:</p>
 <table>
 <thead>
 <tr>
 <th>Resource</th>
-<th>Shared VM</th>
-<th>Dedicated per-repo VM</th>
+<th>Default</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>CPUs</td>
 <td>4</td>
-<td>4</td>
 </tr>
 <tr>
 <td>Memory</td>
 <td>4 GiB</td>
-<td>4 GiB</td>
 </tr>
 <tr>
 <td>Disk</td>
-<td>50 GiB</td>
 <td>100 GiB</td>
 </tr>
 </tbody>
 </table>
-<p>The shared VM takes the VM template's own values (<code>templates/agent.yaml</code>)
-for any field the identity leaves unset. A dedicated VM takes its size
-from <code>vrg-vm</code>'s base footprint, which sets a 100 GiB disk
-(vergil-tooling #4791). A repo's <code>[vm]</code> profile can size a dedicated VM
-itself; see vergil-tooling's VM spec reference. Off-platform cloud VMs
+<p>For any field the identity leaves unset, both kinds take their size from
+<code>vrg-vm</code>'s base footprint, not from the VM template's own values in
+<code>templates/agent.yaml</code> (vergil-tooling #4791, #4810). A per-identity
+<code>disk</code> (see below) overrides the 100 GiB default, and so does a named
+instance's <code>disk</code> in a repo's <code>[vm]</code> profile; see vergil-tooling's VM
+spec reference. A shared VM created before #4810, at the template's
+50 GiB, reaches 100 GiB only when it is rebuilt. Off-platform cloud VMs
 have no <code>disk</code> field: they size an ephemeral boot disk (60 GiB by
 default) and a persistent volume instead.</p>
 <h2 id="how-to-configure">How to Configure<a class="headerlink" href="#how-to-configure" title="Permanent link">&para;</a></h2>
@@ -2876,7 +2875,7 @@ default) and a persistent volume instead.</p>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">private_key_path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"~/.config/vergil/keys/vergil.pem"</span>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">cpus</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">12</span>
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="n">memory</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"32GiB"</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="n">disk</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"100GiB"</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="n">disk</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"200GiB"</span>
 </code></pre></div>
 <p>These values are applied automatically by <code>vrg-vm create</code> when creating
 a VM for this identity.</p>
