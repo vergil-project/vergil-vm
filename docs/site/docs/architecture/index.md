@@ -91,6 +91,12 @@ within their `~>` ranges.
 Also configures:
 
 - zsh as the default shell for the Lima user
+- `~/.local/bin` at the front of `PATH` in `/etc/environment`
+  (`templates/provision/15-environment.sh`). pam_env reads that file for
+  every SSH session, so a non-login remote command (`limactl shell`,
+  `gcloud compute ssh --command`, `ssh <host> <cmd>`) finds the
+  uv-installed `uv` and `vrg-*` commands with no shell rc file. The
+  vergil-tooling install relies on this.
 - sshd drop-in to accept terminal environment variables (see
   [SSH Terminal Forwarding](#ssh-terminal-environment-forwarding))
 
