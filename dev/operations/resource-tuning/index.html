@@ -2834,30 +2834,41 @@
 
 <h1 id="resource-tuning">Resource Tuning<a class="headerlink" href="#resource-tuning" title="Permanent link">&para;</a></h1>
 <h2 id="defaults">Defaults<a class="headerlink" href="#defaults" title="Permanent link">&para;</a></h2>
-<p>The VM template defines conservative defaults suitable for modest
-hardware:</p>
+<p>The defaults are conservative, suitable for modest hardware. The disk
+default depends on which kind of Lima VM <code>vrg-vm</code> creates:</p>
 <table>
 <thead>
 <tr>
 <th>Resource</th>
-<th>Default</th>
+<th>Shared VM</th>
+<th>Dedicated per-repo VM</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>CPUs</td>
 <td>4</td>
+<td>4</td>
 </tr>
 <tr>
 <td>Memory</td>
+<td>4 GiB</td>
 <td>4 GiB</td>
 </tr>
 <tr>
 <td>Disk</td>
 <td>50 GiB</td>
+<td>100 GiB</td>
 </tr>
 </tbody>
 </table>
+<p>The shared VM takes the VM template's own values (<code>templates/agent.yaml</code>)
+for any field the identity leaves unset. A dedicated VM takes its size
+from <code>vrg-vm</code>'s base footprint, which sets a 100 GiB disk
+(vergil-tooling #4791). A repo's <code>[vm]</code> profile can size a dedicated VM
+itself; see vergil-tooling's VM spec reference. Off-platform cloud VMs
+have no <code>disk</code> field: they size an ephemeral boot disk (60 GiB by
+default) and a persistent volume instead.</p>
 <h2 id="how-to-configure">How to Configure<a class="headerlink" href="#how-to-configure" title="Permanent link">&para;</a></h2>
 <p>Set resource fields in <code>~/.config/vergil/identities.toml</code>:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">[identities.vergil]</span>

@@ -2981,6 +2981,12 @@ within their <code>~&gt;</code> ranges.</p>
 <p>Also configures:</p>
 <ul>
 <li>zsh as the default shell for the Lima user</li>
+<li><code>~/.local/bin</code> at the front of <code>PATH</code> in <code>/etc/environment</code>
+  (<code>templates/provision/15-environment.sh</code>). pam_env reads that file for
+  every SSH session, so a non-login remote command (<code>limactl shell</code>,
+  <code>gcloud compute ssh --command</code>, <code>ssh &lt;host&gt; &lt;cmd&gt;</code>) finds the
+  uv-installed <code>uv</code> and <code>vrg-*</code> commands with no shell rc file. The
+  vergil-tooling install relies on this.</li>
 <li>sshd drop-in to accept terminal environment variables (see
   <a href="#ssh-terminal-environment-forwarding">SSH Terminal Forwarding</a>)</li>
 </ul>

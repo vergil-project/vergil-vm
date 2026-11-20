@@ -2947,8 +2947,11 @@ companion and is <strong>out of scope here</strong>.</p>
   the dedicated <code>destroy-volume</code> verb is confirmation-gated. (An earlier
   <code>prevent_destroy</code> guard on the disk was removed — a literal can't be
   conditionalized, so it also blocked that legitimate verb.)</li>
-<li><strong>The boot disk is ephemeral and fixed-size</strong> (<code>boot_disk_gib</code>, default 60, #433); only the
-  persistent <code>volume</code> size is author-facing. (<code>disk</code> is a Lima knob, not a cloud one.)</li>
+<li><strong>The boot disk is ephemeral, and its size is optional</strong> (<code>boot_disk_gib</code>, default
+  60, #433). A repo sizes it with <code>[vm].boot_disk</code>: vergil-tooling sends
+  <code>boot_disk_gib</code> only when that key is declared, and otherwise the module default
+  applies. The persistent <code>volume</code> size is always declared by the repo. (<code>disk</code> is a
+  Lima knob, not a cloud one.)</li>
 <li><strong>The boot disk type is selectable</strong> (<code>boot_disk_type</code>, #312). Consumers that put
   I/O-heavy work on the ephemeral boot disk (for example, libvirt's default image pool
   holding nested guests' qcow2 files) can choose faster storage than the default.</li>
