@@ -2,20 +2,23 @@
 
 ## Defaults
 
-The defaults are conservative, suitable for modest hardware. The disk
-default depends on which kind of Lima VM `vrg-vm` creates:
+The defaults are conservative, suitable for modest hardware, and the
+same for both kinds of Lima VM `vrg-vm` creates, the shared VM and a
+dedicated per-repo VM:
 
-| Resource | Shared VM | Dedicated per-repo VM |
-| -------- | --------- | --------------------- |
-| CPUs | 4 | 4 |
-| Memory | 4 GiB | 4 GiB |
-| Disk | 50 GiB | 100 GiB |
+| Resource | Default |
+| -------- | ------- |
+| CPUs | 4 |
+| Memory | 4 GiB |
+| Disk | 100 GiB |
 
-The shared VM takes the VM template's own values (`templates/agent.yaml`)
-for any field the identity leaves unset. A dedicated VM takes its size
-from `vrg-vm`'s base footprint, which sets a 100 GiB disk
-(vergil-tooling #4791). A repo's `[vm]` profile can size a dedicated VM
-itself; see vergil-tooling's VM spec reference. Off-platform cloud VMs
+For any field the identity leaves unset, both kinds take their size from
+`vrg-vm`'s base footprint, not from the VM template's own values in
+`templates/agent.yaml` (vergil-tooling #4791, #4810). A per-identity
+`disk` (see below) overrides the 100 GiB default, and so does a named
+instance's `disk` in a repo's `[vm]` profile; see vergil-tooling's VM
+spec reference. A shared VM created before #4810, at the template's
+50 GiB, reaches 100 GiB only when it is rebuilt. Off-platform cloud VMs
 have no `disk` field: they size an ephemeral boot disk (60 GiB by
 default) and a persistent volume instead.
 
@@ -29,7 +32,7 @@ app_id = 12345
 private_key_path = "~/.config/vergil/keys/vergil.pem"
 cpus = 12
 memory = "32GiB"
-disk = "100GiB"
+disk = "200GiB"
 ```
 
 These values are applied automatically by `vrg-vm create` when creating
