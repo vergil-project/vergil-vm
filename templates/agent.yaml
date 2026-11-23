@@ -30,13 +30,15 @@ base:
 # Override per-identity in ~/.config/vergil/identities.toml:
 #   cpus = 12
 #   memory = "32GiB"
-#   disk = "100GiB"
+#   disk = "200GiB"
 #
 # vrg-vm applies these at create time; apply a changed footprint to an
-# existing VM with `vrg-vm rebuild`.
+# existing VM with `vrg-vm rebuild`. A larger disk alone can instead be grown
+# in place (Lima grows a main disk, never shrinks it); see
+# docs/site/docs/operations/resource-tuning.md.
 cpus: 4
 memory: "4GiB"
-disk: "50GiB"
+disk: "100GiB"
 
 # Per-repo VM profile parameters (issue #99). Overridden at create time by
 # vrg-vm via `--set=.param.<KEY>`. Empty defaults keep the base box unchanged.
