@@ -625,6 +625,8 @@
       
         
       
+        
+      
     
     
     
@@ -677,6 +679,34 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../releases/v2.1.55/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1.55
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
               
             
               
@@ -2656,6 +2686,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#growing-an-existing-vms-disk" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Growing an Existing VM's Disk
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -2815,6 +2856,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#growing-an-existing-vms-disk" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Growing an Existing VM's Disk
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -2834,8 +2886,9 @@
 
 <h1 id="resource-tuning">Resource Tuning<a class="headerlink" href="#resource-tuning" title="Permanent link">&para;</a></h1>
 <h2 id="defaults">Defaults<a class="headerlink" href="#defaults" title="Permanent link">&para;</a></h2>
-<p>The VM template defines conservative defaults suitable for modest
-hardware:</p>
+<p>The defaults are conservative, suitable for modest hardware, and the
+same for both kinds of Lima VM <code>vrg-vm</code> creates, the shared VM and a
+dedicated per-repo VM:</p>
 <table>
 <thead>
 <tr>
@@ -2854,10 +2907,23 @@ hardware:</p>
 </tr>
 <tr>
 <td>Disk</td>
-<td>50 GiB</td>
+<td>100 GiB</td>
 </tr>
 </tbody>
 </table>
+<p>For any field the identity leaves unset, both kinds take their size from
+<code>vrg-vm</code>'s base footprint, not from the VM template's own values in
+<code>templates/agent.yaml</code> (vergil-tooling #4791, #4810). The template's
+own values are the same 4 CPUs, 4 GiB and 100 GiB, and apply only to a
+VM created from it directly with <code>limactl</code>, such as the test VM
+<code>scripts/build.sh</code> builds. A per-identity <code>disk</code> (see below) overrides
+the 100 GiB default, and so does a named instance's <code>disk</code> in a repo's
+<code>[vm]</code> profile; see vergil-tooling's VM spec reference. A shared VM
+created before #4810 has the 50 GiB disk the template had then, and
+keeps it until it is rebuilt or its disk is
+<a href="#growing-an-existing-vms-disk">grown in place</a>. Off-platform cloud VMs
+have no <code>disk</code> field: they size an ephemeral boot disk (60 GiB by
+default) and a persistent volume instead.</p>
 <h2 id="how-to-configure">How to Configure<a class="headerlink" href="#how-to-configure" title="Permanent link">&para;</a></h2>
 <p>Set resource fields in <code>~/.config/vergil/identities.toml</code>:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">[identities.vergil]</span>
@@ -2865,7 +2931,7 @@ hardware:</p>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">private_key_path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"~/.config/vergil/keys/vergil.pem"</span>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">cpus</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">12</span>
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="n">memory</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"32GiB"</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="n">disk</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"100GiB"</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="n">disk</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"200GiB"</span>
 </code></pre></div>
 <p>These values are applied automatically by <code>vrg-vm create</code> when creating
 a VM for this identity.</p>
@@ -2873,14 +2939,56 @@ a VM for this identity.</p>
 <p>To apply new resource settings, rebuild the VM:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>vrg-vm<span class="w"> </span>rebuild
 </code></pre></div>
-<p>If you only changed CPU or memory (not disk), a restart is sufficient:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>vrg-vm<span class="w"> </span>restart
-</code></pre></div>
+<p>A restart alone applies no changed setting: <code>vrg-vm restart</code> stops and
+starts the VM with the CPUs, memory and disk Lima recorded when it was
+created. To change those without a rebuild, edit the stopped VM with
+<code>limactl edit</code>, as <a href="#growing-an-existing-vms-disk">Growing an Existing VM's
+Disk</a> shows for the disk; the same
+command takes <code>--cpus &lt;n&gt;</code> and <code>--memory &lt;GiB&gt;</code>.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Disk size can only be increased, not decreased, and requires a
-rebuild. CPU and memory changes take effect on restart.</p>
+<p>Disk size can only be increased, never decreased. A rebuild applies
+a larger disk; so does growing it in place, below.</p>
 </div>
+<h2 id="growing-an-existing-vms-disk">Growing an Existing VM's Disk<a class="headerlink" href="#growing-an-existing-vms-disk" title="Permanent link">&para;</a></h2>
+<p><code>vrg-vm</code> sets a VM's disk size only when it creates the VM. No <code>vrg-vm</code>
+command changes the size of an existing VM's disk: <code>vrg-vm update</code>
+reinstalls tooling and plugins in a running VM, and <code>vrg-vm restart</code>
+stops and starts it as it is. An existing VM keeps its disk size until
+it is rebuilt, or until its disk is grown in place.</p>
+<p>Lima can grow, but never shrink, an existing instance's main disk with
+<code>limactl edit --disk</code> (Lima 1.1 and later; this template requires Lima
+2.0). Growing in place keeps the VM's contents, so it avoids the
+rebuild. Run these steps on the host, one VM at a time:</p>
+<ol>
+<li>
+<p>Stop the VM, with the same identity and workspace arguments you use
+   to start it. <code>vrg-vm stop</code> prints the Lima instance name, which
+   <code>limactl list</code> also shows:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>vrg-vm<span class="w"> </span>stop
+</code></pre></div>
+</li>
+<li>
+<p>Set the new size, in GiB. It must be larger than the current size:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>limactl<span class="w"> </span>edit<span class="w"> </span>&lt;instance&gt;<span class="w"> </span>--disk<span class="w"> </span><span class="m">100</span>
+</code></pre></div>
+</li>
+<li>
+<p>Start the VM with <code>vrg-vm start</code>, so credentials are injected as
+   usual. On boot, the Ubuntu image's cloud-init <code>growpart</code> and
+   <code>resizefs</code> modules, which run on every boot, grow the root partition
+   and filesystem to fill the larger disk.</p>
+</li>
+<li>
+<p>Check the result: the <code>DISK</code> column of <code>limactl list</code>, and <code>df -h /</code>
+   inside the VM. <code>vrg-vm list</code> shows the size the identity's footprint
+   asks for, not the VM's actual disk, so it cannot confirm the change.</p>
+</li>
+</ol>
+<p>A dedicated VM's <code>vrg-vm list</code> drift check compares the spec it was
+created from, <code>disk</code> included, with the composed spec. Growing its disk
+in place does not change that record, so a dedicated VM whose declared
+<code>disk</code> changed still shows <code>NEEDS-REBUILD</code> after the steps above.</p>
 
 
 
