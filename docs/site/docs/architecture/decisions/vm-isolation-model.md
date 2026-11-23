@@ -73,5 +73,5 @@ Moving to Ubuntu 26.04 is a change of its own
   the VM.
 
 **Trade-off:** Ubuntu is larger than minimal distributions like Alpine.
-Disk size is not a primary concern for long-lived VMs with 50 GiB
-default disks.
+Disk size is not a primary concern for long-lived VMs with a 100 GiB
+default disk (see [Resource Tuning](../../operations/resource-tuning.md)).
