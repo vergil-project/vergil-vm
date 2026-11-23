@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.1.55] - 2026-11-23
+
+### CI
+
+- stop granting actions: read to the security job (#443)
+- pass the App secrets to the shared docs workflows (#446)
+
+### Documentation
+
+- state the boot and Lima disk defaults and the non-login PATH guarantee (#439)
+- state a single 100 GiB default Lima disk for shared and dedicated VMs (#441)
+
+### Features
+
+- double the agent template's default disk to 100 GiB (#445)
+
 ## [2.1.54] - 2026-11-19
 
 ### CI
