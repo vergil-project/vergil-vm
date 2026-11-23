@@ -22,10 +22,10 @@ jobs:
       contents: write
     # The automation App's credentials let the shared docs workflow report
     # its failures as issues in the operations queue (epic
-    # vergil-project/.github#1494).
-    secrets:
-      APP_CLIENT_ID: ${{ secrets.APP_CLIENT_ID }}
-      APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
+    # vergil-project/.github#1494). They live in the `automation` environment,
+    # which reaches a reusable workflow only through `secrets: inherit` (epic
+    # vergil-project/.github#1384).
+    secrets: inherit
 
   release:
     if: github.ref == 'refs/heads/main'
@@ -34,7 +34,7 @@ jobs:
       container-suffix: base
     # The automation App's installation token pushes the release tag (epic
     # vergil-project/.github#1350); tag protection lets only the App and
-    # admins create release tags.
-    secrets:
-      APP_CLIENT_ID: ${{ secrets.APP_CLIENT_ID }}
-      APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
+    # admins create release tags. The App keys live in the `automation`
+    # environment, which reaches a reusable workflow only through
+    # `secrets: inherit` (epic vergil-project/.github#1384).
+    secrets: inherit
