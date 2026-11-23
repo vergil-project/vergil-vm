@@ -20,6 +20,12 @@ jobs:
     uses: vergil-project/vergil-actions/.github/workflows/cd-docs.yml@v2.1
     permissions:
       contents: write
+    # The automation App's credentials let the shared docs workflow report
+    # its failures as issues in the operations queue (epic
+    # vergil-project/.github#1494).
+    secrets:
+      APP_CLIENT_ID: ${{ secrets.APP_CLIENT_ID }}
+      APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
 
   release:
     if: github.ref == 'refs/heads/main'
