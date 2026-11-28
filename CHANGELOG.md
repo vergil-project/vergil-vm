@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.1.56] - 2026-11-28
+
+### CI
+
+- read the automation App secrets from the automation environment (#452)
+
+### Chores
+
+- sync the managed files with the released templates (#451)
+- sync the managed files with the released templates (#456)
+- sync the managed files with the released templates (#457)
+- sync the managed files with the released templates (#458)
+
+### Features
+
+- the daily agent audit (#455)
+
 ## [2.1.55] - 2026-11-23
 
 ### CI
